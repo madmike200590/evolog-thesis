@@ -11,3 +11,8 @@ No, we don't want them to diverge massively, both should make use of latest solv
 An Evolog program might significantly differ from what Alpha (or ASPCore2) considers a valid program. ~At the very least, we need _different parsers_, one with the ASPCore2 Grammar, the other with the (extended) Evolog grammar.~ Scratch this, we'd have to duplicate  the code from ParseTreeVisitor, we don't wanna do that. Evolog-specific features are handed by a new visitor that extends the current one.
 
 Possible ways to distinguish would then be a CLI switch for ASPCore2/Evolog mode, or separate executables (seems nicer).
+
+#### Binding action heads to code
+
+* we don't want to use reflection
+* hav to get from the string id of the action to a bound method
