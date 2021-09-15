@@ -7,10 +7,14 @@
 #### Keep Evolog and "Standard Alpha" code bases separate?
 No, we don't want them to diverge massively, both should make use of latest solving features, static analysis, etc.
 
-#### How to distinguish between "vanilla ASP solving" and Evolog program execution?
-An Evolog program might significantly differ from what Alpha (or ASPCore2) considers a valid program. ~At the very least, we need _different parsers_, one with the ASPCore2 Grammar, the other with the (extended) Evolog grammar.~ Scratch this, we'd have to duplicate  the code from ParseTreeVisitor, we don't wanna do that. Evolog-specific features are handled by a new visitor that extends the current one.
+However, alpha and evolog should be different executables (and library-jars), i.e. the modularized alpha architecture should be extended by an evolog-cli-app and evolog-lib module.
 
-Possible ways to distinguish would then be a CLI switch for ASPCore2/Evolog mode, or separate executables (seems nicer).
+#### How to distinguish between "vanilla ASP solving" and Evolog program execution?
+An Evolog program might significantly differ from what Alpha (or ASPCore2) considers a valid program. However, every ASPCore2 program is a valid Evolog program. ~At the very least, we need _different parsers_, one with the ASPCore2 Grammar, the other with the (extended) Evolog grammar.~ Scratch this, we'd have to duplicate  the code from ParseTreeVisitor, we don't wanna do that. Evolog-specific features are handled by a new visitor that extends the current one.
+
+Since Every ASPCore2 program is a valid evolog program, we don't want to distinguish between the two in program implementations. The Alpha backend will be extended to always fully support Evolog execution, but - depending on the parser in use - full Evolog- or only ASPCore2-Syntax is accepted. Note that this might need to be revisited when adding program modules.
+
+Possible ways to distinguish would then be ~a CLI switch for ASPCore2/Evolog mode, or~ separate executables (seems nicer).
 
 ### Implementation of Actions
 
