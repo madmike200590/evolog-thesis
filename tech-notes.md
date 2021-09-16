@@ -27,7 +27,7 @@ Possible ways to distinguish would then be ~a CLI switch for ASPCore2/Evolog mod
 
 ### Syntax
 
-We want rule heads triggering actions to derive user-defined predicates, i.e. one should be able to directly assign an arbitrary predicate name to the result of an "file\_open" action, rather than having to write rules like "config\_file\_open(RES) :- @file\_open[F](RES), config\_path(F).". This seems to be more convenient and also saves us from the (potentially huge) problem of having all actions of same type use the same predicate name which would mess up dependency analysis (e.g. when code needs to first read one file, then another, and then do something, where read order is important).
+We want rule heads triggering actions to derive user-defined predicates, i.e. one should be able to directly assign an arbitrary predicate name to the result of an "file\_open" action, rather than having to write rules like "`config\_file\_open(RES) :- @file\_open\[F\](RES), config\_path(F).`". This seems to be more convenient and also saves us from the (potentially huge) problem of having all actions of same type use the same predicate name which would mess up dependency analysis (e.g. when code needs to first read one file, then another, and then do something, where read order is important).
 
 Draft syntax example: Read from file "a.txt" (line-wise) and write to file "b.txt"
 ```
