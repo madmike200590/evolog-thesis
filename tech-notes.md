@@ -55,4 +55,14 @@ dst_closed : @file_close[DST] = _ :- dst_file_all_written, dst_file(DST).
 
 ### Semantics
 
+Actions are represented as (interpreted) functions, i.e. an action head `p(Y) : @f[X] = Y` can be seen as a short-hand for `p(f(X))`, where `f(X)` denotes the (action-)function `f` that is applied to term `X` and gives the result `Y`.
+
+Function congruence axioms hold for action functions (TODO write out axioms).
+
+#### Axioms
+
+- Actions may only occur in those nodes of a program's component graph, where no incoming path from any entry node (i.e. fact predicate) contains cycles through negation.
+- Actions are idempotent (implementation-wise: only get executed once per unique set of ground input terms).
+- Actions that are not on a common path in the component graph are assumed to be independent, i.e. do not influence each others results.
+
 
