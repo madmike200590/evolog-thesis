@@ -18,6 +18,12 @@ Possible ways to distinguish would then be ~a CLI switch for ASPCore2/Evolog mod
 
 ### Implementation of Actions
 
+#### Work Packages
+- Make Solver-Mode (ASPCore2 vs Evolog) configurable: Alpha interface should cover both, Main probably different
+- Design static checks on Evolog programs (action safety, stratification analysis)
+- Implement additional actions
+- Proper Test Suite for actions
+
 #### Binding action heads to code
 
 * we don't want to use reflection
@@ -66,7 +72,7 @@ Function congruence axioms hold for action functions (TODO write out axioms).
 #### Axioms
 
 - Actions may only occur in those nodes of a program's component graph, where no incoming path from any entry node (i.e. fact predicate) contains cycles through negation.
-- Actions are idempotent (implementation-wise: only get executed once per unique set of ground input terms).
+- Actions are idempotent (implementation-wise: only get executed once per unique set of ground input terms). NOTE: How does this correlate to a getCurrentTime() external?
 - Actions that are not on a common path in the component graph are assumed to be independent, i.e. do not influence each others results.
 
 
