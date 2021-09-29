@@ -20,7 +20,7 @@ Possible ways to distinguish would then be ~a CLI switch for ASPCore2/Evolog mod
 
 #### Work Packages
 - Make Solver-Mode (ASPCore2 vs Evolog) configurable: Alpha interface should cover both, Main probably different
--- Implement configurer component for all objects used by AlphaImpl (also transitively used). Could be spring, but do hand-crafted for now
+- - Implement configurer component for all objects used by AlphaImpl (also transitively used). Could be spring, but do hand-crafted for now
 - Design static checks on Evolog programs (action safety, stratification analysis)
 - Implement additional actions
 - Proper Test Suite for actions
