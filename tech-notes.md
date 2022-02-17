@@ -2,6 +2,8 @@
 
 ## Random thoughts, notes on design
 
+- TODO static check ensuring that action result variables do not occur in rule bodies (head only!)
+
 ### Evolog vs. Alpha
 
 #### Keep Evolog and "Standard Alpha" code bases separate?
@@ -20,7 +22,8 @@ Possible ways to distinguish would then be ~a CLI switch for ASPCore2/Evolog mod
 
 #### Work Packages
 - Make Solver-Mode (ASPCore2 vs Evolog) configurable: Alpha interface should cover both, Main probably different
-    - Implement configurer component for all objects used by AlphaImpl (also transitively used). Could be spring, but do hand-crafted for now
+    - Use separate executables with separate mains. Split CommandlineParser options in common and ASP/Evolog specific parts
+    - ~implement configurer component for all objects used by AlphaImpl (also transitively used). Could be spring, but do hand-crafted for now~ (realized in AlphaFactory)
 - Design static checks on Evolog programs (action safety, stratification analysis)
 - Implement additional actions
 - Proper Test Suite for actions
@@ -31,6 +34,10 @@ Possible ways to distinguish would then be ~a CLI switch for ASPCore2/Evolog mod
 * have to get from the string id of the action to a bound method
 
 ## Actions
+
+### Execution
+
+Actions are executed by some rule instantiation component called by DefaultGrounder (currently NaiveGrounder, rename).
 
 ### Syntax
 
@@ -72,6 +79,7 @@ Function congruence axioms hold for action functions (TODO write out axioms).
 
 #### Axioms
 
+- There must be a 1:1 relationship between executed actions and atoms in an answer set.
 - Actions may only occur in those nodes of a program's component graph, where no incoming path from any entry node (i.e. fact predicate) contains cycles through negation.
 - Actions are idempotent (implementation-wise: only get executed once per unique set of ground input terms). NOTE: How does this correlate to a getCurrentTime() external?
 - Actions that are not on a common path in the component graph are assumed to be independent, i.e. do not influence each others results.
