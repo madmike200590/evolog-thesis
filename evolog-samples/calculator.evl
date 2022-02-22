@@ -1,0 +1,122 @@
+infile("/home/michael/asp_snippets/evolog-actions/calculations.txt").
+infile_open(PATH, HD) : @fileInputStream[PATH] = HD :- infile(PATH).
+
+% Won't happen currently, Java dies instead of wrapping error
+error(io, MSG) :- infile_open(_, err(MSG)).
+
+
+%%%% Read all lines from infile %%%%
+
+readline_result(PATH, 0, RES) : @streamReadLine[STREAM] = RES :- infile(PATH), infile_open(PATH, stream(STREAM)).
+readline_result(PATH, LINE_NO, RES) : @streamReadLine[STREAM] = RES :- 
+	infile(PATH), 
+	infile_open(PATH, stream(STREAM)), 
+	readline_result(PATH, PREV_LINE_NO, ok(PREV_LINE_RES)), 
+	PREV_LINE_RES != eof, 
+	LINE_NO = PREV_LINE_NO + 1.
+
+%% close stream after getting eof
+infile_closed(PATH, RES) : @inputStreamClose[STREAM] = RES :- infile(PATH), infile_open(PATH, stream(STREAM)), readline_result(PATH, _, ok(eof)).
+
+%%%% Parse calculations %%%%
+
+input_line(LINE_NO, LINE) :- readline_result(_, LINE_NO, ok(LINE)), LINE != eof.
+
+%%%% Tokenize input lines (i.e. Lexer part) %%%%
+
+input_regex(number, "\d+"). 
+input_regex(op_plus, "\+").
+input_regex(op_minus, "-").
+input_regex(op_times, "\*").
+input_regex(op_div, "/").
+input_regex(op_eq, "=").
+input_regex(blank, "\s").
+
+input_line_part(LINE_NO, PART, 0, 1) :- input_line(LINE_NO, LINE), &string_substring[LINE, 0, 1](PART).
+input_line_part(LINE_NO, PART, START, END) :- 
+	input_line(LINE_NO, LINE), 
+	input_line_part(LINE_NO, _, START, PREV_END), 
+	END = PREV_END + 1,
+	END < LEN,
+	&stdlib_string_length[LINE](LEN),
+	&string_substring[LINE, START, END](PART).
+
+input_token_match(LINE_NO, START, END, TOK) :-
+	input_line_part(LINE_NO, PART, START, END), 
+	&stdlib_string_matches_regex[PART, EXPR], 
+	input_regex(TOK, EXPR).
+
+not_longest_match(LINE_NO, START, END) :-
+	input_token_match(LINE_NO, START, END, _), 
+	input_token_match(LINE_NO, START, LATER_END, _),
+	LATER_END > END.
+input_token_longest_match(LINE_NO, START, END, TOK) :- 
+	input_token_match(LINE_NO, START, END, TOK),
+	not not_longest_match(LINE_NO, START, END).
+
+input_line_part(LINE_NO, PART, START, END) :-
+	input_line(LINE_NO, LINE),
+	input_token_longest_match(LINE_NO, _, START, TOK),
+	END = START + 1,
+	END < LEN,
+	&stdlib_string_length[LINE](LEN),
+	&string_substring[LINE, START, END](PART).
+
+input_token(LINE_NO, START, END, TOK) :- input_token_longest_match(LINE_NO, START, END, TOK), TOK != blank.
+
+input_token_left(LINE_NO, START, END, LEFT_START, LEFT_END) :-
+	input_token(LINE_NO, START, END, _),
+	input_token(LINE_NO, LEFT_START, LEFT_END, _),
+	LEFT_START < START.
+
+input_token_not_pred(LINE_NO, START, END, LEFT_START, LEFT_END) :-
+	input_token(LINE_NO, START, END, _),
+	input_token(LINE_NO, LEFT_START, LEFT_END, _),
+	input_token(LINE_NO, INTM_START, INTM_END, _),
+	input_token_left(LINE_NO, START, END, LEFT_START, LEFT_END),
+	input_token_left(LINE_NO, INTM_START, INTM_END, LEFT_START, LEFT_END),
+	input_token_left(LINE_NO, START, END, INTM_START, INTM_END).
+
+input_token_pred(LINE_NO, START, END, P_START, P_END) :- 
+	input_token(LINE_NO, START, END, _),
+	input_token(LINE_NO, P_START, P_END, _),
+	input_token_left(LINE_NO, START, END, P_START, P_END),
+	not input_token_not_pred(LINE_NO, START, END, P_START, P_END).
+
+input_token_has_predecessor(LINE_NO, START, END) :- input_token(LINE_NO, START, END, _), input_token_pred(LINE_NO, START, END, _, _).
+input_token_pos(LINE_NO, START, END, TOK, 0) :- input_token(LINE_NO, START, END, TOK), not input_token_has_predecessor(LINE_NO, START, END).
+input_token_pos(LINE_NO, START, END, TOK, POS) :- input_token(LINE_NO, START, END, TOK), input_token_pos(LINE_NO, P_START, P_END, _, P_POS), input_token_pred(LINE_NO, START, END, P_START, P_END), POS = P_POS + 1. 
+
+%%%% Interpret Tokens %%%%
+
+operator_precedence(op_times, 1).
+operator_precedence(op_div, 1).
+operator_precedence(op_plus, 2).
+operator_precedence(op_minus, 2).
+
+input_operator(LINE_NO, POS, OP) :- input_token_pos(LINE_NO, _, _, OP, POS), OP = op_plus.
+input_operator(LINE_NO, POS, OP) :- input_token_pos(LINE_NO, _, _, OP, POS), OP = op_minus.
+input_operator(LINE_NO, POS, OP) :- input_token_pos(LINE_NO, _, _, OP, POS), OP = op_times.
+input_operator(LINE_NO, POS, OP) :- input_token_pos(LINE_NO, _, _, OP, POS), OP = op_div.
+input_operator_precedence(LINE_NO, POS, OP, PRIO) :- input_operator(LINE_NO, POS, OP), operator_precedence(OP, PRIO).
+
+% Values for numbers
+input_number(LINE_NO, POS, VALUE) :- 
+	input_token_pos(LINE_NO, START, END, number, POS),
+	input_line(LINE_NO, LINE),
+	&string_substring[LINE, START, END](STR),
+	&string_parse_integer[STR](VALUE).
+
+input_first_op(LINE_NO, OP, PRIO) :- input_operator_precedence(LINE_NO, _, OP, PRIO), PRIO = #min{ P : input_operator_precedence(LINE_NO, _, _, P)}.
+ast(LINE_NO, R_POS, ROOT, LEFT, RIGHT) :- 
+	input_first_op(LINE_NO, OP, PRIO), 
+	input_token_pos(LINE_NO, _, _, OP, OP_POS),
+	input_token_pos(LINE_NO, _, _, number, L_POS),
+	input_token_pos(LINE_NO, _, _, number, R_POS),
+	OP_POS = L_POS + 1,
+	R_POS = OP_POS + 1,
+	ROOT = node(OP, R_POS),
+	LEFT = leaf(L_VAL),
+	RIGHT = leaf(R_VAL),
+	input_number(LINE_NO, L_POS, L_VAL),
+	input_number(LINE_NO, R_POS, R_VAL).
