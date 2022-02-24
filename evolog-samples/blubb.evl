@@ -1,0 +1,52 @@
+infile("/home/michael/asp_snippets/evolog-actions/bla.txt").
+outfile("/home/michael/asp_snippets/evolog-actions/blubb.txt").
+infile_open(PATH, HD) : @fileInputStream[PATH] = HD :- infile(PATH).
+outfile_open(PATH, HD) : @fileOutputStream[PATH] = HD :- outfile(PATH).
+
+% Won't happen currently, Java dies instead of wrapping error
+error(io, MSG) :- infile_open(_, err(MSG)).
+error(io, MSG) :- outfile_open(_, err(MSG)).
+
+
+%%%% Read all lines from infile %%%%
+
+readline_result(PATH, 0, RES) : @streamReadLine[STREAM] = RES :- infile(PATH), infile_open(PATH, stream(STREAM)).
+readline_result(PATH, LINE_NO, RES) : @streamReadLine[STREAM] = RES :- 
+	infile(PATH), 
+	infile_open(PATH, stream(STREAM)), 
+	readline_result(PATH, PREV_LINE_NO, ok(PREV_LINE_RES)), 
+	PREV_LINE_RES != eof, 
+	LINE_NO = PREV_LINE_NO + 1.
+
+%% close stream after getting eof
+infile_closed(PATH, RES) : @inputStreamClose[STREAM] = RES :- infile(PATH), infile_open(PATH, stream(STREAM)), readline_result(PATH, _, ok(eof)).
+
+file_line(PATH, LINE_NO, LINE) :- readline_result(PATH, LINE_NO, ok(LINE)), LINE != eof.
+
+%%%% Prepend every line with "blubb" and write to outfile %%%%
+write_result(OUTFILE, 0, RES) : @streamWrite[STREAM, OUTLINE] = RES :- 
+    file_line(INFILE, 0, LINE),
+    outfile_open(OUTFILE, stream(STREAM)),
+    outfile(OUTFILE),
+    infile(INFILE),
+    &stdlib_string_concat["(blubb) ", LINE](BLUBB_LINE),
+    &stdlib_string_concat[BLUBB_LINE, "\n"](OUTLINE).
+    
+    
+write_result(OUTFILE, LINE_NO, RES) : @streamWrite[STREAM, OUTLINE] = RES :-
+    write_result(OUTFILE, P_LINE_NO, writeResult(ok)),
+    P_LINE_NO = LINE_NO - 1,
+    file_line(INFILE, LINE_NO, LINE),
+    outfile_open(OUTFILE, stream(STREAM)),
+    outfile(OUTFILE),
+    infile(INFILE),
+    &stdlib_string_concat["(blubb) ", LINE](BLUBB_LINE),
+    &stdlib_string_concat[BLUBB_LINE, "\n"](OUTLINE).
+    
+%% Close outfile after everything is written
+outfile_closed(PATH, RES) : @outputStreamClose[STREAM] = RES :- 
+     outfile(PATH), 
+     outfile_open(PATH, stream(STREAM)), 
+     write_result(PATH, P_LINE_NO, writeResult(ok)),
+     readline_result(_, EOF_LINE_NO, ok(eof)),
+     P_LINE_NO = EOF_LINE_NO - 1.
