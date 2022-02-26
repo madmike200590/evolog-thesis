@@ -1,0 +1,55 @@
+From "You could have invented monads"
+http://blog.sigfpe.com/2006/08/you-could-have-invented-monads-and.html
+
+In a pure functional language, a function can only read what is supplied to it in its arguments and the only way it can have an effect on the world is through the values it returns.
+
+In Haskell, f and g might have types given by
+
+f,g :: Float -> Float
+
+How can we modify the types of f and g to admit side effects? Well there really isn't any choice at all. If we'd like f' and g' to produce strings as well as floating point numbers as output, then the only possible way is for these strings to be returned alongside the floating point numbers. In other words, we need f' and g' to be of type
+
+f',g' :: Float -> (Float,String)
+
+
+On I/O and sequencing:
+
+Now consider the implementation of random in the compiler. It's typically a C or assembler routine linked into the final Haskell executable. If this routine were modified to perform I/O we could guarantee that the I/O in f was performed before that in g. This is exactly how I/O works in Haskell, we perform all of the I/O in a monad. In this case, a function that conceptually is of type a -> b, but also has a side-effect in the real world, is actually of type a -> IO b. Type IO type is a black box, we don't need to know what's in it. (Maybe it works just like the random example, maybe not.) We just need to know that x >>= f >>= g performs the I/O in f before that in g.
+
+
+
+Evolog Action: 
+"Monadic inspired handwavy": Every evolog action depends on everything that is needed to accurately describe the world it operates on (i.e. input state) and returns everything it changed.
+
+Sequencing that haskell or other languages achieve with monads is not necessary in evolog -> can already be encoded through rule dependencies
+
+Given a program P and an answer set AS, we need to be able to see:
+- which actions were performed (i.e. called functions with input)
+- why they were called (i.e. which rules fired)
+- in which sequence they were executed --> not sure, may actually be better to allow non-interdependent actions to happen simultaneously, i.e. leave execution order open, but provide means of obtaining actual order for debugging (logging etc)
+
+The (interpreted) functions designated as actions report their side-effects by operating on a specific world state (can be represented as counter, but could be as simple as currentTimeMillis) -- but that creates problem with externals (e.g. some &file_exists external used in two rules, one of which deletes the file) --> DEFINITION: IO works on mutable state. Therefore, also functions querying this mutable world state are semantically actions since they depend on said mutable world state. This entails that also operations like checking for file existence using "file_exists" are actions and follow the same rules!
+
+
+Furthermore, actions may only be called once! (too imprecise?)
+
+--- Other note: For action composition, maybe we can do monads! see https://www.haskell.org/tutorial/io.html
+
+#### Example: Opening two files
+
+User code:
+file1_open(OP_RES) : @fileInputStream[PATH] = OP_RES :- file1(PATH).
+file2_open(OP_RES) : @fileInputStream[PATH] = OP_RES :- file2(PATH).
+
+"conceptually compiled" to:
+action_result(fileInputStream, PATH, OP_RES) :- file1(PATH).
+action_result(fileInputStream, PATH, OP_RES) :- file2(PATH).
+
+file1_open(OP_RES) :- action_result(fileInputStream, PATH, OP_RES).
+file2_open(OP_RES) :- action_result(fileInputStream, PATH, OP_RES).
+--> PROBLEM!!! We lose connex between rule and action! Need to incorporate a rule id, i.e.
+
+action_result(r1, fileInputStream, PATH, OP_RES) :- file1(PATH).
+action_result(r2, fileInputStream, PATH, OP_RES) :- file2(PATH).
+file1_open(OP_RES) :- action_result(r1, fileInputStream, PATH, OP_RES).
+file2_open(OP_RES) :- action_result(r2, fileInputStream, PATH, OP_RES).
