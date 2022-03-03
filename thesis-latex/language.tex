@@ -1,0 +1,89 @@
+\section{Syntax}
+\label{sec:lang-syntax}
+
+Every valid ASP-Core2 program is a valid Evolog program. In addition, Evolog programs may contain \emph{action rules} and \emph{module literals}.
+
+\begin{definition}[Action Rule]
+\label{def:action-rule}
+Action Rules are ASP rules that have a body as defined by the ASP-Core2 standard~\cite{asp-core2} and an \emph{action head}, where an action head is of the following form:
+\[
+h : @a[i_1,\ldots,i_n] = v_r
+\]
+where
+	\begin{itemize}
+		\item the head atom $h$ is an ASP atom of form $p(t_1,\ldots,t_n)$ with $p$ and $t_1 \ldots,t_n$ being a predicate symbol and a list of terms, respectively.
+		\item the function symbol $a$ is the name of an action function, i.e. an identifier starting with a lower-case letter
+		\item action input terms $t_1$ through $t_n$ are a list of terms
+		\item result variable $r_v$  is a variable.
+	\end{itemize}
+\end{definition}
+
+Action result variables must not occur in the rule body.
+
+\begin{definition}[Module Literals]
+TBD
+\end{definition}
+
+\section{Semantics}
+\label{sec:lang-semantics}
+
+\subsection{Action Rules}
+\label{sec:lang-semantics:action-rules}
+
+\subsubsection*{Desiderata}
+
+For every Evolog Program $P$ and answer set $A$, the following must be clearly defined:
+\begin{itemize}
+	\item $D1$: Which actions were executed by the program?
+	\item $D2$: For every individual action $act$, what led to the action being executed, i.e. of which rule body is $act$ a consequence?
+\end{itemize}
+Combining $D1$ and $D2$ it follows that 
+\begin{itemize}
+	\item $D3$: for actions that depend on other actions, it is clearly visible in which sequence they were executed, i.e. the respective execution sequence can be unambiguously reconstructed using the answer set and program('s dependency graph).
+\end{itemize}
+Furthermore,
+\begin{itemize}
+\item $D4$: all state changes effected on the outside world by execution of $P$ are reflected in each answer set (as results of actions).
+\end{itemize}
+
+
+\begin{definition}[Expansion of action rules]
+\label{def:action-rule-expansion}
+\todo{This is an example, make into a proper definition}
+Semantically, every action rule is equivalent to its \emph{expansion}:
+\[
+file1\_open(OP\_RES) : @fileInputStream[PATH] = OP\_RES :- file1(PATH). %  r1
+\]
+The expansion of $r1$ is:
+\[
+action\_result(r1, fileInputStream, PATH, fileInputStream(PATH)) :- file1(PATH).
+file1\_open(OP\_RES) :- action\_result(r1, fileInputStream, PATH, OP\_RES).
+\]
+\end{definition}
+Consequently, it is ensured that for each ground instance of an action rule $R_a$ that fires, there is exactly one $action\_result$ instance in every answer set. We call this atom a \emph{witness of action $act$}. Requirement $D1$ is fulfilled through the existence of action witnesses. Furthermore, inspection of a program (or its dependency graph) and all action witnesses in an answer set yields the information demanded in $D2$.
+
+\begin{definition}[Applicability of action rules]
+\label{def:action-rule-applicability}
+In order to guarantee $D1$ and $D4$, for every (ground) action rule $R_a$ that fires, it must hold that the corresponding \emph{witness atom} is part of \emph{every answer set}.
+Implementations may further restrict this in order to ensure static verifiability of the condition (e.g. by restricting action rules to  the stratified part, i.e. common base program of a program).
+\end{definition}
+
+\begin{definition}[Rule Identifier]
+\label{def:rule-id}
+Given a non-ground Evolog rule $R$, $id(R)$ denotes a (program-wide) unique identifier of $R$.
+\end{definition}
+
+\begin{definition}[Action function]
+\label{def:action-function}
+An action function $f_{act}$ maps a rule id $r$, a tuple $S$, and a list of input terms $t_1,\ldots, t_n$ to a result term $t_{res}$.
+\begin{itemize}
+	\item Identifier $r$ references the rule (within a program) that is the \emph{action source} (i.e. that fires in order to trigger the action)
+	\item State $S$ is a ground susbtitution for all body variables of the action source rule, i.e. it encodes the state of the world on which the action operates.
+\end{itemize}
+\end{definition}
+In accordance with Definition \ref{def:action-function}, an action witness $action\_result(r_1, fileInputStream, PATH, OP\_RES)$ then reads as "Function $fileInputStream$, with action source $r_1$, applied to input $PATH$, given world state $(PATH)$, gives result $OP\_RES$". \todo{this should be done nicer. Actually, a function is applied to its input, given a rule body holds, that's exactly the elegance, we wanna put this into math-speak.}
+
+\begin{definition}[Interpretations of Evolog programs]
+\label{def:evolog-interpretation}
+An Evolog interpretation $I$ of a program $P$ is a tuple $(F, H)$ consisting of a \emph{Frame} $F$ and a herbrand interpretation $H$. The frame $F$ defines the action functions associated with rules in $P$.
+\end{definition}

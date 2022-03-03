@@ -53,3 +53,10 @@ action_result(r1, fileInputStream, PATH, OP_RES) :- file1(PATH).
 action_result(r2, fileInputStream, PATH, OP_RES) :- file2(PATH).
 file1_open(OP_RES) :- action_result(r1, fileInputStream, PATH, OP_RES).
 file2_open(OP_RES) :- action_result(r2, fileInputStream, PATH, OP_RES).
+
+
+
+#### Tech design for action backend
+
+- needs to construct witnesses
+

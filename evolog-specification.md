@@ -31,16 +31,12 @@ TBD
 For every Evolog Program `P` and answer set `A`, the following must be clearly defined:
 - D1: Which actions were executed by the program?
 - D2: For every individual action `act`, what led to the action being executed, i.e. of which rule body is `act` a consequence?
+
 Combining D1 and D2 it follows that 
-- D3: for actions that depend on other actions, it is clearly visible in which sequence they were executed.
+- D3: for actions that depend on other actions, it is clearly visible in which sequence they were executed, i.e. the respective execution sequence can be unambiguously reconstructed using the answer set and program('s dependency graph).
 
 Furthermore, 
 - D4: all state changes effected on the outside world by execution of `P` are reflected in each answer set (as results of actions)
-
-#### Applicability of action rules
-
-In order to guarantee D1 and D4, for every (ground) action rule `R_a` that fires, it must hold that the corresponding ground instance of `head(R_a)` is part of *every answer set*.
-Implementations may further restrict this in order to ensure static verifiability of the condidtion (e.g. by restricting action rules to  the stratified part, i.e. common base program of a program).
 
 #### Expansion of action rules
 
@@ -50,7 +46,26 @@ file1_open(OP_RES) : @fileInputStream[PATH] = OP_RES :- file1(PATH). %  r1
 ```
 The expansion of `r1` is:
 ```
-action_result(r1, fileInputStream, PATH, OP_RES) :- file1(PATH).
+action_result(r1, fileInputStream, PATH, fileInputStream(PATH)) :- file1(PATH).
 file1_open(OP_RES) :- action_result(r1, fileInputStream, PATH, OP_RES).
 ```
 Consequently, it is ensured that for each ground instance of an action rule `R_a` that fires, there is exactly one `action_result` instance in every answer set. We call this atom a *witness of action `act`*. Requirement D1 is fulfilled through the existence of action witnesses. Furthermore, inspection of a program (or its dependency graph) and all action witnessesin an answer set yields the information demanded in D2.
+
+#### Applicability of action rules
+
+In order to guarantee D1 and D4, for every (ground) action rule `R_a` that fires, it must hold that the corresponding *witness atom* is part of *every answer set*.
+Implementations may further restrict this in order to ensure static verifiability of the condition (e.g. by restricting action rules to  the stratified part, i.e. common base program of a program).
+
+##### Definition: Rule Id
+
+(Helper definition) Given a non-ground Evolog rule `R`, `id(R)` denotes a (program-wide) unique identifier of `R`.
+
+##### Definition: Action function
+
+Given an action rule `R_a` with body variables `v_1, ..., v_n` and action function symbol `act`, the action function associated with `R_a` **TODO** this needs tex to properly write.
+
+#### Interpretations of Evolog programs
+
+An Evolog interpretation `I` as a tuple `(F, H)` consisting of a *Frame* `F` and a herbrand interpretation `H`.
+
+##### Definition: Frame

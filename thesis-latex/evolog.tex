@@ -9,6 +9,8 @@
 
 % Extended LaTeX functionality is enables by including packages with \usepackage{...}.
 \usepackage{amsmath}    % Extended typesetting of mathematical expression.
+\usepackage{amsthm}
+\usepackage{listings}
 \usepackage{amssymb}    % Provides a multitude of mathematical symbols.
 \usepackage{mathtools}  % Further extensions of mathematical typesetting.
 \usepackage{microtype}  % Small-scale typographic enhancements.
@@ -42,6 +44,26 @@
 
 \nonzeroparskip             % Create space between paragraphs (optional).
 \setlength{\parindent}{0pt} % Remove paragraph identation (optional).
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\newtheorem{theorem}{Theorem}[section]
+
+\newtheorem{example}{Example}[section]
+
+\lstdefinestyle{base}{
+	basicstyle=\ttfamily
+}
+
+\lstdefinestyle{asp-code}{
+	basicstyle=\ttfamily,
+	frame=single,
+	numbers=left,
+    stepnumber=1
+}
+
+
 
 \makeindex      % Use an optional index.
 \makeglossaries % Use an optional glossary.
@@ -127,8 +149,8 @@
 \chapter{Introduction}
 \input{intro.tex} % A short introduction to LaTeX.
 
-\chapter{Additional Chapter}
-\todo{Enter your text here.}
+\chapter{The Evolog Language}
+\input{language.tex}
 
 \backmatter
 
