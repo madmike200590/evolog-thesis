@@ -56,7 +56,9 @@ file1\_open(OP\_RES) : @fileInputStream[PATH] = OP\_RES :- file1(PATH). %  r1
 \]
 The expansion of $r1$ is:
 \[
-action\_result(r1, fileInputStream, PATH, fileInputStream(PATH)) :- file1(PATH).
+action\_result(r1, fileInputStream, PATH, fileInputStream(PATH)) :- file1(PATH). 
+\]
+\[
 file1\_open(OP\_RES) :- action\_result(r1, fileInputStream, PATH, OP\_RES).
 \]
 \end{definition}
@@ -86,4 +88,8 @@ In accordance with Definition \ref{def:action-function}, an action witness $acti
 \begin{definition}[Interpretations of Evolog programs]
 \label{def:evolog-interpretation}
 An Evolog interpretation $I$ of a program $P$ is a tuple $(F, H)$ consisting of a \emph{Frame} $F$ and a herbrand interpretation $H$. The frame $F$ defines the action functions associated with rules in $P$.
+\end{definition}
+
+\begin{definition}[Evolog Model]
+An evolog interpretation $I = (F, H)$ is a \emph{model} of evolog program $P$ iff $H$ is a \emph{stable model} of $P$, and all action witness atoms in $H$ are consistent with the action function definitions in $F$.
 \end{definition}
