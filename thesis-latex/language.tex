@@ -83,7 +83,7 @@ An action function $f_{act}$ maps a rule id $r$, a tuple $S$, and a list of inpu
 	\item State $S$ is a ground susbtitution for all body variables of the action source rule, i.e. it encodes the state of the world on which the action operates.
 \end{itemize}
 \end{definition}
-In accordance with Definition \ref{def:action-function}, an action witness $action\_result(r_1, fileInputStream, PATH, OP\_RES)$ then reads as "Function $fileInputStream$, with action source $r_1$, applied to input $PATH$, given world state $(PATH)$, gives result $OP\_RES$". \todo{this should be done nicer. Actually, a function is applied to its input, given a rule body holds, that's exactly the elegance, we wanna put this into math-speak.}
+In accordance with Definition \ref{def:action-function}, an action witness $action\_result(r_1, fileInputStream, PATH, OP\_RES)$ then reads as "Function $fileInputStream$, with action source $r_1$, applied to input $PATH$, given world state $(PATH)$, gives result $OP\_RES$".
 
 \begin{definition}[Interpretations of Evolog programs]
 \label{def:evolog-interpretation}
