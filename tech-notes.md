@@ -2,6 +2,7 @@
 
 ## Random thoughts, notes on design
 
+- TODO at the time the action context for execution of a specific program is constructed, verify that the context knows an implementation for every action in the program (i.e. "linking step")!
 - TODO static check ensuring that action result variables do not occur in rule bodies (head only!)
 
 ### Evolog vs. Alpha
@@ -83,5 +84,11 @@ Function congruence axioms hold for action functions (TODO write out axioms).
 - Actions may only occur in those nodes of a program's component graph, where no incoming path from any entry node (i.e. fact predicate) contains cycles through negation.
 - Actions are idempotent (implementation-wise: only get executed once per unique set of ground input terms). NOTE: How does this correlate to a getCurrentTime() external?
 - Actions that are not on a common path in the component graph are assumed to be independent, i.e. do not influence each others results.
+
+##### TODO 
+
+- encode also head and body *literals* into input state.
+- transformations which merge rules based on equivalent (but not identical) bodies are not valid for evolog.
+
 
 

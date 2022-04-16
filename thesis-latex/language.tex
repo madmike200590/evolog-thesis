@@ -1,3 +1,102 @@
+The Evolog language extends (non-disjunctive) ASP as defined in the ASP-Core2 standard~\cite{asp-core2} with facilities to communicate with and influence the "outside world" (e.g. read and write files, capture user input, etc.) as well as program modularization and reusability features, namely \emph{actions} and \emph{modules}.
+
+\section{Actions in Evolog}
+\label{sec:evolog-actions}
+
+Actions allow for an ASP program to encode operations with \emph{side-effects} while maintaining fully declarative semantics. Actions are modelled in a functional style loosely based on the concept of monads as used in Haskell~\todo{cite something here!}. Intuitively, to maintain declarative semantics, actions need to behave as pure functions, meaning the result of executing an action (i.e. evaluating the respective function) must be reproducible for each input value across all executions. On first glance, this seems to contradict the nature of IO operations, which inherently depend on some state, e.g. the result of evaluating a function $getFileHandle(f)$ for a file $f$ will be different depending on whether $f$ exists, is readable, etc. However, at any given point in time - in other words, in a given state of the world - the operation will have exactly one result (i.e. a file handle or an error will be returned). A possible solution to making state-dependent operations behave as functions is therefore to make the state of the world at the time of evaluation part of the function's input. A function $f(x)$ is then turned into $f'(s, x)$  where $s$ represents a specific world state. The rest of this section deals with formalizing this notion of actions.
+
+\todo{Define non-disjunctive ASP-Core2 in detail in preliminaires. Give detailed definition of all "standard ASP" elements referenced here!}
+
+\subsection{Syntax}
+\label{subsec:evolog-actions-syntax}
+
+\begin{definition}[Action Rule, Action Program]
+\label{def:action-rule-syntax}
+An \emph{action rule} $R$ is of form
+\[
+	a_H : @t_{act} = act_{res} \leftarrow l_1,\ldots,l_n.
+\]
+where
+\begin{itemize}
+	\item $a_H$ is an atom called \emph{head atom},
+	\item $t_{act}$ is a functional term called \emph{action term},
+	\item $act_{res}$ is a term called \emph{(action-)result} term
+	\item and $l_1,\ldots,l_n$ are literals constituting the \emph{body} of $R$.
+\end{itemize}
+An \emph{action program} $P$ is a set of (classic ASP-)rules and action rules.
+\end{definition}
+
+\subsection{Semantics}
+\label{subsec:evolog-actions-semantics}
+
+To properly define the semantics of an action program according to the intuition outlined at the start of this section, we first need to formalize our view of the "outside world" which action rules interact with. We call the world in which we execute a program a \emph{frame} - formally, action programs are always evaluated \emph{with respect to a given frame}. The behavior of actions is specified in terms of \emph{action functions}. The semantics (i.e. interpretations) of action functions in a program are defined by the respective frame. \\
+
+To get from the practical-minded action syntax from Definition~\ref{def:action-rule-syntax} to the formal representation of an action as a function of some state and an input, we use the helper construct of an action rule's \emph{expansion} to bridge the gap. \\
+
+Intuitively, the expansion of an action rule is a syntactic transformation that results in a more verbose version of the original rule called \emph{application rule} and a second rule only dependent on the application rule called \emph{projection rule}. A (ground) application rule's head atom uniquely identifies the ground instance of the rule that derived it. As one such atom corresponds to one action executed, we call a ground instance of an application rule head in an answer set an \emph{action witness}. 
+
+\todo{define (classic ASP) grounding and substitutions in preliminaries}
+
+\begin{definition}[Action Rule Expansion]
+Given a non-ground action rule $R$ with head atom $a_H$, action term $f_{act}(i_1,\ldots,i_n)$ and body  $B$ consisting of literals $l_1,\ldots,l_m$, the expansion of $R$ is a pair of rules consisting of an \emph{application rule} $R_{app}$ and \emph{projection rule} $R_{proj}$. $R_{app}$ is defined as
+\[
+	a_{res}(f_{act}, S, I, f_{act}(S, I)) \leftarrow l_1,\ldots,l_n.
+\]
+where $S$ and $I$ and function terms called \emph{state-} and \emph{input-}terms, respectively.
+An action rule's state term has the function symbol $\mathit{state}$ and terms $fn(a_H), fn(l_1),\ldots,fn(l_m)$, with the expression $fn(l)$ for an atom or literal $l$ denoting a function term representing $l$. The (function-)term representation of a literal $p(t_1,\ldots,t_n)$ with predicate symbol $p$ and terms $t_1,\ldots,t_n$ uses $p$ as function symbol. For a negated literal $\mathit{not}~p(t_1,\ldots,t_n)$, the representing function term is $not(p(t_1,\ldots,p_n))$. \\
+The action input term is a "wrapped" version of all arguments of the action term, i.e. for action term $f_{act}(t_1,\ldots,t_n)$, the corresponding input term is $input(t_1,\ldots,t_n)$. \\
+The projection rule $R_{proj}$ is defined as
+\[
+	a_H \leftarrow a_{res}(f_{act}, S, I, v_{res}).
+\]
+where $a_H$ is the head atom of the initial action rule $R$ and the (sole) body atom is the action witness derived by $R_{app}$, with the application term $f_{act}(S, I)$ replaced by a variable $v_{res}$ called \emph{action result variable}.
+\end{definition}
+
+%% NOTE: Action func. term is uninterpreted in nonground view! Application formally happens during grounding, i.e. action fnc is applied in grounding, ground version has action result.
+
+%% TODO define frame as interpretation function for action func symbols.
+%% TODO define grounding with respect to a frame - grounding eliminates action terms, i.e. action functions are applied during grounding!
+
+\begin{definition}[Frame]
+Given an action program $P$ containing action application terms $A = \{a_1,\ldots,a_n\}$, a frame $F$ is an interpretation function such that,for each application term $f_{act}(S, I) \in A$ where $S \in H_{U}(P)^{*}$ and $I \in H_{U}(P)^{*}$, $F(f_{act}): H_{U}(P)^{*} \times H_{U}(P)^{*} \mapsto H_{U}(P)$.
+\end{definition}
+
+Example \ref{ex:action-rule-expansion} demonstrates the expansion of an action rule as well as a compatible example frame for the respective action.
+
+\begin{example}[Expansion and Frame]
+\label{ex:action-rule-expansion}
+Consider the (action-)rule $R$ which writes a message into a file if $dom(X)$ holds:
+\[
+	write\_result(F, R) : @fileWrite(F, S) = R \leftarrow file\_handle(F), message(S), dom(X).
+\]
+The expansion of $R$ is
+\begin{align*}
+	a_{res}(fileWrite, s(F, S, X), i(F, S), &fileWrite(s(F, S, X), i(F, S))) \leftarrow \\
+		&file\_handle(F), message(S), dom(X). \\
+	write\_result(R) \leftarrow a_{res}(fileWrite, &s(F, S, X), i(F, S), R).
+\end{align*}
+
+\end{example}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \section{Syntax}
 \label{sec:lang-syntax}
 
@@ -46,6 +145,7 @@ Furthermore,
 \item $D4$: all state changes effected on the outside world by execution of $P$ are reflected in each answer set (as results of actions).
 \end{itemize}
 
+% action function defined as in following example: some_io(s, i) where s is a state tuple (t_1,...,t_n) and i is an input tuple (t_i1,...,t_in)
 
 \begin{definition}[Expansion of action rules]
 \label{def:action-rule-expansion}
@@ -84,6 +184,11 @@ An action function $f_{act}$ maps a rule id $r$, a tuple $S$, and a list of inpu
 \end{itemize}
 \end{definition}
 In accordance with Definition \ref{def:action-function}, an action witness $action\_result(r_1, fileInputStream, PATH, OP\_RES)$ then reads as "Function $fileInputStream$, with action source $r_1$, applied to input $PATH$, given world state $(PATH)$, gives result $OP\_RES$".
+
+\begin{definition}[Frame]
+\label{def:evolog-frame}
+A \emph{Frame} $F$ is an interpretation function 
+\end{definition}
 
 \begin{definition}[Interpretations of Evolog programs]
 \label{def:evolog-interpretation}
