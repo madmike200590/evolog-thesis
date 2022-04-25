@@ -1,0 +1,24 @@
+#import "xml".
+#import "io".
+
+action main(in: arg/1, out: empty) {
+    infile(X) :- arg(X).
+    graph_parse_result(R) : @xml::parse_graph[X] = R :- infile(X).
+    
+    graph(G) :- graph_parse_result(graph(G)).
+    parsing_error(MSG) :- graph_parse_result(err(MSG)).
+    
+    graph_coloring(G, COL) :- graph(G), {all}@3col[G](COL).
+    write_result(R) : @io::write_list[OUT, COL] = R :- 
+        OUT = "col-" + IDX, graph_coloring(G, coloring(IDX, COL)).
+}
+
+predicate 3col(in graph/1, out: coloring/1) {
+    node(N) :- [ node(N) in G : graph(G) ]. 
+    edge(N1, N2) :- [ edge(N1, N2) in G : graph(G) ].
+    
+    1 {col(N, red); col(N, blue); col(N, green)} 1 :- node(N).
+    :- col(N1, C), col(N2, C), edge(N1, N2).
+    
+    coloring(COL) :- COL = #list-collect{ node_colored(N, C) : col(N, C) }.   
+}
