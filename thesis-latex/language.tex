@@ -55,19 +55,14 @@ where $a_H$ is the head atom of the initial action rule $R$ and the (sole) body 
 
 Looking at the head of an action application rule of format $a_{res}(f_{act}, S, I, \mathit{t_{app}})$ with action $f_{act}$, state term $S$, input term $I$ and application term $t_{app}$, the intuitive reading of this atom is "The result of action function $f_{act}$ applied to state $S$ and input $I$ is $t_{app}$", i.e. the action application term $t_{app}$ is not a regular (uninterpreted) function term as in regular ASP, but an actual function call which is resolved using an interpretation function provided by a \emph{frame} during grounding.
 
-\todo{put a simple nonground expansion example here}
 %% NOTE: Action func. term is uninterpreted in nonground view! Application formally happens during grounding, i.e. action fnc is applied in grounding, ground version has action result.
 
-%% TODO define frame as interpretation function for action func symbols.
 %% TODO define grounding with respect to a frame - grounding eliminates action terms, i.e. action functions are applied during grounding!
-
-Looking at the head of an action application rule of format $a_{res}(f_{act}, S, I, \mathit{t_{app}})$ with action $f_{act}$, state term $S$, input term $I$ and application term $t_{app}$, the intuitive reading of this atom is "The result of action function $f_{act}$ applied to state $S$ and input $I$ is $t_{app}$", i.e. the action application term $t_{app}$ is not a regular (uninterpreted) function term as in regular ASP, but an actual function call which is resolved using an interpretation function provided by a \emph{frame} during grounding.
 
 \subsubsection{Grounding of Action Rules}
 \label{subsubsec:evolog-actions-semantics-grounding}
 
-
-
+Grounding, in the context of answer set programming, generally refers to the conversion of a program with variables into a semantically equivalent, variable-free, version. Action application terms as introduced in Definition \ref{def:action-rule-expansion} can be intuitively read as variables, in the sense that they represent the result of applying the respective action function. Consequently, all action application terms are replaced with the respective (ground) result terms defined in the \emph{frame} with respect to which the program is grounded.
 
 \begin{definition}[Frame]
 \label{def:evolog-frame}
@@ -101,7 +96,7 @@ Then, the ground program $P_{grnd}$ after action rule expansion is
 	a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c)) \leftarrow p(a).~q(b).~r(c).& \\
 	h(a, \mathit{success}(a, c)) \leftarrow a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c).&
 \end{align*}
-The sole model of $P$ with respect to frame $F$ is
+The sole model of $P$ with respect to frame $F$ is \todo{according to which semantics? reference LFP here}
 \begin{align*}
 	M = \{p(a), q(b), r(c),& \\
 	a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c))& \\ h(a, \mathit{success}(a, c))\}&
