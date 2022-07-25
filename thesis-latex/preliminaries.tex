@@ -1,0 +1,59 @@
+\section{Answer Set Programming}
+
+When speaking of \emph{answer set programming}, we nowadays mostly refer to the language specfied by the ASP-Core2 standard~\cite{asp-core2}. It uses the \emph{stable model semantics} by Gelfond and Lifschitz~\cite{stable-models} as a formal basis and enhances it with support for advanced concepts such as disjunctive programs, aggregate literals and weak constraints. This chapter describes the input language supported by the Alpha solver, which will serve as the basis on which we will define the Evolog language.
+
+\todo{abbreviations!}
+
+\subsection{Syntax}
+\label{subsec:prelims-asp-syntax}
+
+\begin{definition}[Integer numeral]
+\label{def:prelims-asp-syntax-int}
+An \emph{integer numeral} in the context of an ASP program is a string of the following form:
+\[
+	(-)?[0-9]+
+\]
+The set of all valid integer numerals is denoted as $INT$.
+\end{definition}
+
+\begin{definition}[Identifier]
+\label{def:prelims-asp-syntax-id}
+An \emph{identifier} in the context of an ASP program is a string of the following form:
+\[
+	[a-z][a-zA-Z0-9\_]*
+\]
+The set of all valid identifiers is denoted as $ID$.
+\end{definition}
+
+\begin{definition}[Variable Name]
+\label{def:prelims-asp-syntax-var}
+A \emph{variable name} in the context of an ASP program is a string of the following form:
+\[
+	[A-Z][a-zA-Z0-9\_]*
+\]
+The set of all valid variable names is denoted as $VAR$.
+\end{definition}
+
+\begin{definition}[Term]
+\label{def:prelims-asp-syntax-term}
+A \emph{term} is inductively defined as follows:
+\begin{itemize}
+	\item Any \emph{constant} $c \in (INT \cup ID)$ is a term.
+	\item Any \emph{variable} $v \in VAR$ is a term.
+	\item Given terms $t_1, t_2$, any \emph{artihmetic expression} $t_1 \oplus t_2$ with $\oplus \in \{+, - , *, /, **\}$ is a term.
+	\item Given terms $t_1, t_2$, any \emph{interval expression} $t_1 \ldots t_2$ is a term.
+	\item For function symbol $f \in ID$ and argument terms $t_1, \ldots, t_n$, the \emph{functional expression} $f(t_1, \ldots, t_n)$ is a term.
+\end{itemize}
+\end{definition}
+
+\begin{definition}[Subterms]
+\label{def:prelims-asp-syntax-subterms}
+Given a term $t$, the set of \emph{subterms} of $t$, $st(t)$, is defined as follows:
+\begin{itemize}
+	\item If $t$ is a \emph{constant} or \emph{variable}, $st(t) = \{t\}$.
+	\item If $t$ is an \emph{artihmetic expression} $t_1 \oplus t_2$, $st(t) = st(t_1) \cup st(t_2)$.
+	\item If $t$ is an \emph{interval expression} $t_1 \ldots t_2$, $st(t) = st(t_1) \cup st(t_2)$.
+	\item If $t$ is a \emph{functional expression} with argument terms $t_1, \ldots, t_n$, $st(t) = st(t_1) \cup \ldots \cup st(t_n)$.
+\end{itemize}
+A term is called \emph{ground} if it is variable-free, i.e. none of its subterms is a variable.
+\end{definition}
