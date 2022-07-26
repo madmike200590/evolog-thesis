@@ -9,40 +9,40 @@ When speaking of \emph{answer set programming}, we nowadays mostly refer to the 
 
 \begin{definition}[Integer numeral]
 \label{def:prelims-asp-syntax-int}
-An \emph{integer numeral} in the context of an ASP program is a string of the following form:
-\[
-	(-)?[0-9]+
-\]
-The set of all valid integer numerals is denoted as $INT$.
+An \emph{integer numeral} in the context of an ASP program is a string matching the regular expression:
+\begin{lstlisting}[style=code]
+(-)?[0-9]+
+\end{lstlisting}
+The set of all valid integer numerals is denoted as $\INTs$.
 \end{definition}
 
 \begin{definition}[Identifier]
 \label{def:prelims-asp-syntax-id}
-An \emph{identifier} in the context of an ASP program is a string of the following form:
-\[
-	[a-z][a-zA-Z0-9\_]*
-\]
-The set of all valid identifiers is denoted as $ID$.
+An \emph{identifier} in the context of an ASP program is a string matching the regular expression:
+\begin{lstlisting}[style=code]
+[a-z][a-zA-Z0-9\_]*
+\end{lstlisting}
+The set of all valid identifiers is denoted as $\IDs$.
 \end{definition}
 
 \begin{definition}[Variable Name]
 \label{def:prelims-asp-syntax-var}
-A \emph{variable name} in the context of an ASP program is a string of the following form:
-\[
-	[A-Z][a-zA-Z0-9\_]*
-\]
-The set of all valid variable names is denoted as $VAR$.
+A \emph{variable name} in the context of an ASP program is a string matching the regular expression:
+\begin{lstlisting}[style=code]
+[A-Z][a-zA-Z0-9\_]*
+\end{lstlisting}
+The set of all valid variable names is denoted as $\VARs$.
 \end{definition}
 
 \begin{definition}[Term]
 \label{def:prelims-asp-syntax-term}
 A \emph{term} is inductively defined as follows:
 \begin{itemize}
-	\item Any \emph{constant} $c \in (INT \cup ID)$ is a term.
-	\item Any \emph{variable} $v \in VAR$ is a term.
+	\item Any \emph{constant} $c \in (\INTs \cup \IDs)$ is a term.
+	\item Any \emph{variable} $v \in \VARs$ is a term.
 	\item Given terms $t_1, t_2$, any \emph{artihmetic expression} $t_1 \oplus t_2$ with $\oplus \in \{+, - , *, /, **\}$ is a term.
 	\item Given terms $t_1, t_2$, any \emph{interval expression} $t_1 \ldots t_2$ is a term.
-	\item For function symbol $f \in ID$ and argument terms $t_1, \ldots, t_n$, the \emph{functional expression} $f(t_1, \ldots, t_n)$ is a term.
+	\item For function symbol $f \in \IDs$ and argument terms $t_1, \ldots, t_n$, the \emph{functional expression} $f(t_1, \ldots, t_n)$ is a term.
 \end{itemize}
 \end{definition}
 
@@ -51,9 +51,33 @@ A \emph{term} is inductively defined as follows:
 Given a term $t$, the set of \emph{subterms} of $t$, $st(t)$, is defined as follows:
 \begin{itemize}
 	\item If $t$ is a \emph{constant} or \emph{variable}, $st(t) = \{t\}$.
-	\item If $t$ is an \emph{artihmetic expression} $t_1 \oplus t_2$, $st(t) = st(t_1) \cup st(t_2)$.
+	\item If $t$ is an \emph{arithmetic expression} $t_1 \oplus t_2$, $st(t) = st(t_1) \cup st(t_2)$.
 	\item If $t$ is an \emph{interval expression} $t_1 \ldots t_2$, $st(t) = st(t_1) \cup st(t_2)$.
 	\item If $t$ is a \emph{functional expression} with argument terms $t_1, \ldots, t_n$, $st(t) = st(t_1) \cup \ldots \cup st(t_n)$.
 \end{itemize}
 A term is called \emph{ground} if it is variable-free, i.e. none of its subterms is a variable.
 \end{definition}
+
+\begin{definition}[Atom]
+\label{def:prelims-asp-syntax-atom}
+Given a predicate symbol $p \in \IDs$ and argument terms $t_1,\ldots,t_n$, the expression
+\[
+	p(t_1,\ldots,t_n)
+\]
+is called an \emph{atom}. An atom is ground if all of its argument terms are ground. A ground atom with predicate $p$ is called an \emph{instance} of $p$.
+\end{definition}
+
+\begin{definition}[Literal]
+\label{def:prelims-asp-syntax-literal}
+A literal in ASP is an atom $a$ or ("default"-)negated atom $\NOT\ a$.
+\end{definition}
+
+\begin{definition}[Rule, Program]
+\label{def:prelims-asp-syntax-rule}
+A \emph{rule} is an expression of form
+\[
+	a_H \leftarrow b_1,\ldots,b_n.
+\]
+where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An ASP \emph{program} is a set of rules
+\end{definition}
+\todo{Maybe add definitions for constraints and choice rules?}
