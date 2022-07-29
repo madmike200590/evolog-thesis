@@ -78,6 +78,51 @@ A \emph{rule} is an expression of form
 \[
 	a_H \leftarrow b_1,\ldots,b_n.
 \]
-where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An ASP \emph{program} is a set of rules
+for $n \geq 0$, where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An ASP \emph{program} is a set of rules. A rule with an empty body is called a \emph{fact}. A rule is \emph{ground} if both its head atom and all of its body literals are ground. By the same reasoning, a program is ground if all of its rules are ground.
 \end{definition}
-\todo{Maybe add definitions for constraints and choice rules?}
+
+\begin{definition}[Constraint]
+\label{def:prelims-asp-syntax-constraint}
+A \emph{constraint} is a special form of rule, written as a rule with an empty head, i.e.
+\[
+	\leftarrow b_1,\ldots,b_n.
+\]
+It is snytactic sugar for
+\[
+	q \leftarrow b_1,\ldots,b_n, \NOT\ q.
+\]
+where $q$ is a propositional constant not occurring in any other rule in the program.
+\end{definition}
+
+\subsection{Semantics}
+\label{subsec:prelims-asp-semantics}
+
+\begin{definition}[Herbrand Universe]
+\label{def:prelims-asp-semantics-hu}
+The Herbrand Universe $HU_P$ of a Program $P$ is the set of all valid terms that can be constructed with respect to Definitions~\ref{def:prelims-asp-syntax-int},~\ref{def:prelims-asp-syntax-id} and \ref{def:prelims-asp-syntax-term}.
+Note that most papers use stricter definition of the Herbrand Universe where $HU_P$ consists only of terms constructible from constants occurring in $P$. The broader definition used here is chosen for ease of definition with respect to some of the extensions introduced in Section~\ref{sec:evolog-actions}.
+\end{definition}
+
+\begin{definition}[Herbrand Base]
+\label{def:prelims-asp-semantics-hb}
+The Herbrand Base $HB_P$ of a Program $P$ is the set of all ground atoms that can be constructed from the Herbrand Universe $HU_P$ according to definition~\ref{def:prelims-asp-syntax-atom}. 
+\end{definition}
+
+\begin{definition}[Herbrand Interpretation]
+\label{def:prelims-asp-semantics-herbrand-interpretation}
+A Herbrand Interpretation is a special form of first order interpretation where the domain of the interpretation is a Herbrand Universe and terms are the interpretation of a term is the term itself, i.e. the corresponding element of $HU_P$. Intuitively, Herbrand Interpretations constitute listings of atoms that are true in a given program.
+\end{definition}
+
+\subsubsection{Grounding}
+\label{subsubsec:prelims-grounding}
+Given a program $P$ containing variables, \emph{grounding} refers to the process of converting $P$ into a semantically equivalent propositional, i.e. variable-free, program.
+
+\begin{definition}[Substitution, adapted from~\cite{lazy-cdnl}]
+\label{def:prelims-asp-semantics-substitution}
+A substitution $\sigma: \VARs \mapsto (\IDs \cup \INTs)$ is a mapping from variables to constants. For a atom $a$, applying a a substitution results in a substituted atom $a\sigma$ in which variables are replaced according to $\sigma$. Substitutions are applied to rules  by applying them to every individual atom or literal within the rule. By the same mechanism, we can apply substitutions to programs by applying the to all rules.
+\end{definition}
+
+\begin{definition}[Grounding]
+\label{def:prelims-asp-semantics-grounding}
+Given a rule $r$, the \emph{grounding} of $r$, $\mathit{grnd}(r)$, is a set of substitutions $S$, such that the set of ground rules resulting from applying the substitutions in $S$ is semantically equivalent to $r$.
+\end{definition}
