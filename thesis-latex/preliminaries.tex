@@ -58,18 +58,36 @@ Given a term $t$, the set of \emph{subterms} of $t$, $st(t)$, is defined as foll
 A term is called \emph{ground} if it is variable-free, i.e. none of its subterms is a variable.
 \end{definition}
 
-\begin{definition}[Atom]
+\begin{definition}[Basic Atom]
 \label{def:prelims-asp-syntax-atom}
 Given a predicate symbol $p \in \IDs$ and argument terms $t_1,\ldots,t_n$, the expression
 \[
 	p(t_1,\ldots,t_n)
 \]
-is called an \emph{atom}. An atom is ground if all of its argument terms are ground. A ground atom with predicate $p$ is called an \emph{instance} of $p$.
+is called a \emph{atom}. An atom is ground if all of its argument terms are ground. A ground atom with predicate $p$ is called an \emph{instance} of $p$.
+\end{definition}
+
+\begin{definition}[Comparison Atom]
+\label{def:prelims-asp-syntax-cmp-atom}
+Given terms $t_1$ and $t_2$ and comparison operator $\odot$ where $\odot \in \{ <, \leq, =, \geq, >, \neq \}$, the expression
+\[
+	t_1 \odot t_2
+\]
+is called a \emph{comparison atom}. Syntactically, a comparison atom is a regular atom where the predicate symbol (i.e. comparison operator) is written in infix- rather than prefix-notation.
+\end{definition}
+
+\begin{definition}[External Atom]
+\label{def:prelims-asp-syntax-ext-atom}
+Given an \emph{external predicate name} $\mathit{ext}$, \emph{input terms} $t_1,\ldots,t_n$ and \emph{output terms} $t_{n+1},\ldots,t_m$, the expression
+\[
+	@\mathit{ext}[t_1,\ldots,t_n](t_{n+1},\ldots,t_m)
+\]
+is called an \emph{external atom}. Syntacticaly, external atoms are regular atoms where $@\mathit{ext}$ is the predicate symbol and $t_1,\ldots,t_m$ are argument terms.
 \end{definition}
 
 \begin{definition}[Literal]
 \label{def:prelims-asp-syntax-literal}
-A literal in ASP is an atom $a$ or ("default"-)negated atom $\NOT\ a$.
+A literal in ASP is an atom $a$ or ("default"-)negated atom $\NOT\ a$. Literals wrapping comparison- or external atoms are called \emph{fixed interpretation literals}.
 \end{definition}
 
 \begin{definition}[Rule, Program]
@@ -110,7 +128,7 @@ The Herbrand Base $HB_P$ of a Program $P$ is the set of all ground atoms that ca
 
 \begin{definition}[Herbrand Interpretation]
 \label{def:prelims-asp-semantics-herbrand-interpretation}
-A Herbrand Interpretation is a special form of first order interpretation where the domain of the interpretation is a Herbrand Universe and terms are the interpretation of a term is the term itself, i.e. the corresponding element of $HU_P$. Intuitively, Herbrand Interpretations constitute listings of atoms that are true in a given program.
+A Herbrand Interpretation is a special form of first order interpretation where the domain of the interpretation is a Herbrand Universe and terms are the interpretation of a term is the term itself, i.e. the corresponding element of $HU_P$. Intuitively, Herbrand Interpretations constitute listings of atoms that are true in a given program. Since the domain of a Herbrand Interpretation is always the Herbrand Universe $HU_P$, we only need to give a predicate interpretation for the predicates occurring in a program $P$ in oder to fully specify a Herbrand Interpretation. We can therefore denote Herbrand Interpretations as sets of atoms $I \subseteq HB_P$.
 \end{definition}
 
 \subsubsection{Grounding}
@@ -124,5 +142,87 @@ A substitution $\sigma: \VARs \mapsto (\IDs \cup \INTs)$ is a mapping from varia
 
 \begin{definition}[Grounding]
 \label{def:prelims-asp-semantics-grounding}
-Given a rule $r$, the \emph{grounding} of $r$, $\mathit{grnd}(r)$, is a set of substitutions $S$, such that the set of ground rules resulting from applying the substitutions in $S$ is semantically equivalent to $r$.
+Given a rule $r$, the \emph{grounding} of $r$, $\mathit{grnd}(r)$, is a set of substitutions $S$, such that the set of ground rules resulting from applying the substitutions in $S$ is semantically equivalent to $r$. In a slight abuse of terminology, \emph{grounding} in this work also refers to the set of ground rules resulting from applying $S$ as well as the process of finding said set.
+\end{definition}
+
+\subsubsection{Stable Model Semantics}
+\label{subsubsec:prelims-asp-semantics-stable-models}
+
+\begin{definition}[Fixed interpretation literals]
+Fixed interpretation literals, i.e. comparison- and external literals, respectively, are interpreted by means of a program-independent oracle function $f_O : H_{U}(P)^{*} \mapsto \{ \top, \bot \}$, i.e. a fixed interpretation literal with argument terms $t_1,\ldots,t_n$ has the same truth value under all interpretations.
+\end{definition}
+
+\begin{definition}[Truth of Atoms and Literals]
+\label{def:prelims-asp-semantics-truth}
+A positive ground literal $l$ with atom $a$ is true w.r.t. a Herbrand Interpretation $I$, i.e. $I \models l$ if
+\begin{itemize}
+	\item $a$ is a basic atom contained in $I$, i.e. $a \in I$,
+	\item $a$ is a fixed interpretation literal with terms $t_1,\ldots,t_n$ and $f_O(t_1,\ldots,t_n) = \top$.
+\end{itemize} 
+For a negative ground literal $\NOT\ a$, the reverse holds, i.e. $I \models \NOT\ a$ if
+\begin{itemize}
+	\item $a$ is a basic atom not contained in $I$, i.e. $a \notin I$,
+	\item $a$ is a fixed interpretation literal with terms $t_1,\ldots,t_n$ and $f_O(t_1,\ldots,t_n) = \bot$.
+\end{itemize} 
+A set of literals $L$ is true w.r.t. an interpretation $I$ if $I \models l$ holds for every literal $l \in L$. 
+\end{definition}
+
+\begin{definition}[Positive Logic Program]
+\label{def:prelims-asp-semantics-positive-program}
+A \emph{positive} logic program is a program according to Definition \ref{def:prelims-asp-syntax-rule}, where all rule bodies are positive, i.e. no rule body contains a negated atom.
+\end{definition}
+
+\begin{definition}[Immediate Consequence Operator, adapted from~\cite{asp-primer}]
+\label{def:prelims-asp-semantics-immediate-consequence}
+Given a Herbrand Interpretation $I$ and a ground positive logic program $P$, the immediate  consequence operator $T_P(I)$ defines a monotonic function $T_P: 2^{HB_P} \mapsto 2^{HB_P}$ such that
+\[
+	T_P(I) = \{h(r)\ |\ r \in P \land I \models b(r)\}
+\]
+i.e. the result set of applying $T_P$ with a Herbrand Interpretation $I$ contains the heads of all rules whose body is true under $I$.
+\end{definition}
+
+\begin{definition}[Least Model of positive logic programs]
+\label{def:prelims-asp-semantics-least-model}
+The least model $LM(P)$ of a (ground) positive logic program $P$ is the least fixpoint of the $T_P$ operator  of $P$, i.e. the set toward which the sequence $\langle T^{i}_{P} \rangle$, with $i \geq 0$, $T^{0}_P = \emptyset$ and $T^{i}_P = T_P(T^{i-1}_P)$ for $i \geq 1$, converges. The existence of this fixpoint and its characterisation as limit of $\langle T^{i}_{P} \rangle$ follow from the fixpoint theorems of Knaster-Tarski and Kleene, respectively.
+\end{definition}
+
+\begin{definition}[Gelfond-Lifschitz Reduct, adapted from~\cite{stable-models} and~\cite{asp-primer}]
+\label{def:prelims-asp-semantics-gl-reduct}
+Given a ground ASP program $P$ and a Herbrand Interpretation $I$, the \emph{Gelfond-Lifschitz-Reduct} ("GL-reduct") $P^{I}$of $P$ with respect to $I$ is the program obtained by:
+\begin{itemize}
+	\item removing from $P$ all rules $r$ that are "blocked", i.e. $I \not\models l$ for some literal $l \in b^{-}(r)$ 
+	\item and removing the negative body of all other rules.
+\end{itemize}
+Note that $P^{I}$ is a positive logic program.
+\end{definition}
+
+\begin{definition}[Answer Set~\cite{stable-models}~\cite{asp-primer}]
+A Herbrand Interpretation $I$ of an ASP program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$.
+\end{definition}
+
+\section{Lazy-Grounding ASP Solving}
+
+\subsection{Two-phased ASP solving}
+In traditional ASP solving systems such as SModels~\cite{smodels}, DLV~\cite{dlv} or Clingo~\cite{clingo}, grounding an input program and solving the resulting propositional program are distinct sequential steps in the overall solving process. Consequently, in order to obtain answer sets of a program, one has to calculate a grounding for the entire program first, and can only then start the actual solver. Since the grounding of an arbitrary program may be exponentially larger than the nonground program or, in some extreme cases, not even finite, calculating a full grounding is often not feasible, especially for programs where only very few ground rules can actually fire. Lazy-grounding systems like Alpha try to alleviate this by interleaving the grounding- and solving steps and ideally ground only as much of the input programs as is necessary to find all answer sets.
+
+\subsection{Conceptual solving workflow in Alpha}
+
+\begin{definition}[Computation Sequence]
+\end{definition}
+
+\begin{definition}[Nogood]
+\end{definition}
+
+\subsubsection{Structural Dependency Analysis and Stratified Evaluation}
+
+\begin{definition}[Stratification]
+\end{definition}
+
+\begin{definition}[Common Base Program]
+\end{definition}
+
+\begin{definition}[Dependency Graph]
+\end{definition}
+
+\begin{definition}[Component Graph]
 \end{definition}
