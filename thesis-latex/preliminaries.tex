@@ -228,7 +228,7 @@ Obviously, computation sequences can be easily found by simple iterative applica
 
 \subsubsection{Structural Dependency Analysis and Stratified Evaluation}
 
-\todo{Since we're talking about nonground stratification, should we define a nonground $T_P$ operator?}
+\todo{Since we're talking about nonground stratification, should we define a nonground $T_P$ operator! Juust simply say we add the rules where all defining rules have already fired in each step}
 
 \begin{definition}[Unification]
 \label{def:prelims-asp-semantics-unification}
@@ -255,8 +255,10 @@ Given a (non-ground) ASP program $P$, a stratification is a partition $S$ of $P$
 A program is called \emph{stratified} iff a stratification exists for it.
 \end{definition}
 
-\begin{definition}[Stratified Evaluation]
+\begin{definition}[Stratified Evaluation, adapted from~\cite{asp-primer} and~\cite{stratification}]
 \label{def:prelims-asp-semantics-stratified-eval}
+Let $P$ be an ASP program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T_{P_i}$ with $0 \leq i \leq n$ the immediate consequence operator for sub-program $P_i \in S$ respectively. Then the least model $\mathit{LM}(P)$ of $P$ is defined as follows.
+The sequence $\langle M_{P_i} \rangle,\ 0 \leq i \leq n$ with $M_{P_0} = \mathit{lfp}(T_{P_0})$ and $M_{P_i} = \mathit{lfp}(T_{P_i \cup\ M_{S_{i-1}}})$ for all $1 \leq i \leq n$ defines the least model for each stratum. The least model $LM(P)$ of program $P$ is then the least model of the highest stratum $M_{P_n}$, i.e. the end of the sequence $\langle M_{P_i} \rangle$.
 \end{definition}
 
 \begin{definition}[Common Base Program]
