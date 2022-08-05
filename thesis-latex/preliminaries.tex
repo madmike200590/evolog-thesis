@@ -261,11 +261,33 @@ Let $P$ be an ASP program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T
 The sequence $\langle M_{P_i} \rangle,\ 0 \leq i \leq n$ with $M_{P_0} = \mathit{lfp}(T_{P_0})$ and $M_{P_i} = \mathit{lfp}(T_{P_i \cup\ M_{S_{i-1}}})$ for all $1 \leq i \leq n$ defines the least model for each stratum. The least model $LM(P)$ of program $P$ is then the least model of the highest stratum $M_{P_n}$, i.e. the end of the sequence $\langle M_{P_i} \rangle$.
 \end{definition}
 
-\begin{definition}[Common Base Program]
+\begin{definition}[Dependencies]
+\label{def:prelims-asp-semantics-dependencies}
+Let $P$ be an ASP program and $r \in P$ a rule contained in $P$. a rule $d$ is a \emph{positive dependency} of $r$ , i.e. $ r \DEP{+} d$ iff one the following holds:
+\begin{itemize}
+	\item $\exists l \in b^{+}(r): d \in \mathit{def}(l) $, i.e. $d$ is a defining rule for some positive body literalof $r$, or
+	\item $\exists d_1 \in P: r \DEP{+} d_1 \land d_1 \DEP{+} d$, i.e. there is some positive dependency $d_1$ of $r$ of which $d$ is a (transitive) positive dependency.
+\end{itemize}
+\emph{Negative dependencies} are defined in the same way, i.e. a rule $d$ is a negative dependency of $r$, $r \DEP{-} d$ iff
+\begin{itemize}
+	\item $\exists l \in b^{-}(r): d \in \mathit{def}(l)$, i.e. $d$ is a defining rule for some negative body literalof $r$, or
+	\item $\exists d_1 \in P: r \DEP{-} d_1 \land d_1 \DEP{-} d$, i.e. there is some negative dependency $d_1$ of $r$ of which $d$ is a (transitive) negative dependency.
+\end{itemize}
+Any positive or negative dependency $d$ of $r$ is a \emph{dependency} of $r$, i.e. $r \DEP{} d$.
+We denote the set of dependencies of a rule as $D(r) = \{ d\ |\ r \DEP{} d\}$ and positive and negative dependencies as $D^{+}(r) = \{ d\ |\ r \DEP{+} d\}$ and $D^{-}(r) = \{ d\ |\ r \DEP{-} d\}$ respectively. Any non-transitive dependency of a rule is called a \emph{direct dependency}.
 \end{definition}
 
 \begin{definition}[Dependency Graph]
+Let $P$ be an ASP program. Then the \emph{dependency graph}  $\mathit{DG}_P = (H, D)$ is a directed graph with vertex set $H$, which has one element for each rule head in $P$, and (dependency-)edge set $D$ such that
+\[
+	D = \{ (h_1, h_2, +)\ |\ h_1, h_2 \in H \land \exists r \in \}
+\]
 \end{definition}
 
 \begin{definition}[Component Graph]
 \end{definition}
+
+\begin{definition}[Common Base Program]
+Given an ASP program $P$, the \emph{common base program} blablabla...
+\end{definition}
+
