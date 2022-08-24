@@ -199,6 +199,7 @@ Note that $P^{I}$ is a positive logic program.
 \end{definition}
 
 \begin{definition}[Answer Set~\cite{stable-models}~\cite{asp-primer}]
+\label{def:prelims-asp-semantics-answer-set}
 A Herbrand Interpretation $I$ of an ASP program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$.
 \end{definition}
 
@@ -278,16 +279,29 @@ We denote the set of dependencies of a rule as $D(r) = \{ d\ |\ r \DEP{} d\}$ an
 \end{definition}
 
 \begin{definition}[Dependency Graph]
-Let $P$ be an ASP program. Then the \emph{dependency graph}  $\mathit{DG}_P = (H, D)$ is a directed graph with vertex set $H$, which has one element for each rule head in $P$, and (dependency-)edge set $D$ such that
-\[
-	D = \{ (h_1, h_2, +)\ |\ h_1, h_2 \in H \land \exists r \in \}
-\]
+\label{def:prelims-asp-semantics-depgraph}
+Let $P$ be an ASP program. Then the \emph{dependency graph}  $\mathit{DG}_P = (R, D)$ is a directed graph with vertex set $R$, which has one element for each rule in $P$, and (dependency-)edge set $D$ such that
+\begin{align*}
+	D = &\{ (r_1, r_2, +)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ positive\ dependency\ of}\ r_1 \}\\ &\cup
+\{ (r_1, r_2, -)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ negative\ dependency\ of}\ r_1 \}
+\end{align*}
+Edges are represented as 3-tuples where the first two values represent target and destination vertices and the third value indicates the "polarity", i. e. positive ("+") or negative ("-"), of the dependency.
 \end{definition}
 
 \begin{definition}[Component Graph]
+\label{def:prelims-asp-semantics-compgraph}
+The component graph $\mathit{CG}_P = (C, D)$ of a program $P$ is defined as the "condensed" dependency graph, i. e. vertices of $\mathit{CG}_P$ represent strongly connected components of $\mathit{DG}_P$. Each vertex of $\mathit{CG}_P$ is labelled "$+$" if the respective strongly connected component is connected only by positive edges, or "$-$" if there is a negative edge in the component. Edges of $\mathit{CG}_P$ are those edges of $\mathit{DG}_P$ that connect vertices from different strongly connected components where douuble edges resulting from multiple rule-level dependencies of same polarity between components are condensed into single edges.
 \end{definition}
 
-\begin{definition}[Common Base Program]
-Given an ASP program $P$, the \emph{common base program} blablabla...
+\begin{definition}[Splitting Set, adapted from~\cite{splitting-sets}]
+\label{def:prelims-asp-semantics-splitting-set}
+Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.
+\end{definition}
+
+Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}. Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using a simplified bottom-up algorithm and then only using the - computationally more complex - CDNL-based algorithm for the top part.
+
+\begin{definition}[Common Base Program, adapted from~\cite{partial-eval}]
+\label{def:prelims-asp-semantics-cbp}
+Given a splitting set $S$ of program $P$, the bottom $B_S(P)$ is called \emph{common base program}, i.e. $CBP(P)$ if it is stratified and maximal in the sense that adding any further rule to $B_S(P)$ would destroy the property of $B_S(P)$ of being stratified.
 \end{definition}
 
