@@ -5,8 +5,6 @@ The Evolog language extends (non-disjunctive) ASP as defined in the ASP-Core2 st
 
 Actions allow for an ASP program to encode operations with \emph{side-effects} while maintaining fully declarative semantics. Actions are modelled in a functional style loosely based on the concept of monads as used in Haskell~\todo{cite something here!}. Intuitively, to maintain declarative semantics, actions need to behave as pure functions, meaning the result of executing an action (i.e. evaluating the respective function) must be reproducible for each input value across all executions. On first glance, this seems to contradict the nature of IO operations, which inherently depend on some state, e.g. the result of evaluating a function $getFileHandle(f)$ for a file $f$ will be different depending on whether $f$ exists, is readable, etc. However, at any given point in time - in other words, in a given state of the world - the operation will have exactly one result (i.e. a file handle or an error will be returned). A possible solution to making state-dependent operations behave as functions is therefore to make the state of the world at the time of evaluation part of the function's input. A function $f(x)$ is then turned into $f'(s, x)$  where $s$ represents a specific world state. The rest of this section deals with formalizing this notion of actions.
 
-\todo{Define non-disjunctive ASP-Core2 in detail in preliminaires. Give detailed definition of all "standard ASP" elements referenced here!}
-
 \subsection{Syntax}
 \label{subsec:evolog-actions-syntax}
 
@@ -69,6 +67,11 @@ Grounding, in the context of answer set programming, generally refers to the con
 Given an action program $P$ containing action application terms $A = \{a_1,\ldots,a_n\}$, a frame $F$ is an interpretation function such that, for each application term $f_{act}(S, I) \in A$ where $S \in H_{U}(P)^{*}$ and $I \in H_{U}(P)^{*}$, $F(f_{act}): H_{U}(P)^{*} \times H_{U}(P)^{*} \mapsto H_{U}(P)$.
 \end{definition}
 
+\begin{definition}[Grounding of action rules]
+\label{def:evolog-grounding}
+Grounding of Evolog rules (and programs) always happens \emph{with respect to a frame}. Given a frame $F$, an expanded action rule $r_a$ and a (grounding) substitution $\sigma$ over all body variables of application rule $r_{a_{app}}$, during grounding, every ground action application term $t_{app}\sigma$ resulting from applying substitution $\sigma$ is replaced with its interpretation according to $F$.
+\end{definition}
+
 Example \ref{ex:action-rule-expansion} demonstrates the expansion of an action rule as well as a compatible example frame for the respective action.
 
 \begin{example}[Expansion and Frame]
@@ -96,9 +99,14 @@ Then, the ground program $P_{grnd}$ after action rule expansion is
 	a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c)) \leftarrow p(a).~q(b).~r(c).& \\
 	h(a, \mathit{success}(a, c)) \leftarrow a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c)).&
 \end{align*}
-The sole model of $P$ with respect to frame $F$ is \todo{according to which semantics? reference LFP here}
+The sole model of $P$ with respect to frame $F$ is 
 \begin{align*}
 	M = \{p(a), q(b), r(c),& \\
 	a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c))& \\ h(a, \mathit{success}(a, c))\}&
 \end{align*}
 \end{example}
+
+\subsubsection{Evolog Models}
+\label{subsubsec:evolog-action-semantics-models}
+
+Describe how we can use a frame and reduct to verify an arbitrary set of atoms, i.e. check whether the set is an answer set.

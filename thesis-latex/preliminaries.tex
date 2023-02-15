@@ -94,10 +94,9 @@ A \emph{rule} is an expression of form
 \[
 	a_H \leftarrow b_1,\ldots,b_n.
 \]
-for $n \geq 0$, where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An \gls{asp} \emph{program} is a set of rules. A rule with an empty body is called a \emph{fact}. A rule is \emph{ground} if both its head atom and all of its body literals are ground. By the same reasoning, a program is ground if all of its rules are ground.
+for $n \geq 0$, where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An \gls{asp} \emph{program} is a set of rules. A rule with an empty body is called a \emph{fact}. A rule is \emph{ground} if both its head atom and all of its body literals are ground. By the same reasoning, a program is ground if all of its rules are ground.\\
+Given a rule $r$, he refer to the head of $r$ as $h(r)$ and the body of $r$ as $b(r)$. Furthermore, $b^+(r)$ is used to reference the set of \emph{positive body literals} of $r$, while $b^-(r)$ references the \emph{negative body literals}. 
 \end{definition}
-
-\todo{define positive and negative rule body as sets with distinct notation!}
 
 \begin{definition}[Constraint]
 \label{def:prelims-asp-syntax-constraint}
@@ -105,7 +104,7 @@ A \emph{constraint} is a special form of rule, written as a rule with an empty h
 \[
 	\leftarrow b_1,\ldots,b_n.
 \]
-It is snytactic sugar for
+It is syntactic sugar for
 \[
 	q \leftarrow b_1,\ldots,b_n, \NOT\ q.
 \]
@@ -118,7 +117,7 @@ where $q$ is a propositional constant not occurring in any other rule in the pro
 \begin{definition}[Herbrand Universe]
 \label{def:prelims-asp-semantics-hu}
 The Herbrand Universe $HU_P$ of a Program $P$ is the set of all valid terms that can be constructed with respect to Definitions~\ref{def:prelims-asp-syntax-int},~\ref{def:prelims-asp-syntax-id} and \ref{def:prelims-asp-syntax-term}.
-Note that most papers use stricter definition of the Herbrand Universe where $HU_P$ consists only of terms constructible from constants occurring in $P$. The broader definition used here is chosen for ease of definition with respect to some of the extensions introduced in Section~\ref{sec:evolog-actions}.
+Note that most papers use stricter definitions of the Herbrand Universe where $HU_P$ consists only of terms constructible from constants occurring in $P$. The broader definition used here is chosen for ease of definition with respect to some of the extensions introduced in Section~\ref{sec:evolog-actions}.
 \end{definition}
 
 \begin{definition}[Herbrand Base]
@@ -183,7 +182,7 @@ i.e. the result set of applying $T_P$ with a Herbrand Interpretation $I$ contain
 
 \begin{definition}[Least Model of positive logic programs]
 \label{def:prelims-asp-semantics-least-model}
-The least model $LM(P)$ of a (ground) positive logic program $P$ is the least fixpoint of the $T_P$ operator  of $P$, i.e. the set toward which the sequence $\langle T^{i}_{P} \rangle$, with $i \geq 0$, $T^{0}_P = \emptyset$ and $T^{i}_P = T_P(T^{i-1}_P)$ for $i \geq 1$, converges. The existence of this fixpoint and its characterisation as limit of $\langle T^{i}_{P} \rangle$ follow from the fixpoint theorems of Knaster, Tarski and Kleene, respectively.
+The least model $LM(P)$ of a (ground) positive logic program $P$ is the least fixpoint of the $T_P$ operator  of $P$, i.e. the set toward which the sequence $\langle T^{i}_{P} \rangle$, with $i \geq 0$, $T^{0}_P = \emptyset$ and $T^{i}_P = T_P(T^{i-1}_P)$ for $i \geq 1$, converges. The existence of said fixpoint and its characterisation as limit of $\langle T^{i}_{P} \rangle$ follow from the fixpoint theorems of Knaster, Tarski and Kleene, respectively.
 \end{definition}
 
 \begin{definition}[Gelfond-Lifschitz Reduct, adapted from~\cite{stable-models} and~\cite{asp-primer}]
@@ -296,10 +295,33 @@ The component graph $\mathit{CG}_P = (C, D)$ of a program $P$ is defined as the 
 Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.
 \end{definition}
 
-Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}. Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using a simplified bottom-up algorithm and then only using the - computationally more complex - \gls{cdnl}-based algorithm for the top part.
-
 \begin{definition}[Common Base Program, adapted from~\cite{partial-eval}]
 \label{def:prelims-asp-semantics-cbp}
 Given a splitting set $S$ of program $P$, the bottom $B_S(P)$ is called \emph{common base program}, i.e. $CBP(P)$ if it is stratified and maximal in the sense that adding any further rule to $B_S(P)$ would destroy the property of $B_S(P)$ of being stratified.
 \end{definition}
 
+Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}.\\
+
+Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using the simplified bottom-up algorithm outlined in Algorithm \ref{alg:cbp-eval} and then only using the - computationally more complex - \gls{cdnl}-based algorithm for the top part.
+
+\begin{algorithm}[!h]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\SetKwRepeat{Do}{do}{while}
+\Input{Stratification $S$}
+\Input{Program $P$}
+\Output{partially evaluated program $P_{eval}$}
+Facts $F$ = \emph{facts($P$)};\\
+$n~\leftarrow~(\mid S \mid~-~1)$;\\
+\ForEach{$i~$\emph{\textbf{in}} $0 \ldots n$}{
+	Program $grnd(P_{S_i})$ = \emph{ground($P_{S_i}$)};\\
+	Facts $F_{old} = \emptyset$;\\
+	\Do{$F_{old} \neq F$}{
+		$F_{old} = F$;\\ 
+		$F \leftarrow pr(T_{grnd(P_{S_i})}(F))$;\\
+	}
+	$P \leftarrow P \backslash P_{S_i}$;\\
+}
+\textbf{return} $P_{eval} = P~\cup~F$;\\
+\caption{Procedure \emph{evaluateCommonBaseProgram}}\label{alg:cbp-eval}
+\end{algorithm}
