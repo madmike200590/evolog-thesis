@@ -1,15 +1,13 @@
 \section{Answer Set Programming}
 
-When speaking of \emph{answer set programming}, we nowadays mostly refer to the language specfied by the ASP-Core2 standard~\cite{asp-core2}. It uses the \emph{stable model semantics} by Gelfond and Lifschitz~\cite{stable-models} as a formal basis and enhances it with support for advanced concepts such as disjunctive programs, aggregate literals and weak constraints. This chapter describes the input language supported by the Alpha solver, which will serve as the basis on which we will define the Evolog language.
-
-\todo{abbreviations!}
+When speaking of \gls{asp}, we nowadays mostly refer to the language specfied by the ASP-Core2 standard~\cite{asp-core2}. It uses the \emph{stable model semantics} by Gelfond and Lifschitz~\cite{stable-models} as a formal basis and enhances it with support for advanced concepts such as disjunctive programs, aggregate literals and weak constraints. This chapter describes the input language supported by the Alpha solver, which will serve as the basis on which we will define the Evolog language.
 
 \subsection{Syntax}
 \label{subsec:prelims-asp-syntax}
 
 \begin{definition}[Integer numeral]
 \label{def:prelims-asp-syntax-int}
-An \emph{integer numeral} in the context of an ASP program is a string matching the regular expression:
+An \emph{integer numeral} in the context of an \gls{asp} program is a string matching the regular expression:
 \begin{lstlisting}[style=code]
 (-)?[0-9]+
 \end{lstlisting}
@@ -18,7 +16,7 @@ The set of all valid integer numerals is denoted as $\INTs$.
 
 \begin{definition}[Identifier]
 \label{def:prelims-asp-syntax-id}
-An \emph{identifier} in the context of an ASP program is a string matching the regular expression:
+An \emph{identifier} in the context of an \gls{asp} program is a string matching the regular expression:
 \begin{lstlisting}[style=code]
 [a-z][a-zA-Z0-9\_]*
 \end{lstlisting}
@@ -27,7 +25,7 @@ The set of all valid identifiers is denoted as $\IDs$.
 
 \begin{definition}[Variable Name]
 \label{def:prelims-asp-syntax-var}
-A \emph{variable name} in the context of an ASP program is a string matching the regular expression:
+A \emph{variable name} in the context of an \gls{asp} program is a string matching the regular expression:
 \begin{lstlisting}[style=code]
 [A-Z][a-zA-Z0-9\_]*
 \end{lstlisting}
@@ -87,7 +85,7 @@ is called an \emph{external atom}. Syntacticaly, external atoms are regular atom
 
 \begin{definition}[Literal]
 \label{def:prelims-asp-syntax-literal}
-A literal in ASP is an atom $a$ or ("default"-)negated atom $\NOT\ a$. Literals wrapping comparison- or external atoms are called \emph{fixed interpretation literals}.
+A literal in \gls{asp} is an atom $a$ or ("default"-)negated atom $\NOT\ a$. Literals wrapping comparison- or external atoms are called \emph{fixed interpretation literals}.
 \end{definition}
 
 \begin{definition}[Rule, Program]
@@ -96,10 +94,9 @@ A \emph{rule} is an expression of form
 \[
 	a_H \leftarrow b_1,\ldots,b_n.
 \]
-for $n \geq 0$, where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An ASP \emph{program} is a set of rules. A rule with an empty body is called a \emph{fact}. A rule is \emph{ground} if both its head atom and all of its body literals are ground. By the same reasoning, a program is ground if all of its rules are ground.
+for $n \geq 0$, where the \emph{rule head} $a_H$ is an atom and the \emph{rule body} $b_1,\ldots,b_n$ is a set of literals. An \gls{asp} \emph{program} is a set of rules. A rule with an empty body is called a \emph{fact}. A rule is \emph{ground} if both its head atom and all of its body literals are ground. By the same reasoning, a program is ground if all of its rules are ground.\\
+Given a rule $r$, he refer to the head of $r$ as $h(r)$ and the body of $r$ as $b(r)$. Furthermore, $b^+(r)$ is used to reference the set of \emph{positive body literals} of $r$, while $b^-(r)$ references the \emph{negative body literals}. 
 \end{definition}
-
-\todo{define positive and negative rule body as sets with distinct notation!}
 
 \begin{definition}[Constraint]
 \label{def:prelims-asp-syntax-constraint}
@@ -107,7 +104,7 @@ A \emph{constraint} is a special form of rule, written as a rule with an empty h
 \[
 	\leftarrow b_1,\ldots,b_n.
 \]
-It is snytactic sugar for
+It is syntactic sugar for
 \[
 	q \leftarrow b_1,\ldots,b_n, \NOT\ q.
 \]
@@ -120,7 +117,7 @@ where $q$ is a propositional constant not occurring in any other rule in the pro
 \begin{definition}[Herbrand Universe]
 \label{def:prelims-asp-semantics-hu}
 The Herbrand Universe $HU_P$ of a Program $P$ is the set of all valid terms that can be constructed with respect to Definitions~\ref{def:prelims-asp-syntax-int},~\ref{def:prelims-asp-syntax-id} and \ref{def:prelims-asp-syntax-term}.
-Note that most papers use stricter definition of the Herbrand Universe where $HU_P$ consists only of terms constructible from constants occurring in $P$. The broader definition used here is chosen for ease of definition with respect to some of the extensions introduced in Section~\ref{sec:evolog-actions}.
+Note that most papers use stricter definitions of the Herbrand Universe where $HU_P$ consists only of terms constructible from constants occurring in $P$. The broader definition used here is chosen for ease of definition with respect to some of the extensions introduced in Section~\ref{sec:evolog-actions}.
 \end{definition}
 
 \begin{definition}[Herbrand Base]
@@ -185,12 +182,12 @@ i.e. the result set of applying $T_P$ with a Herbrand Interpretation $I$ contain
 
 \begin{definition}[Least Model of positive logic programs]
 \label{def:prelims-asp-semantics-least-model}
-The least model $LM(P)$ of a (ground) positive logic program $P$ is the least fixpoint of the $T_P$ operator  of $P$, i.e. the set toward which the sequence $\langle T^{i}_{P} \rangle$, with $i \geq 0$, $T^{0}_P = \emptyset$ and $T^{i}_P = T_P(T^{i-1}_P)$ for $i \geq 1$, converges. The existence of this fixpoint and its characterisation as limit of $\langle T^{i}_{P} \rangle$ follow from the fixpoint theorems of Knaster-Tarski and Kleene, respectively.
+The least model $LM(P)$ of a (ground) positive logic program $P$ is the least fixpoint of the $T_P$ operator  of $P$, i.e. the set toward which the sequence $\langle T^{i}_{P} \rangle$, with $i \geq 0$, $T^{0}_P = \emptyset$ and $T^{i}_P = T_P(T^{i-1}_P)$ for $i \geq 1$, converges. The existence of said fixpoint and its characterisation as limit of $\langle T^{i}_{P} \rangle$ follow from the fixpoint theorems of Knaster, Tarski and Kleene, respectively.
 \end{definition}
 
 \begin{definition}[Gelfond-Lifschitz Reduct, adapted from~\cite{stable-models} and~\cite{asp-primer}]
 \label{def:prelims-asp-semantics-gl-reduct}
-Given a ground ASP program $P$ and a Herbrand Interpretation $I$, the \emph{Gelfond-Lifschitz-Reduct} ("GL-reduct") $P^{I}$of $P$ with respect to $I$ is the program obtained by:
+Given a ground \gls{asp} program $P$ and a Herbrand Interpretation $I$, the \emph{Gelfond-Lifschitz-Reduct} ("GL-reduct") $P^{I}$of $P$ with respect to $I$ is the program obtained by:
 \begin{itemize}
 	\item removing from $P$ all rules $r$ that are "blocked", i.e. $I \not\models l$ for some literal $l \in b^{-}(r)$ 
 	\item and removing the negative body of all other rules.
@@ -200,13 +197,13 @@ Note that $P^{I}$ is a positive logic program.
 
 \begin{definition}[Answer Set~\cite{stable-models}~\cite{asp-primer}]
 \label{def:prelims-asp-semantics-answer-set}
-A Herbrand Interpretation $I$ of an ASP program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$.
+A Herbrand Interpretation $I$ of an \gls{asp} program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$.
 \end{definition}
 
 \section{Lazy-Grounding ASP Solving}
 
 \subsection{Two-phased ASP solving}
-In traditional ASP solving systems such as SModels~\cite{smodels}, DLV~\cite{dlv} or Clingo~\cite{clingo}, grounding an input program and solving the resulting propositional program are distinct sequential steps in the overall solving process. Consequently, in order to obtain answer sets of a program, one has to calculate a grounding for the entire program first, and can only then start the actual solver. Since the grounding of an arbitrary program may be exponentially larger than the nonground program or, in some extreme cases, not even finite, calculating a full grounding is often not feasible, especially for programs where only very few ground rules can actually fire. Lazy-grounding systems like Alpha try to alleviate this by interleaving the grounding- and solving steps and ideally ground only as much of the input programs as is necessary to find all answer sets.
+In traditional \gls{asp} solving systems such as SModels~\cite{smodels}, DLV~\cite{dlv} or Clingo~\cite{clingo}, grounding an input program and solving the resulting propositional program are distinct sequential steps in the overall solving process. Consequently, in order to obtain answer sets of a program, one has to calculate a grounding for the entire program first, and can only then start the actual solver. Since the grounding of an arbitrary program may be exponentially larger than the nonground program or, in some extreme cases, not even finite, calculating a full grounding is often not feasible, especially for programs where only very few ground rules can actually fire. Lazy-grounding systems like Alpha try to alleviate this by interleaving the grounding- and solving steps and ideally ground only as much of the input programs as is necessary to find all answer sets.
 
 \subsection{Conceptual solving workflow in Alpha}
 
@@ -214,7 +211,7 @@ The formal basis of lazy-grounding architectures lies in the notion of a \emph{c
 
 \begin{definition}[Computation Sequence, adapted from ~\cite{lazy-cdnl} and~\cite{asperix-fw-chain}]
 \label{def:prelims-asp-semantics-compseq}
-Let $P$ be an ASP programand $S = (A_0,\ldots,A_{\infty})$ a sequence of assignments, i.e. herbrand interpretations denoted by a set of atoms assumed to be true, then $S$ is called a \emph{computation sequence} iff
+Let $P$ be an \gls{asp} program and $S = (A_0,\ldots,A_{\infty})$ a sequence of assignments, i.e. herbrand interpretations denoted by a set of atoms assumed to be true, then $S$ is called a \emph{computation sequence} iff
 \begin{itemize}
 	\item $A_0 = \emptyset$
 	\item $\forall i \geq 1: A_i \subseteq T_P(A_{i - 1})$, i.e. every $A_i$ is a consequence of its predecessor in the sequence,
@@ -225,11 +222,11 @@ Let $P$ be an ASP programand $S = (A_0,\ldots,A_{\infty})$ a sequence of assignm
 $A_{\infty}$ is an answer set of $P$ iff $S$ is a computation sequence. Note that there may exist an arbitrary number of computation sequences leading to the same answer set.
 \end{definition}
 
-Obviously, computation sequences can be easily found by simple iterative application of the $T_P$ operator for programs that do not use negation in rules. However, since in general once negation comes into play, solvers may have to retract assignments of atoms ("backtrack"), over the course of the solving process. \todo{Example of mutually blocking rules!} Lazy-grounding solvers suffer from a performance penalty compared to two-phased systems in that respect. This penalty results from algorithms based on conflict-driven nogood learning~\cite{clasp-cdnl} achieving higher performance since conflicts occur faster and more nogoods can be learned from them with a full grounding available. A key challenge in designing lazy-grounding systems is therefore identifying classes of programs as well as groups of rules within programs that can be evaluated using simplified deterministic algorithms in order to minimize the number of potential backtracks.
+Obviously, computation sequences can be easily found by simple iterative application of the $T_P$ operator for programs that do not use negation in rules. However, since in general once negation comes into play, solvers may have to retract assignments of atoms ("backtrack"), over the course of the solving process. \todo{Example of mutually blocking rules!} Lazy-grounding solvers suffer from a performance penalty compared to two-phased systems in that respect. This penalty results from algorithms based on \gls{cdnl}~\cite{clasp-cdnl} achieving higher performance since conflicts occur faster and more nogoods can be learned from them with a full grounding available. A key challenge in designing lazy-grounding systems is therefore identifying classes of programs as well as groups of rules within programs that can be evaluated using simplified deterministic algorithms in order to minimize the number of potential backtracks.
 
 \subsubsection{Structural Dependency Analysis and Stratified Evaluation}
 
-\todo{Since we're talking about nonground stratification, should we define a nonground $T_P$ operator! Juust simply say we add the rules where all defining rules have already fired in each step}
+\todo{Since we're talking about nonground stratification, should we define a nonground $T_P$ operator! Just simply say we add the rules where all defining rules have already fired in each step}
 
 \begin{definition}[Unification]
 \label{def:prelims-asp-semantics-unification}
@@ -238,7 +235,7 @@ Let $l_1$, $l_2$ be literals. Then a substitution $\sigma$ is a \emph{unifier} o
 
 \begin{definition}[Defining rules]
 \label{def:prelims-asp-semantics}
-Given an ASP program $P$ and literal $l$ of form $a$ or $\NOT\ a$ with atom $a$, the set $\mathit{def}(l)$ of \emph{defining rules} of $l$ is defined as
+Given an \gls{asp} program $P$ and literal $l$ of form $a$ or $\NOT\ a$ with atom $a$, the set $\mathit{def}(l)$ of \emph{defining rules} of $l$ is defined as
 \[
 	\mathit{def}(l) = \{ r\ |\ r \in P \land h(r) \uplus a \}
 \]
@@ -247,7 +244,7 @@ i.e. all rules in $P$ whose head is unifiable with $a$.
 
 \begin{definition}[Stratification, adapted from~\cite{stratification}]
 \label{def:prelims-asp-semantics-stratification}
-Given a (non-ground) ASP program $P$, a stratification is a partition $S$ of $P$ into sub-programs called \emph{strata} $(P_0,\ldots,P_1)$ such that
+Given a (non-ground) \gls{asp} program $P$, a stratification is a partition $S$ of $P$ into sub-programs called \emph{strata} $(P_0,\ldots,P_1)$ such that
 \begin{itemize}
 	\item $\cup^{n}_{i = 0} P_i = P$, i.e. $S$ is total,
 	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{+}(r): \mathit{def}(l) \subseteq \cup^{i}_{j = 0} P_j$, i. e. for every positive body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with lower or equal index to the stratum $r$ resides in, and
@@ -258,13 +255,13 @@ A program is called \emph{stratified} iff a stratification exists for it.
 
 \begin{definition}[Stratified Evaluation, adapted from~\cite{asp-primer} and~\cite{stratification}]
 \label{def:prelims-asp-semantics-stratified-eval}
-Let $P$ be an ASP program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T_{P_i}$ with $0 \leq i \leq n$ the immediate consequence operator for sub-program $P_i \in S$ respectively. Then the least model $\mathit{LM}(P)$ of $P$ is defined as follows.
+Let $P$ be an \gls{asp} program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T_{P_i}$ with $0 \leq i \leq n$ the immediate consequence operator for sub-program $P_i \in S$ respectively. Then the least model $\mathit{LM}(P)$ of $P$ is defined as follows.
 The sequence $\langle M_{P_i} \rangle,\ 0 \leq i \leq n$ with $M_{P_0} = \mathit{lfp}(T_{P_0})$ and $M_{P_i} = \mathit{lfp}(T_{P_i \cup\ M_{S_{i-1}}})$ for all $1 \leq i \leq n$ defines the least model for each stratum. The least model $LM(P)$ of program $P$ is then the least model of the highest stratum $M_{P_n}$, i.e. the end of the sequence $\langle M_{P_i} \rangle$.
 \end{definition}
 
 \begin{definition}[Dependencies]
 \label{def:prelims-asp-semantics-dependencies}
-Let $P$ be an ASP program and $r \in P$ a rule contained in $P$. a rule $d$ is a \emph{positive dependency} of $r$ , i.e. $ r \DEP{+} d$ iff one the following holds:
+Let $P$ be an \gls{asp} program and $r \in P$ a rule contained in $P$. a rule $d$ is a \emph{positive dependency} of $r$ , i.e. $ r \DEP{+} d$ iff one the following holds:
 \begin{itemize}
 	\item $\exists l \in b^{+}(r): d \in \mathit{def}(l) $, i.e. $d$ is a defining rule for some positive body literalof $r$, or
 	\item $\exists d_1 \in P: r \DEP{+} d_1 \land d_1 \DEP{+} d$, i.e. there is some positive dependency $d_1$ of $r$ of which $d$ is a (transitive) positive dependency.
@@ -280,7 +277,7 @@ We denote the set of dependencies of a rule as $D(r) = \{ d\ |\ r \DEP{} d\}$ an
 
 \begin{definition}[Dependency Graph]
 \label{def:prelims-asp-semantics-depgraph}
-Let $P$ be an ASP program. Then the \emph{dependency graph}  $\mathit{DG}_P = (R, D)$ is a directed graph with vertex set $R$, which has one element for each rule in $P$, and (dependency-)edge set $D$ such that
+Let $P$ be an \gls{asp} program. Then the \emph{dependency graph}  $\mathit{DG}_P = (R, D)$ is a directed graph with vertex set $R$, which has one element for each rule in $P$, and (dependency-)edge set $D$ such that
 \begin{align*}
 	D = &\{ (r_1, r_2, +)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ positive\ dependency\ of}\ r_1 \}\\ &\cup
 \{ (r_1, r_2, -)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ negative\ dependency\ of}\ r_1 \}
@@ -298,10 +295,33 @@ The component graph $\mathit{CG}_P = (C, D)$ of a program $P$ is defined as the 
 Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.
 \end{definition}
 
-Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}. Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using a simplified bottom-up algorithm and then only using the - computationally more complex - CDNL-based algorithm for the top part.
-
 \begin{definition}[Common Base Program, adapted from~\cite{partial-eval}]
 \label{def:prelims-asp-semantics-cbp}
 Given a splitting set $S$ of program $P$, the bottom $B_S(P)$ is called \emph{common base program}, i.e. $CBP(P)$ if it is stratified and maximal in the sense that adding any further rule to $B_S(P)$ would destroy the property of $B_S(P)$ of being stratified.
 \end{definition}
 
+Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}.\\
+
+Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using the simplified bottom-up algorithm outlined in Algorithm \ref{alg:cbp-eval} and then only using the - computationally more complex - \gls{cdnl}-based algorithm for the top part.
+
+\begin{algorithm}[!h]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\SetKwRepeat{Do}{do}{while}
+\Input{Stratification $S$}
+\Input{Program $P$}
+\Output{partially evaluated program $P_{eval}$}
+Facts $F$ = \emph{facts($P$)};\\
+$n~\leftarrow~(\mid S \mid~-~1)$;\\
+\ForEach{$i~$\emph{\textbf{in}} $0 \ldots n$}{
+	Program $grnd(P_{S_i})$ = \emph{ground($P_{S_i}$)};\\
+	Facts $F_{old} = \emptyset$;\\
+	\Do{$F_{old} \neq F$}{
+		$F_{old} = F$;\\ 
+		$F \leftarrow pr(T_{grnd(P_{S_i})}(F))$;\\
+	}
+	$P \leftarrow P \backslash P_{S_i}$;\\
+}
+\textbf{return} $P_{eval} = P~\cup~F$;\\
+\caption{Procedure \emph{evaluateCommonBaseProgram}}\label{alg:cbp-eval}
+\end{algorithm}

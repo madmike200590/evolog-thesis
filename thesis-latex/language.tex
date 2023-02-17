@@ -69,6 +69,11 @@ Grounding, in the context of answer set programming, generally refers to the con
 Given an action program $P$ containing action application terms $A = \{a_1,\ldots,a_n\}$, a frame $F$ is an interpretation function such that, for each application term $f_{act}(S, I) \in A$ where $S \in H_{U}(P)^{*}$ and $I \in H_{U}(P)^{*}$, $F(f_{act}): H_{U}(P)^{*} \times H_{U}(P)^{*} \mapsto H_{U}(P)$.
 \end{definition}
 
+\begin{definition}[Grounding of action rules]
+\label{def:evolog-grounding}
+Grounding of Evolog rules (and programs) always happens \emph{with respect to a frame}. Given a frame $F$, an expanded action rule $r_a$ and a (grounding) substitution $\sigma$ over all body variables of application rule $r_{a_{app}}$, during grounding, every ground action application term $t_{app}\sigma$ resulting from applying substitution $\sigma$ is replaced with its interpretation according to $F$.
+\end{definition}
+
 Example \ref{ex:action-rule-expansion} demonstrates the expansion of an action rule as well as a compatible example frame for the respective action.
 
 \begin{example}[Expansion and Frame]
@@ -96,9 +101,14 @@ Then, the ground program $P_{grnd}$ after action rule expansion is
 	a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c)) \leftarrow p(a).~q(b).~r(c).& \\
 	h(a, \mathit{success}(a, c)) \leftarrow a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c)).&
 \end{align*}
-The sole model of $P$ with respect to frame $F$ is \todo{according to which semantics? reference LFP here}
+The sole model of $P$ with respect to frame $F$ is 
 \begin{align*}
 	M = \{p(a), q(b), r(c),& \\
 	a_{res}(a, \mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c), \mathit{success}(a, c))& \\ h(a, \mathit{success}(a, c))\}&
 \end{align*}
 \end{example}
+
+\subsubsection{Evolog Models}
+\label{subsubsec:evolog-action-semantics-models}
+
+Describe how we can use a frame and reduct to verify an arbitrary set of atoms, i.e. check whether the set is an answer set.
