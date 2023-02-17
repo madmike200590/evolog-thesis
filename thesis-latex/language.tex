@@ -5,7 +5,7 @@ The Evolog language extends (non-disjunctive) ASP as defined in the ASP-Core2 st
 
 Actions allow for an ASP program to encode operations with \emph{side-effects} while maintaining fully declarative semantics. Actions are modelled in a functional style loosely based on the concept of monads as used in Haskell~\todo{cite something here!}. Intuitively, to maintain declarative semantics, actions need to behave as pure functions, meaning the result of executing an action (i.e. evaluating the respective function) must be reproducible for each input value across all executions. On first glance, this seems to contradict the nature of IO operations, which inherently depend on some state, e.g. the result of evaluating a function $getFileHandle(f)$ for a file $f$ will be different depending on whether $f$ exists, is readable, etc. However, at any given point in time - in other words, in a given state of the world - the operation will have exactly one result (i.e. a file handle or an error will be returned). A possible solution to making state-dependent operations behave as functions is therefore to make the state of the world at the time of evaluation part of the function's input. A function $f(x)$ is then turned into $f'(s, x)$  where $s$ represents a specific world state. The rest of this section deals with formalizing this notion of actions.
 
-\todo{Define non-disjunctive ASP-Core2 in detail in preliminaires. Give detailed definition of all "standard ASP" elements referenced here!}
+\todo{Define non-disjunctive ASP-Core2 in detail in preliminaries. Give detailed definition of all "standard ASP" elements referenced here!}
 
 \subsection{Syntax}
 \label{subsec:evolog-actions-syntax}
