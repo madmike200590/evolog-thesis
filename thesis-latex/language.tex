@@ -111,4 +111,49 @@ The sole model of $P$ with respect to frame $F$ is
 \subsubsection{Evolog Models}
 \label{subsubsec:evolog-action-semantics-models}
 
-Describe how we can use a frame and reduct to verify an arbitrary set of atoms, i.e. check whether the set is an answer set.
+Having introduced action rule expansions as well as frames, we now use these to extend the stable model semantics to Evolog programs.
+
+\begin{definition}[Supportedness of Actions]
+\label{def:evolog-supported-action}
+Let $r_{app}$ be a non-ground anction application rule with head $H = a_{res}(f_{act}, S, I, f_{act}(S, I))$, $F$ a frame, and $H_{grnd} = a_{res}(f_{act}, S_{grnd}, I_{grnd}, r)$ a ground instance of $H$ with $r$ being an arbitrary ground term.
+Then, $H_{grnd}$ is \emph{supported by $F$}, if and only if $F$ contains a mapping of form $f_{act}(S_{grnd}, I_{grnd}) \mapsto r$, i.e. $r$ is a valid result of action function $f_{act}$ with arguments $S_{grnd}$ and $I_{grnd}$ according to frame $F$. 
+We call a ground instance of an action rule \emph{supported by a frame} if the head of the corresponding application rule in the rule's expansion is supported by that frame.
+\end{definition}
+
+\begin{definition}[Evolog-Reduct]
+\label{def:evolog-reduct}
+Given a ground Evolog program $P$, a frame $F$ and a set of ground atoms $A$, the \emph{Evolog Reduct} of $P$ with respect to $F$ and $A$ $P_{F}^{A}$ is obtained from $P$ as follows:
+\begin{enumerate}
+	\item Remove all rules $r$ from $P$ that are "blocked", i.e. $A \not\models l$ for some negative body literal $l \in b^{-}(r)$.
+	\item Remove all action application rules from $P$ which are not supported by $F$.
+	\item Remove the negative body from all other rules.
+\end{enumerate}
+\end{definition}
+
+Note that the reduct outlined in Definition \ref{def:evolog-reduct} extends the classic GL-reduct (see Definition \ref{def:prelims-asp-semantics-gl-reduct}) just by adding a check on action supportedness.
+
+\begin{definition}[Evolog Model]
+A herbrand interpretation $I$ of an Evolog Program is an \emph{Evolog Model} ("answer set") of an Evolog program $P$ with respect to a frame $F$ if and only if it is a minimal classical model of its Evolog-Reduct $P_{F}^{A}$.
+\end{definition}
+
+\section{Program Modularization in Evolog}
+\label{sec:evolog-modules}
+
+TODO
+
+\section{Relationship between Evolog- and Stable Model Semantics}
+
+TODO: Find good (source for and) definition of (model-theoretic) conservative extension and add here!
+
+\begin{theorem}
+\label{thm:extension}
+Every ASP program is a valid and semantically equivalent Evolog program.
+\end{theorem}
+
+\begin{proof}
+Directly from the definitions of an Evolog program \todo{put somewhere "an Evolog program is an ASP program with actions and modules"} and the Evolog Reduct (see Definition \ref{def:evolog-reduct}):
+\begin{itemize}
+	\item Since an Evolog program is an ASP program that may additionally use action rules and module literals, it follows that every ASP program is an Evolog program which does not use actions or modules, and therefore a valid Evolog program.
+	\item Equivalence between Evolog- and Stable Model Semantics for programs without actions and modules similarly follows from Definition \ref{def:evolog-reduct}: Since a regular ASP program does not contain any action rules, its Evolog Reduct coincides with its GL-Reduct. \todo{also reference module semantics here!}
+\end{itemize}
+\end{proof}
