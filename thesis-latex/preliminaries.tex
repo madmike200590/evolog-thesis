@@ -187,7 +187,7 @@ The least model $LM(P)$ of a (ground) positive logic program $P$ is the least fi
 
 \begin{definition}[Gelfond-Lifschitz Reduct, adapted from~\cite{stable-models} and~\cite{asp-primer}]
 \label{def:prelims-asp-semantics-gl-reduct}
-Given a ground \gls{asp} program $P$ and a Herbrand Interpretation $I$, the \emph{Gelfond-Lifschitz-Reduct} ("GL-reduct") $P^{I}$of $P$ with respect to $I$ is the program obtained by:
+Given a ground \gls{asp} program $P$ and a Herbrand Interpretation $I$, the \emph{Gelfond-Lifschitz-Reduct} ("GL-reduct") $P^{I}$ of $P$ with respect to $I$ is the program obtained by:
 \begin{itemize}
 	\item removing from $P$ all rules $r$ that are "blocked", i.e. $I \not\models l$ for some literal $l \in b^{-}(r)$ 
 	\item and removing the negative body of all other rules.
@@ -197,7 +197,7 @@ Note that $P^{I}$ is a positive logic program.
 
 \begin{definition}[Answer Set~\cite{stable-models}~\cite{asp-primer}]
 \label{def:prelims-asp-semantics-answer-set}
-A Herbrand Interpretation $I$ of an \gls{asp} program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$.
+A Herbrand Interpretation $I$ of an \gls{asp} program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$. We denote the set of Answer Sets of a program $P$ as $\mathit{AS}(P)$.
 \end{definition}
 
 \section{Lazy-Grounding ASP Solving}

@@ -55,9 +55,7 @@ where $a_H$ is the head atom of the initial action rule $R$ and the (sole) body 
 
 Looking at the head of an action application rule of format $a_{res}(f_{act}, S, I, \mathit{t_{app}})$ with action $f_{act}$, state term $S$, input term $I$ and application term $t_{app}$, the intuitive reading of this atom is "The result of action function $f_{act}$ applied to state $S$ and input $I$ is $t_{app}$", i.e. the action application term $t_{app}$ is not a regular (uninterpreted) function term as in regular ASP, but an actual function call which is resolved using an interpretation function provided by a \emph{frame} during grounding.
 
-%% NOTE: Action func. term is uninterpreted in nonground view! Application formally happens during grounding, i.e. action fnc is applied in grounding, ground version has action result.
-
-%% TODO define grounding with respect to a frame - grounding eliminates action terms, i.e. action functions are applied during grounding!
+%% NOTE: Action func. term is uninterpreted in nonground view! Application formally happens during grounding, i.e. action func is applied in grounding, ground version has action result.
 
 \subsubsection{Grounding of Action Rules}
 \label{subsubsec:evolog-actions-semantics-grounding}
@@ -91,7 +89,7 @@ The expansion of $R$ is:
 \end{align*}
 Furthermore, consider following frame $F$:
 \[
-	F(a) = \{a(\mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c))) \mapsto \mathit{success}(a, c)\}
+	F(a) = \{a(\mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c)) \mapsto \mathit{success}(a, c)\}
 \]
 which assigns the result $\mathit{success}(a, c)$ to the action application term (i.e. function call $a(\mathit{state}(p(a), q(b), r(c)), \mathit{input}(a, c)))$. \\
 
@@ -115,7 +113,7 @@ Having introduced action rule expansions as well as frames, we now use these to 
 
 \begin{definition}[Supportedness of Actions]
 \label{def:evolog-supported-action}
-Let $r_{app}$ be a non-ground anction application rule with head $H = a_{res}(f_{act}, S, I, f_{act}(S, I))$, $F$ a frame, and $H_{grnd} = a_{res}(f_{act}, S_{grnd}, I_{grnd}, r)$ a ground instance of $H$ with $r$ being an arbitrary ground term.
+Let $r_{app}$ be a non-ground action application rule with head $H = a_{res}(f_{act}, S, I, f_{act}(S, I))$, $F$ a frame, and $H_{grnd} = a_{res}(f_{act}, S_{grnd}, I_{grnd}, r)$ a ground instance of $H$ with $r$ being an arbitrary ground term.
 Then, $H_{grnd}$ is \emph{supported by $F$}, if and only if $F$ contains a mapping of form $f_{act}(S_{grnd}, I_{grnd}) \mapsto r$, i.e. $r$ is a valid result of action function $f_{act}$ with arguments $S_{grnd}$ and $I_{grnd}$ according to frame $F$. 
 We call a ground instance of an action rule \emph{supported by a frame} if the head of the corresponding application rule in the rule's expansion is supported by that frame.
 \end{definition}
@@ -133,8 +131,14 @@ Given a ground Evolog program $P$, a frame $F$ and a set of ground atoms $A$, th
 Note that the reduct outlined in Definition \ref{def:evolog-reduct} extends the classic GL-reduct (see Definition \ref{def:prelims-asp-semantics-gl-reduct}) just by adding a check on action supportedness.
 
 \begin{definition}[Evolog Model]
-A herbrand interpretation $I$ of an Evolog Program is an \emph{Evolog Model} ("answer set") of an Evolog program $P$ with respect to a frame $F$ if and only if it is a minimal classical model of its Evolog-Reduct $P_{F}^{A}$.
+A herbrand interpretation $I$ of an Evolog Program is an \emph{Evolog Model} ("answer set") of an Evolog program $P$ with respect to a frame $F$ if and only if it is a minimal classical model of its Evolog-Reduct $P_{F}^{A}$. We denote the set of Evolog Models of a program $P$ as $\mathit{EM}(P)$.
 \end{definition}
+
+\subsection{Restrictions on Program Structure}
+
+As has been stated at the start of this section, actions in Evolog aim to add a declarative way of interacting with the outside world to \gls{asp}. The central contract action rules need to fulfill is that, given a ground action (application-)rule and some fixed state of the outside world, 
+
+
 
 \section{Program Modularization in Evolog}
 \label{sec:evolog-modules}
@@ -143,17 +147,26 @@ TODO
 
 \section{Relationship between Evolog- and Stable Model Semantics}
 
-TODO: Find good (source for and) definition of (model-theoretic) conservative extension and add here!
+The extensions to the usual \gls{asp} programming language described in the previous sections extend the original formalism with a notion of an outside world (through frames in the context of which, actions can be expressed) as well as a grouping mechanism for sub-programs into modules.
 
-\begin{theorem}
+\begin{theorem}[Extension]
 \label{thm:extension}
-Every ASP program is a valid and semantically equivalent Evolog program.
+Every ASP program $P$ is a valid and semantically equivalent Evolog program in the sense that - for any given frame $F$, the Evolog Models of $P$ are the same as its Answer Sets according to Stable Model Semantics~\ref{def:prelims-asp-semantics-answer-set}.
 \end{theorem}
 
 \begin{proof}
-Directly from the definitions of an Evolog program \todo{put somewhere "an Evolog program is an ASP program with actions and modules"} and the Evolog Reduct (see Definition \ref{def:evolog-reduct}):
+First, we assert that every "regular" ASP program P is also a syntactically valid Evolog program. This follows directly from the definitions - since Evolog only adds syntactic support for actions~\ref{def:action-rule-syntax}, but does not restrict regular ASP syntax, it follows that a syntactically correct ASP program is also a syntactically correct Evolog program. \\
+Next, we show that for every regular ASP program $P$ and any frame $F$, the Evolog Models of $P$ are the same as its Stable Models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$: \\
+Given any set of ground Atoms $A$ from the Herbrand Base $HB_P$ of $P$, $P$ is an Answer Set according to Stable Model Semantics if it is a minimal model of the GL-reduct~\ref{def:prelims-asp-semantics-gl-reduct} $P^{A}$ of $P$ w.r.t. $A$. We recall that $P^{A}$ is constructed as follows (see~\ref{def:prelims-asp-semantics-gl-reduct}):
 \begin{itemize}
-	\item Since an Evolog program is an ASP program that may additionally use action rules and module literals, it follows that every ASP program is an Evolog program which does not use actions or modules, and therefore a valid Evolog program.
-	\item Equivalence between Evolog- and Stable Model Semantics for programs without actions and modules similarly follows from Definition \ref{def:evolog-reduct}: Since a regular ASP program does not contain any action rules, its Evolog Reduct coincides with its GL-Reduct. \todo{also reference module semantics here!}
+	\item remove from $P$ all rules $r$ that are "blocked", i.e. $A \not\models l$ for some literal $l \in b^{-}(r)$ 
+	\item and remove the negative body of all other rules.
 \end{itemize}
+Furthermore, consider how the Evolog-Reduct of $P$ w.r.t. $A$ and (any arbitrary) Frame $F$, $P_{F}^{A}$, is constructed (see~\ref{def:evolog-reduct}):
+\begin{itemize}
+	\item Remove all rules $r$ from $P$ that are "blocked", i.e. $A \not\models l$ for some negative body literal $l \in b^{-}(r)$.
+	\item Remove all action application rules from $P$ which are not supported by $F$.
+	\item Remove the negative body from all other rules.
+\end{itemize}
+Since $P$ is a "regular", i.e. non-Evolog, ASP Program it contains no action application rules by definition. It is therefore clear, that for any set answer set candidate $A$ of $P$ and any Frame $F$, the GL-Reduct $P^{A}$ and Evolog-Reduct $P_{F}^{A}$ coincide. Any minimal model of the GL-reduct is therefore also a minimal model of the Evolog-Reduct (and vice-versa) and therefore the Evolog Models of P are identical with its Satble Models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$.
 \end{proof}

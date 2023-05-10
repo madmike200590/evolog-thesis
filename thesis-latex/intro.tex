@@ -1,1 +1,14 @@
-\todo{Intro here}
+\todo{short summary what ASP is, why it is cool etc.}
+
+The goal of this work is to address the following issues with as little "semantics overhead" as possible and deliver an easy-to-use programming language that can be used in most software engineering contexts.
+
+\paragraph{Triggering actions from programs} Most program flows follow a chain of events, each a consequence of its predecessor, e.g. "If there exists a file A, read it. If reading was successful, do something with the content. If the operation succeeds, write the result to file B". It is highly desirable to be able to write this kind of program in a declarative, logic-based language that can leverage the strengths of ASP for the "business logic" part. Specifically, the proposed action semantics should deliver
+\begin{itemize}
+    \item declarative programs, i.e. order in which actions occur in code does not affect semantics,
+    \item actions behaving in a functional fashion, i.e. an action always gives the same result for the same input. Especially, actions have to be idempotent in the sense that, for an ASP rule that is associated with some action, the result of the action never changes, no matter how often the rule fires.
+    \item transparent action execution, i.e. every action that is executed during evaluation of a program must be reflected in an answer set.
+\end{itemize}
+
+\paragraph{Program Modularization} While not formally connected, triggering actions from programs and modularization (i.e. plugable and re-usable sub-programs), intuitively complement each other in our current high-level design. Introducing a simple, easy-to-use module system is therefore the second goal of this work. It is, however, secondary in priority to definition and prototypical implementation of action support and may be reduced to a technical design draft if required due to time constraints.
+
+\paragraph{Incremental Evaluation and Lazy Grounding} Experiences from existing systems for ASP application development such as ASAP~\cite{aspetris} or ACTHEX~\cite{acthex} show that, in order to achieve the evaluation performance necessary for use in real-world applications, ASP application code needs to be evaluated in an incremental fashion (rather than iteratively re-evaluating the whole program) whenever possible. The lazy-grounding architecture employed by ASP systems such as Alpha~\cite{alpha} offers an intuitive solution.
