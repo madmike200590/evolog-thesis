@@ -2,7 +2,7 @@
 
 The goal of this work is to address the following issues with as little "semantics overhead" as possible and deliver an easy-to-use programming language that can be used in most software engineering contexts.
 
-\paragraph{Triggering actions from programs} Most program flows follow a chain of events, each a consequence of its predecessor, e.g. "If there exists a file A, read it. If reading was successful, do something with the content. If the operation succeeds, write the result to file B". It is highly desirable to be able to write this kind of program in a declarative, logic-based language that can leverage the strengths of ASP for the "business logic" part. Specifically, the proposed action semantics should deliver
+\paragraph{Triggering actions from programs} \label{goals:actions}Most program flows follow a chain of events, each a consequence of its predecessor, e.g. "If there exists a file A, read it. If reading was successful, do something with the content. If the operation succeeds, write the result to file B". It is highly desirable to be able to write this kind of program in a declarative, logic-based language that can leverage the strengths of ASP for the "business logic" part. Specifically, the proposed action semantics should deliver
 \begin{itemize}
     \item declarative programs, i.e. order in which actions occur in code does not affect semantics,
     \item actions behaving in a functional fashion, i.e. an action always gives the same result for the same input. Especially, actions have to be idempotent in the sense that, for an ASP rule that is associated with some action, the result of the action never changes, no matter how often the rule fires.

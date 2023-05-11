@@ -135,9 +135,39 @@ A herbrand interpretation $I$ of an Evolog Program is an \emph{Evolog Model} ("a
 \end{definition}
 
 \subsection{Restrictions on Program Structure}
+\label{subsec:evolog-actions-restrictions}
 
-As has been stated at the start of this section, actions in Evolog aim to add a declarative way of interacting with the outside world to \gls{asp}. The central contract action rules need to fulfill is that, given a ground action (application-)rule and some fixed state of the outside world, 
+% Following goals are listed in introduction
+%     \item declarative programs, i.e. order in which actions occur in code does not affect semantics,
+%     \item actions behaving in a functional fashion, i.e. an action always gives the same result for the
+%      same input. Especially, actions have to be idempotent in the sense that, for an ASP rule that is
+%      associated with some action, the result of the action never changes, no matter how often the rule
+%      fires.
+%     \item transparent action execution, i.e. every action that is executed during evaluation of a program must be reflected in an answer set.
 
+While the action semantics outlined so far addresses the requirements for both declarativity and functionality of actions outlined in the introduction (see \ref{goals:actions}), we haven't yet addressed the demand for transparency, i.e. that every action that is executed must be reflected in an aswer set of the respective program. With just the semantics outlined in Section \ref{subsec:evolog-actions-semantics}, it would be possible to write programs such as the one shown in Example \ref{ex:unsat-with-sideeffects} where an action rule can fire, but the program is unsatisfiable.
+
+\begin{example}[Unsatisfiable Program with Side-effects]
+\label{ex:unsat-with-sideeffects}
+The program below contains an action rule that can fire (because $p(a)$ is true), but is also unsatisfiable due to the constraint in the last line.
+\begin{align*}
+	&p(a). \\
+	&q(X) \leftarrow p(X). \\
+	&act\_done(X, R) : @act(X) = R \leftarrow p(X). \\
+	&\leftarrow q(X), act\_done(X, \_).
+\end{align*}
+\end{example}
+
+This kind of programs raises some hard problems for implementations - given the contract that every side-effect of (i.e. action executed by) a program must be reported in an answer set, a solver evaluating the program from Example~\ref{ex:unsat-with-sideeffects} would have to "retract" action $act/1$ after finding that the program is unsatisfiable. Since it is generally not possible to "take back" side-effects (e.g. when some message is sent over a network broadcast to an unknown set of recipients), the only practical way to deal with this is to impose some conditions on programs with actions. Definition~\ref{def:evolog-actions-transparency} details this notion and introduces \emph{transparency} as a necessary condition for an Evolog program to be considered valid.
+
+\begin{definition}[Action Transparency]
+\label{def:evolog-actions-transparency}
+An action rule $r_a$ of an Evolog program $P$ is \emph{transparent} if, for every expanded ground instance $gr_a$ it holds that, if $gr_a$ fires, then the head $h(gr_{a_{app}})$ of the repective application rule $gr_{a_{app}}$ is contained in an answer set of $P$. \\
+
+For an Evolog program to be valid, all its action rules must be transparent.
+\end{definition}
+
+It follows from Definition \ref{def:evolog-actions-transparency} that only satisfiable programs can be transparent. Furthermore, note that Definition~\ref{def:evolog-actions-transparency} aims to be as permissive as possible in terms of program structure. In general, it can not be assumed that transparency of all rules in a program can be guaranteed up-front. Implementations may therefore impose further restrictions on what is considered a valid Evolog program. \todo{It might make sense to introduce the restriction P = CBP(P) for a valid program already here (anything more permissive cannot be linted without a theorem prover!)}
 
 
 \section{Program Modularization in Evolog}
