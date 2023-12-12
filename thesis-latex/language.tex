@@ -173,7 +173,25 @@ It follows from Definition \ref{def:evolog-actions-transparency} that only satis
 \section{Program Modularization in Evolog}
 \label{sec:evolog-modules}
 
-TODO
+Modules aim to introduce a tool to \gls{asp} that helps with code reusability and testability.
+
+Conceptually, an Evolog Module is a special kind of external atom (see~\ref{def:prelims-asp-syntax-ext-atom}) that refers to an ASP solver being called with some program and input.
+
+\subsection{Syntax}
+
+TODO The following design problems need solving:
+\begin{itemize}
+	\item If a complete answer set of a module is packed into one function term, how do you parse it (List iteration)? It probably makes the most sense to just inroduce list terms and be done with it...
+	\item What's the best syntax to express whether we want just one, a certain number of, or all answer sets?
+\end{itemize}
+
+\begin{definition}[Module Literal]
+A \emph{module literal} has the following form:
+$$
+	\rightarrow modname[i_1,\ldots,i_n]([o_1,\ldots,o_n]).
+$$
+\todo{maybe only use ">" as module signifier}
+\end{definition}
 
 \section{Relationship between Evolog- and Stable Model Semantics}
 
@@ -198,5 +216,5 @@ Furthermore, consider how the Evolog-Reduct of $P$ w.r.t. $A$ and (any arbitrary
 	\item Remove all action application rules from $P$ which are not supported by $F$.
 	\item Remove the negative body from all other rules.
 \end{itemize}
-Since $P$ is a "regular", i.e. non-Evolog, ASP Program it contains no action application rules by definition. It is therefore clear, that for any set answer set candidate $A$ of $P$ and any Frame $F$, the GL-Reduct $P^{A}$ and Evolog-Reduct $P_{F}^{A}$ coincide. Any minimal model of the GL-reduct is therefore also a minimal model of the Evolog-Reduct (and vice-versa) and therefore the Evolog Models of P are identical with its Satble Models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$.
+Since $P$ is a "regular", i.e. non-Evolog, ASP Program it contains no action application rules by definition. It is therefore clear, that for any set answer set candidate $A$ of $P$ and any Frame $F$, the GL-Reduct $P^{A}$ and Evolog-Reduct $P_{F}^{A}$ coincide. Any minimal model of the GL-reduct is therefore also a minimal model of the Evolog-Reduct (and vice-versa) and therefore the Evolog Models of P are identical with its Stable Models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$.
 \end{proof}
