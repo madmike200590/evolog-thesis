@@ -78,9 +78,9 @@ is called a \emph{comparison atom}. Syntactically, a comparison atom is a regula
 \label{def:prelims-asp-syntax-ext-atom}
 Given an \emph{external predicate name} $\mathit{ext}$, \emph{input terms} $t_1,\ldots,t_n$ and \emph{output terms} $t_{n+1},\ldots,t_m$, the expression
 \[
-	@\mathit{ext}[t_1,\ldots,t_n](t_{n+1},\ldots,t_m)
+	\&\mathit{ext}[t_1,\ldots,t_n](t_{n+1},\ldots,t_m)
 \]
-is called an \emph{external atom}. Syntacticaly, external atoms are regular atoms where $@\mathit{ext}$ is the predicate symbol and $t_1,\ldots,t_m$ are argument terms.
+is called an \emph{external atom}. Syntacticaly, external atoms are regular atoms where $\&\mathit{ext}$ is the predicate symbol and $t_1,\ldots,t_m$ are argument terms.
 \end{definition}
 
 \begin{definition}[Literal]
@@ -148,6 +148,7 @@ Given a rule $r$, the \emph{grounding} of $r$, $\mathit{grnd}(r)$, is a set of s
 \label{subsubsec:prelims-asp-semantics-stable-models}
 
 \begin{definition}[Fixed interpretation literals]
+\label{def:prelims-asp-semantics-fixedinterpretation-literals}	
 Fixed interpretation literals, i.e. comparison- and external literals, respectively, are interpreted by means of a program-independent oracle function $f_O : H_{U}(P)^{*} \mapsto \{ \top, \bot \}$, i.e. a fixed interpretation literal with argument terms $t_1,\ldots,t_n$ has the same truth value under all interpretations.
 \end{definition}
 

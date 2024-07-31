@@ -173,24 +173,116 @@ It follows from Definition \ref{def:evolog-actions-transparency} that only satis
 \section{Program Modularization in Evolog}
 \label{sec:evolog-modules}
 
-Modules aim to introduce a tool to \gls{asp} that helps with code reusability and testability.
+Modules aim to introduce new ways to re-use and unit-test to \gls{asp} code by enabling programmers to put frequently used sub-programs into \emph{modules} which can be used in multiple programs.
 
 Conceptually, an Evolog Module is a special kind of external atom (see~\ref{def:prelims-asp-syntax-ext-atom}) that refers to an ASP solver being called with some program and input.
 
 \subsection{Syntax}
+\label{subsec:evolog-modules-syntax}
 
-TODO The following design problems need solving:
+Definition~\ref{def:module-definition} outlines the syntax for an Evolog module, i.e. a reusable sub-program the can be used in other programs.
+
+\begin{definition}[Module Definition]
+\label{def:module-definition}
+The following EBNF describes a \emph{module definition} in Evolog.
+\begin{lstlisting}[style=code, label={lst:module-def-grammar}]
+	module_definition : 
+		"#module" ID "(" input_predicate "=>" 
+				output_predicates ")" 
+			"{" statements "}";
+		
+	input_predicate : predicate;
+	output_predicates : 
+		("*" | ("{" predicate ("," predicate)* "}"));
+	predicate: ID "/" INTEGER;
+	statements : (fact | classic-rule | constraint)*;
+\end{lstlisting} 
+In the context of the above grammar,
 \begin{itemize}
-	\item If a complete answer set of a module is packed into one function term, how do you parse it (List iteration)? It probably makes the most sense to just inroduce list terms and be done with it...
-	\item What's the best syntax to express whether we want just one, a certain number of, or all answer sets?
+	\item \texttt{ID} are identifiers according to Definition~\ref{def:prelims-asp-syntax-id},
+	\item \texttt{INTEGER} are integers according to Definition~\ref{def:prelims-asp-syntax-int},
+	\item and \texttt{classical-rule} refers to a regular, i.e. non-evolog, ASP rule according to Definition~\ref{def:prelims-asp-syntax-rule}
 \end{itemize}
+\end{definition}
 
-\begin{definition}[Module Literal]
-A \emph{module literal} has the following form:
-$$
-	\rightarrow modname[i_1,\ldots,i_n]([o_1,\ldots,o_n]).
-$$
-\todo{maybe only use ">" as module signifier}
+Intuitively, a module definition establishes a name for the sub-program in question, and specifies how input and output are translated to and from the module program. Definition \ref{def:module-atom} introduces \emph{module atoms}, i.e. atoms in ASP rules that refer to modules.
+
+\begin{definition}[Module Atom]
+\label{def:module-atom}
+Given a \emph{module name} $\mathit{mod}$, a positive integer $k$, \emph{input terms} $t_1,\ldots,t_n$ and \emph{output terms} $t_{n+1},\ldots,t_m$, the expression
+\[
+	\#\mathit{mod}\{k\}[t_1,\ldots,t_n](t_{n+1},\ldots,t_m)
+\]
+is called a \emph{module atom}. Syntacticaly, module atoms are regular atoms where $\#\mathit{mod}$ is the predicate symbol and $t_1,\ldots,t_m$ are argument terms. The integer $k$ is called the \emph{answer set limit}. It denotes the number of answer sets of the module program to return. If $k$ is omitted, all answer sets are returned.
+\end{definition}
+
+Example \ref{ex:3col-module} shows an encoding of the graph 3-coloring problem as an Evolog module.
+
+\begin{example}[3-Coloring Module]
+\label{ex:3col-module}
+The following module definition encodes the 3-coloring problem for a graph $G = (V, E)$ as an Evolog module. Note that the module program assumes its input to be a single fact of form \texttt{graph(V, E)}, where \texttt{V} and \texttt{E} hold the lists of vertices and edges of $G$, respectively.
+\begin{lstlisting}[style=asp-code, label={lst:3col-module}]
+#module 3col(graph/2 => {col/2})  {
+	% Unwrap input
+	vertex_element(V, TAIL) :- graph(list(V, TAIL), _).
+	vertex_element(V, TAIL) :- 
+		vertex_element(_, list(V, TAIL)).
+	vertex(V) :- vertex_element(V, _).
+	edge_element(E, TAIL) :- graph(_, list(E, TAIL)).
+	edge_element(E, TAIL) :- 
+		edge_element(_, list(E, TAIL)).
+	edge(V1, V2) :- edge_element(edge(V1, V2), _).
+	
+	% Make sure edges are symmetric
+	edge(V2, V1) :- edge(V1, V2).
+	
+	% Guess colors
+	red(V) :- vertex(V), not green(V), not blue(V).
+	green(V) :- vertex(V), not red(V), not blue(V).
+	blue(V) :- vertex(V), not red(V), not green(V).
+	
+	% Filter invalid guesses
+	:- vertex(V1), vertex(V2), 
+		edge(V1, V2), red(V1), red(V2).
+	:- vertex(V1), vertex(V2), 
+		edge(V1, V2), green(V1), green(V2).
+	:- vertex(V1), vertex(V2), 
+		edge(V1, V2), blue(V1), blue(V2).
+	
+	col(V, red) :- red(V).
+	col(V, blue) :- blue(V).
+	col(V, green) :- green(V).
+}	
+\end{lstlisting}	
+\end{example}	
+
+\subsection{Semantics}
+\label{subsec:evolog-modules-semantics}
+
+Intuitively, a module atom is a specialized external atom, and thus follows the general semantics of \emph{fixed interpretation literals} (see~\ref{def:prelims-asp-semantics-fixedinterpretation-literals}). Rather than mapping to some annotated Java Method as is the case with regular external atoms, a module atom is interpreted by calling an ASP solver.
+
+In order to make input terms of a module atom available to the module implementation program as facts, a translation step is necessary. Definition~\ref{def:module-input-translation} describes this process in more detail.
+
+\begin{definition}[Module Input Translation]
+\label{def:module-input-translation}
+Given a module definition $M$ with input predicate $p$ of arity $k$ and implementation program $P_M$ and a ground module atom $a_m$ referencing $M$ with input terms $t_1,\ldots,t_k$, then the ASP program that is solved to interpret $a_m$ is obtained by adding a fact $p(t_1,\ldots,t_k)$ to $P_M$.
+\end{definition}	
+
+Similar to module input translation, it is also necessary, to translate answer sets of an instantiated module program into output terms of the corresponding module atom. Every answer set gets converted into one set of terms, each - together with the inout terms - constituting one ground instance of the module atom. Predicates get converted into function symbols, and atoms become list items. Definition~\ref{def:asp-list-term} introduces the notion of a list term, which is used to represent lists of terms in ASP.
+
+\begin{definition}[List Term]
+\label{def:asp-list-term}
+A list term is defined inductively as follows:
+\begin{itemize}
+		\item The constant denoting the empty list, $\mathit{empty\_list}$ is a list term.
+		\item If $t$ is a term and $l$ is a list term, then $s_{lst}(t, l)$ is a list term.
+\end{itemize}	
+In the above, $s_{lst}$ is a reserved function symbol denoting list terms.
+\end{definition}	
+
+\begin{definition}[Module Output Translation]
+\label{def:module-output-translation}
+BLABLABLA
 \end{definition}
 
 \section{Relationship between Evolog- and Stable Model Semantics}

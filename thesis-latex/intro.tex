@@ -1,6 +1,100 @@
-\gls{asp} is a formalism for declarative problem solving based on the Stable Model semantics introduced by Gelfond and Lifschitz in~\cite{stable-models}. Since its inception in 1988, it has been applied in a wide range of fields such as logistics~\cite{gioia-tauro}~\cite{train-scheduling}, automated music composition~\cite{blues-composition} and even spaceflight~\cite{space-shuttle}. Apart from the established use of \gls{asp} as a formalization language for decision- or optimization problems, more recent developments in the field are increasingly targeted toward working with continuous external data in \gls{asp} programs. A prominent example from this direction of research is the stream reasoning system LARS~\cite{lars}. This thesis takes a different approach to interacting with external data sources as well as time progression in ASP programs. We specify and implement Evolog, an extension of the lazy-grounding \gls{asp} solver Alpha~\cite{alpha} which aims to upgrade the ASP variant understood by Alpha to something resembling a general-purpose programming language with the goal of being able to write arbitrary programs in a language based on \gls{asp}. In the following, we state the design goals for said language extension we deem necessary to achieve this goal.
+\section{Answer Set Programming}
+
+\gls{asp} is a formalism for declarative problem solving based on the Stable Model semantics introduced by Gelfond and Lifschitz in 1988~\cite{stable-models}. At its core, an \gls{asp} program is a collection of conditional rules along the lines of \emph{"if A holds true, then B must also hold"} as well as negative rules, so-called \emph{constraints}, which prohibit certain conditions, e.g. \emph{"If A has property p(A), then it cannot have property q(A)"}. Example \ref{ex:asp-first-intro} demonstrates the basic idea of \gls{asp} based on a program for course planning in a (very simplified) school setting.
+\begin{example}
+\label{ex:asp-first-intro}
+Listing \ref{lst:school-planning} shows a knowledge base written in \gls{asp}, which encodes facts - things that are always true, such as \emph{"There is a subject called maths"} - and rules, e.g. \emph{A teacher T that is qualified to teach subject S, can be assigned to teach S}, about a simplified school domain.
+\begin{lstlisting}[style=asp-code, caption=School planning in ASP, label={lst:school-planning}]
+    % The curriculum consists of different courses.
+    subject(german).
+    subject(english).
+    subject(maths).
+    subject(biology).
+    subject(history).
+
+    % Each teacher can teach one or more subjects
+    teacher(bob).
+    can_teach(bob, english).
+    can_teach(bob, maths).
+    teacher(alice).
+    can_teach(alice, maths).
+    can_teach(alice, history).
+    teacher(claire).
+    can_teach(claire, german).
+    can_teach(claire, history).
+    teacher(joe).
+    can_teach(joe, biology).
+    can_teach(joe, history).
+
+    % Assign subjects to teachers
+    { teaches(T, S) } :- teacher(T), can_teach(T, S).
+    % such that..
+    % Every teacher teaches at least one subject
+    :- teacher(T), not teaches(T, _).
+    % Every subject is taught by exactly one teacher
+    :- subject(S), not teaches(_, S).
+    :- teaches(T1, S), teaches(T2, S), T1 != T2.
+\end{lstlisting}    
+Evaluating the above program using an \emph{answer set solver}, i.e. an interpreter for the \gls{asp} language, yields the following collection of so-called \emph{answer sets}:
+\begin{itemize}
+    \item $A_1 = \{teaches(bob,english), teaches(bob,maths), teaches(alice,history),\\teaches(claire,german), teaches(joe,biology)\}$
+    \item $A_2 = \{teaches(bob,english), teaches(alice,maths), teaches(claire,german),\\teaches(claire,history), teaches(joe,biology)\}$
+    \item $A_3 = \{teaches(bob,english), teaches(alice,maths), teaches(claire,german),\\teaches(joe,biology), teaches(joe,history)\}$
+    \item $A_4 = \{teaches(bob,english), teaches(alice,maths), teaches(alice,history),\\teaches(claire,german), teaches(joe,biology)\}$
+\end{itemize}
+Intuitively, each answer set constitues a valid solution to the problem specified in the program in the sense that, if one adds the propositions form the answer set to the original program, all rules are fulfilled, while no constraint is violated. What sets \gls{asp} apart from many other logic programming formalisms is its \emph{multi-model semantics}, i.e. that it can express more than one solution to a problem as well as mutually exclusive solutions.
+\end{example}    
+
+As Example \ref{ex:asp-first-intro} illustrates, \gls{asp} offers a declarative and concise description language for complex problems, where formulating an imperative algorithm is non-trivial. Since its inception, \gls{asp} has been applied in a wide range of applications such as logistics~\cite{gioia-tauro}~\cite{train-scheduling}, automated music composition~\cite{blues-composition} and even spaceflight~\cite{space-shuttle}.
+\todo{use stuff from "answer set programming at a glance"}..
+
+First implementations 
+"blabla as example \ref{ex:bla} shows, ASP is well suited to all kinds of planning problems... it has successfully been used for ... more software-engineering-like tasks could also benefit from that kind of declarative brevity (hint: parsers, configuration, etc), but for ease of coding ,we don't want to write connectors all day...."
+
+Apart from the established use of \gls{asp} as a formalization language for decision- or optimization problems, more recent developments in the field are increasingly targeted toward working with continuous external data in \gls{asp} programs. A prominent example from this direction of research is the stream reasoning framework LARS~\cite{lars}. Closely related to the concept of processing external data is the notion of actually influencing the outside world, for instance by writing data to a network buffer, from an \gls{asp} program, while still preserving declarative semantics. The DLV-extension Acthex~\cite{acthex} is an example of a system with basic action support. The goal of this thesis is to implement action support in the lazy-grounding solver Alpha~\cite{alpha}, along with a basic modularization concept, thus enabling the development of arbitrary programs fully within \gls{asp}.
+
+\section{Actions and Modularization in ASP - Motivation}
+
+\begin{example}
+\label{ex:asp-binary-parsing}
+Listing \ref{lst:binaryparsing} shows a simple \gls{asp} program that parses binary strings and calculates the corresponding decimal numbers. It uses external atoms implemented in Java for basic stirng operations: The predicate $str\_x\_xs$ takes inspiration from list syntax in Haskell and splits off the first character of a given string, e.g $str\_x\_xs["abc"]("a", "bc")$, while $stdlib_string_length$ and $stdlib_string_matches_regex$ test the length of a string and whether it matches some regular expression, respectively. 
+\begin{lstlisting}[style=asp-code, caption=Parsing binary strings in ASP, label={lst:binaryparsing}]
+    encoding_scheme("1", "0", "[01]+").
+
+    % Helper - binstring_intm_decoded is the "internal" 
+    % predicate we're using to recursively add up the 
+    % bit values
+    binstring_intm_decoded(START_STR, START_STR, 0) :- 
+        binstr(START_STR). 
+    
+    % Handle the case where the current bit is set
+    binstring_intm_decoded(START_STR, CURR_STR, CURR_VALUE) :- 
+        binstring_intm_decoded(START_STR, LAST_STR, LAST_VALUE),
+        \&str_x_xs[LAST_STR](HIGH_CODE, CURR_STR),
+        \&stdlib_string_length[LAST_STR](LAST_LEN),
+        CURR_VALUE = LAST_VALUE + 2 ** (LAST_LEN - 1),
+        encoding_scheme(HIGH_CODE, _, REGEX),
+        &stdlib_string_matches_regex[START_STR, REGEX].
+    
+    % Handle the case where the current bit is not set
+    binstring_intm_decoded(START_STR, CURR_STR, CURR_VALUE) :- 
+        binstring_intm_decoded(START_STR, LAST_STR, LAST_VALUE),
+        \&str_x_xs[LAST_STR](LOW_CODE, CURR_STR),
+        \&stdlib_string_length[LAST_STR](LAST_LEN),
+        CURR_VALUE = LAST_VALUE,
+        encoding_scheme(_, LOW_CODE, REGEX),
+        \&stdlib_string_matches_regex[START_STR, REGEX].
+    
+    % These are the final values
+    bin_number(BIN, DEC) :- 
+        binstring_intm_decoded(BINSTR, "", DEC).    
+\end{lstlisting}
+\end{example}    
+
+The program from Example \ref{ex:asp-binary-parsing} is a (very simple) example of a parser component that may be easier to implement in a declarative language than some (typically imperative) general purpose language such as Java or Python. With most current \gls{asp} solvers, if one wanted to write such a declarative parsing component, reading of parser inputs (typically from some file or stream) and writing of parser output would have to be done in some other language. Especially in applications where input and output is relatively simple, but parsing and data transformation logic is more involved, it would streamline application development to be able to write the whole application in one language. Furthermore, to re-use code parts - for example some generic parser as exhibited in Example \ref{ex:asp-binary-parsing} - one would currently have to keep that code in a separate \gls{asp} file and manually avoid conflicts in naming of predicates without any language-level support for code encapsulation and modularization. These considerations lead to the goals laid out in Section \ref{sec:problem-statement}. Section \ref{sec:state-of-the-art} gives an overview of the state of the art on action support and approaches to program modularizations in current \gls{asp} solving systems. Section \ref{sec:thesis-roadmap} gives an outline of the rest of the thesis.
 
 \section{Problem Statement}
+\label{sec:problem-statement}
 
 \paragraph{Triggering actions from programs} \label{goals:actions}Most program flows follow a chain of events, each a consequence of its predecessor, e.g. "If there exists a file A, read it. If reading was successful, do something with the content. If the operation succeeds, write the result to file B". It is highly desirable to be able to write this kind of program in a declarative, logic-based language that can leverage the strengths of ASP for the "business logic" part. Specifically, the proposed action semantics should deliver
 \begin{itemize}
@@ -14,7 +108,8 @@
 \paragraph{Incremental Evaluation and Lazy Grounding} Experiences from existing systems for ASP application development such as ASAP~\cite{aspetris} or ACTHEX~\cite{acthex} show that, in order to achieve the evaluation performance necessary for use in real-world applications, ASP application code needs to be evaluated in an incremental fashion (rather than iteratively re-evaluating the whole program) whenever possible. The lazy-grounding architecture employed by ASP systems such as Alpha~\cite{alpha} offers an intuitive solution.
 
 \section{State of the Art}
-\todo{Just copied from proposal for now -- polish this!}
+\label{sec:state-of-the-art}
+\todo{Mostly copied from proposal for now -- refine a bit!}
 This work aims to blend action support with modularization in the context of lazy-grounding ASP solving - all three of these areas have seen a substantial amount of research in the past.
 
 Both Clingo~\cite{clingo4} and DLVHEX, through the ACTHEX~\cite{acthex} extension, offer their own flavours of support for triggering actions from programs. While Clingo does not directly support actions as a dedicated feature - and therefore offers no strictly enforced semantics for this - similar behavior can be achieved using external functions and the reactive solving features first introduced in oClingo~\cite{oclingo}. ACTHEX has thoroughly defined semantics for actions. In the ACTHEX model, answer set search and action execution are separate steps, where executability of actions is only determined after answer sets are calculated. While this gives users a high degree of flexibility in working with actions, it does not directly lend itself to the idea of a general purpose language where program behavior may be influenced by continuous two-way communication between a program and its environment.
@@ -24,3 +119,8 @@ Yet another powerful toolset for modular application development is provided by 
 The concept of \emph{lazy grounding}, i.e. interleaving of the - traditionally sequential - grounding and solving steps present in most prevalent ASP solvers, is relatively new. It has been spearheaded by the GASP~\cite{gasp} and ASPERIX~\cite{asperix-fw-chain} solvers which avoid calculating the full grounding of an input program by performing semi-naive bottom-up evaluation along the input's topologically sorted (non-ground) dependency graph. While efficient in terms of memory use, this approach cannot stand up to the solving performance of systems like DLV or Clingo which employ their knowledge of all possible ground rules to perform conflict-driven nogood learning (CDNL) as part of their solving algorithm to great effect. Alpha~\cite{alpha}, a more recent lazy-grounding solver, aims to bridge this gap in performance by employing CDNL-style solving techniques~\cite{lazy-cdnl} incrementally on partially ground program parts as part of its central ground-and-solve loop.
 
 Conceptually, the common ingredient linking the - on first glance not directly connected - areas of actions in ASP, program modularization, and lazy grounding is a need for detailed static program analysis prior to solving, be it to detect potentially invalid action sequences, calculate module instantiation orders, or for up-front evaluation of stratified program parts in a lazy-grounding context. In addition, both actions and modularization can greatly benefit from - or even depend on - incremental evaluation facilities of a solver for efficient operation. Since lazy-grounding by its very definition embodies an incremental evaluation approach, it seems only natural to incorporate actions and modularization into a lazy-grounding solver's input language in order to provide ASP programmers with a powerful tool for application development. Alpha, with its good solving performance compared to other lazy-grounding systems, support for a large part of the current ASP-Core2 language standard, and active development status, appears the natural choice as the technical backbone of this work.
+
+\section{Thesis Roadmap}
+\label{sec:thesis-roadmap}
+
+The core part of this work is the formal specification of the Evolog language in Chapter \ref{chap:evolog-language}, where we formally define Evolog's action semantics and modularization concept and make some observations on the relationship between Evolog programs versus regular \gls{asp} programs. Chapter \ref{chap:reference-implementation} gives and overview of how the formal specifications from Chapter \ref{chap:evolog-language} were implemented in the Alpha \gls{asp} solver, along with some examples of actual programs written in Evolog. Finally, Chapter \ref{chap:results} reflects on the experiences gained in using the implementation from Chapter \ref{chap:reference-implementation} for hands-on software development. We try to gauge the practical applicability of the implementation, highlight challenges yet to be adressed, and take a look at related work.
