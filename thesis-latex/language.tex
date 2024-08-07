@@ -265,7 +265,7 @@ In order to make input terms of a module atom available to the module implementa
 
 \begin{definition}[Module Input Translation]
 \label{def:module-input-translation}
-Given a module definition $M$ with input predicate $p$ of arity $k$ and implementation program $P_M$ and a ground module atom $a_m$ referencing $M$ with input terms $t_1,\ldots,t_k$, then the ASP program that is solved to interpret $a_m$ is obtained by adding a fact $p(t_1,\ldots,t_k)$ to $P_M$.
+Given a module definition $M$ with input predicate $p$ of arity $k$ and implementation program $P_M$ and a ground module atom $a_m$ referencing $M$ with input terms $t_1,\ldots,t_k$, then the ASP program that is solved to interpret $a_m$ is obtained by adding a fact $p(t_1,\ldots,t_k)$ to $P_M$. We denote this conversion of input terms to an atom as the \emph{"factification"} function $\mathit{fct(t_1,\ldots,t_k)}$.
 \end{definition}	
 
 Similar to module input translation, it is also necessary, to translate answer sets of an instantiated module program into output terms of the corresponding module atom. Every answer set gets converted into one set of terms, each - together with the inout terms - constituting one ground instance of the module atom. Predicates get converted into function symbols, and atoms become list items. Definition~\ref{def:asp-list-term} introduces the notion of a list term, which is used to represent lists of terms in ASP.
@@ -280,10 +280,38 @@ A list term is defined inductively as follows:
 In the above, $s_{lst}$ is a reserved function symbol denoting list terms.
 \end{definition}	
 
+% \begin{definition}[List Aggregation]
+% \label{def:asp-list-aggregation}
+% Given a list term $lst$, a term $e$, and literal $lit$, the atom 
+% \[
+% 	$lst$ = \#\mathit{list}\{ e : lit\}
+% \]
+% is called a \emph{list aggregation atom}. The atom is true if and only if $lst$ is a list term containing all terms $e$ for which $lit$ is true. 
+% \end{definition}
+
 \begin{definition}[Module Output Translation]
 \label{def:module-output-translation}
-BLABLABLA
+Given a module definition with output predicates $p_1,\ldots,p_n$, implementation program $P_M$ and an  answer sets $A$ of $P_M$, the output terms of a corresponding module atom are obtained by converting the answer set into a set of terms. For every output predicate specified in the module definition, a function term is created with the predicate symbol as function symbol and a single list term as argument. The list term is constructed by collecting all atoms of the respective predicate in $A$ into a list.
+We denote this conversion of an answer set as the \emph{"termification"} function $\mathit{trm(A)}$.
 \end{definition}
+
+Using the conversions from Definitions~\ref{def:module-input-translation} and~\ref{def:module-output-translation}, we can now define the interpretation function for module atoms.
+
+\begin{definition}[Module Atom Interpretation]
+\label{def:module-atom-interpretation}
+Given (non-ground) module atom $a_M$ with input terms $t_1,\ldots,t_k$ and output terms $t_1,\ldots,t_m$, a module definition $M$ with input predicate $p$ and output predicates $p_1,\ldots,p_m$, implementation program $P_M$, and ground substitution $\sigma$, the ground instance $grnd(a_M)$ obtained by applying $\sigma$ to $a_M$ is true iff $\{\exists A \in AS(P_M \cup fct(\sigma(t_1,\ldots,t_k))): trm(A) = \sigma(t_{1},\ldots,t_m) \}$, i.e. the module atom is true if and only if there exists an answer set of the module program together with the factified input terms that, when termified, equals the output terms of the module atom.
+\end{definition}	
+
+\begin{corollary}[Fixed Module Interpretation]
+\label{cor:fixed-module-interpretation}
+It follows from Definition~\ref{def:module-atom-interpretation} that module literals are \emph{fixed interpretation literals} according to Definition~\ref{def:prelims-asp-semantics-fixedinterpretation-literals}, where the interpretation function is the calculation described in Definition~\ref{def:module-atom-interpretation}. Since the implementation of a module does not change at runtime, the answer sets of the module program, i.e. the output terms of a corresponding module atom, only depend on the input terms supplied by a specific ground instance. The truth value of a given module literal $l$ is therefore independent of the rest of the program $l$ occurs in.
+\end{corollary}
+
+
+\begin{example}[Bin-packing Module]
+\end{example}	
+
+
 
 \section{Relationship between Evolog- and Stable Model Semantics}
 
