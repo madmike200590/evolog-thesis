@@ -307,9 +307,165 @@ Given (non-ground) module atom $a_M$ with input terms $t_1,\ldots,t_k$ and outpu
 It follows from Definition~\ref{def:module-atom-interpretation} that module literals are \emph{fixed interpretation literals} according to Definition~\ref{def:prelims-asp-semantics-fixedinterpretation-literals}, where the interpretation function is the calculation described in Definition~\ref{def:module-atom-interpretation}. Since the implementation of a module does not change at runtime, the answer sets of the module program, i.e. the output terms of a corresponding module atom, only depend on the input terms supplied by a specific ground instance. The truth value of a given module literal $l$ is therefore independent of the rest of the program $l$ occurs in.
 \end{corollary}
 
+Example~\ref{ex:bin-packing-module} demonstrates the use of modules to find solutions to an application of the bin-packing problem.
 
 \begin{example}[Bin-packing Module]
-\end{example}	
+\label{ex:bin-packing-module}
+Suppose a group of computer scientists $G = \{\mathit{bob}, \mathit{alice}, \mathit{dilbert}, \mathit{claire}, \mathit{cate}, \mathit{bill}, \mathit{carl}, \mathit{mary}\}$ plan to attend a conference in the neighboring town of Buzzwordville, which is 150 km distant. They have a number of cars at their disposal - Claire's camper van which seats 7 people, Dilbert's sedan seating 5, and Bob's roadster with 2 seats. Each car has different fuel efficiency, and the group wants to minimize the amount of fuel used.\\
+To complicate matters even more, there are a number of additional constraints:
+\begin{itemize}
+	\item For insurance reasons, each car must be driven by its owner.
+	\item Alice and Carl are a couple and must travel together.
+	\item Dilbert and Mary are not on speaking terms and must not travel together.
+\end{itemize}
+It is intuitively clear, that the problem at hand is a specialization of the bin-packing problem (with differently sized bins). We therefore introduce the Evolog module \texttt{bin\_packing(instance\/2) \=\> \{item\_packed\/2\}}, which calculates solutions to the bin-packing decision problem, i.e. assignments of items to bins, such that all items are packed, and no bin capacity is exceeded. Listing~\ref{lst:bin-packing-module} shows the module in question.
+\begin{lstlisting}[style=asp-code, label={lst:bin-packing-module}, caption={Bin-packing module}]
+#module bin_packing(instance/2 => {item_packed/2}) {
+	% Unpack input lists.
+	bin_element(E, TAIL) :- 
+		instance(lst(E, TAIL), _).
+	bin_element(E, TAIL) :- 
+		bin_element(_, lst(E, TAIL)).
+	bin(B, S) :- 
+		bin_element(bin(B, S), _).
+	
+	item_element(E, TAIL) :- 
+		instance(_, lst(E, TAIL)).
+	item_element(E, TAIL) :- 
+		item_element(_, lst(E, TAIL)).
+	item(I, S) :- 
+		item_element(item(I, S), _).
+	% For every item, guess an assignment to each bin.
+	{ item_packed(I, B) : bin(B, _) } :- item(I, _).
+	% An item may only be assigned to one bin at a time
+	:- item_packed(I, B1), 
+		item_packed(I, B2), 
+		B1 != B2.
+	% We must not exceed the capacity of any bin.
+	capacity_used(B, C) :- 
+		C = #sum{S : item(I, S), 
+		item_packed(I, B)}, bin(B, _).
+	:- capacity_used(B, C), 
+		C > S, 
+		bin(B, S).
+	% Every item must be packed.
+	item_packed_somewhere(I) :- 
+		item_packed(I, _).
+	:- item(I, _), 
+	not item_packed_somewhere(I).
+}	
+\end{lstlisting}
+
+Since the implementation from~\ref{lst:bin-packing-module} only solves the basic decision problem, we need additional code to represent the constraints in this specific variant of the problem and derive a cost value for each valid assignment. Listing~\ref{lst:bin-packing-constraints} shows a validation module that accepts a bin assignment and verifies it against the additional constraints.
+\begin{lstlisting}[style=asp-code, label={lst:bin-packing-constraints}, caption={Custom Constraints}]
+#module assignment_valid(assignment/1 => {assignment/1}) {
+	assignment_element(lst(E, TAIL), E, TAIL) :- 
+		assignment(lst(E, TAIL)).
+	assignment_element(ASSGN, E, TAIL) :- 
+		assignment_element(ASSGN, _, lst(E, TAIL)).
+	assigned(I, B, A) :- 
+		assignment_element(A, item_packed(I, B), _).
+	
+	owner_of(claire, van).
+	owner_of(bob, roadster).
+	owner_of(dilbert, sedan).
+	
+	% For insurance reasons, each car must be 
+	% driven by its owner, i.e. for each car, 
+	% if it is used, the owner must be assigned to it.
+	car_in_use(C) :- assigned(_, C, A).
+	:- car_in_use(C), owner_of(P, C), 
+		assigned(P, C2, A), C2 != C.
+	
+	% Alice and Carl are a couple and 
+	% must travel together.
+	:- assigned(alice, C1, A), 
+		assigned(carl, C2, A), C1 != C2.
+	
+	% Dilbert and Mary are not on speaking 
+	% terms and must not travel together.
+	:- assigned(dilbert, C, A), assigned(mary, C, A).
+}	
+\end{lstlisting}	
+Finally, we calculate the cost of driving one kilometer for each assignment, and collect all assignments with the lowest possible cost value using predicate \texttt{optimal\_cost\_assignment/2}.
+Listing~\ref{lst:bin-packing-main} shows the full program, excluding the module definitions given in Listings~\ref{lst:bin-packing-module} and~\ref{lst:bin-packing-constraints}.
+\begin{lstlisting}[style=asp-code, label={lst:bin-packing-main}, caption={Main Program}]
+person(bob).
+person(alice).
+person(dilbert).
+person(claire).
+person(cate).
+person(bill).
+person(carl).
+person(mary).
+
+car(van, 7).
+car(roadster, 2).
+car(sedan, 5).
+
+distance(150).
+cost_per_km(van, 5).
+cost_per_km(roadster, 8).
+cost_per_km(sedan, 3).
+
+owner_of(claire, van).
+owner_of(bob, roadster).
+owner_of(dilbert, sedan).
+
+% Create input instance for bin-packing module
+instance(BINS, ITEMS) :- 
+	BINS = #list{bin(C, S) : car(C, S)}, 
+	ITEMS = #list{item(P, 1) : person(P)}.
+
+% Calculate assignments and unfold list terms
+assignment_validation_output(ASSGN_VALID) :- 
+	instance(BINS, ITEMS), 
+	#bin_packing[BINS, ITEMS](ASSGN), 
+	#assignment_vali[ASSGN](ASSGN_VALID).
+assignment(A) :- 
+	assignment_validation_output(
+		lst(assignment(A), lst_empty)).
+assignment_element(lst(E, TAIL), E, TAIL) :- 
+	assignment(lst(E, TAIL)).
+assignment_element(ASSGN, E, TAIL) :- 
+	assignment_element(ASSGN, _, lst(E, TAIL)).
+assigned(I, B, A) :- 
+	assignment_element(A, item_packed(I, B), _).
+
+% Calculate the total travelling cost for each assignment
+assignment_cost_per_km(A, C) :- 
+	C = #sum{ CKM : cost_per_km(CAR, CKM), 
+	assigned(_, CAR, A) }, 
+	assignment(A).
+
+% Find the minimum cost per km over all eligible 
+% assignments and assignments with that cost
+optimal_cost_per_km(C) :- 
+	C = #min{CKM : assignment_cost_per_km(_, CKM)}.
+optimal_cost_assignment(C, A) :- 
+	optimal_cost_per_km(C), assignment_cost_per_km(A, C).	
+\end{lstlisting}
+\end{example}
+
+The program from Listing~\ref{lst:bin-packing-main} has a single answer set, with 16 instances of \texttt{optimal\_cost\_assignment/2}, i.e. 16 possible assignments of people to cars which minimize the cost of a driven kilometer (Note that we use the notation $[a, b, c]$ for a list term holding terms $a, b, c$, and write terms of form $item_packed(PERSON, CAR)$ as tuples $(PERSON, CAR)$, for brevity):
+\begin{itemize}
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, sedan), (bob, sedan), (carl, sedan),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, sedan), (bob, sedan), (carl, sedan),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, sedan), (bob, van), (carl, sedan),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, sedan), (bob, van), (carl, sedan),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, van), (bob, sedan), (carl, sedan),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, van), (bob, sedan), (carl, sedan),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, van), (bob, van), (carl, sedan),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, van), (bob, van), (carl, sedan),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, sedan), (bob, sedan), (carl, van),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, sedan), (bob, sedan), (carl, van),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, sedan), (bob, van), (carl, van),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, sedan), (bob, van), (carl, van),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, van), (bob, sedan), (carl, van),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, van), (bob, sedan), (carl, van),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, van), (bob, van), (carl, van),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
+	\item $optimal\_cost\_assignment(8, [(alice, van), (bill, van), (bob, van), (carl, van),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$
+\end{itemize}
 
 
 

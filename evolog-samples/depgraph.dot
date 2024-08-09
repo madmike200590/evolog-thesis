@@ -1,0 +1,10 @@
+digraph dependencyGraph
+{
+splines=false;
+ranksep=4.0;
+n0 [label = "color/1"]
+n1 [label = "_Enumeration/3"]
+n2 [label = "numbered_color/2"]
+n0 -> n2 [xlabel="+" labeldistance=0.1]
+n1 -> n2 [xlabel="+" labeldistance=0.1]
+}

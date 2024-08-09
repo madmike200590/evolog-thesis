@@ -1,0 +1,17 @@
+digraph componentGraph
+{
+splines=false;
+ranksep=4.0;
+label = <
+	<table border = '1' cellborder = '0'>
+		<tr><td>Component Id</td><td>0</td><td>1</td><td>2</td></tr>
+		<tr><td>Predicates</td><td>_Enumeration/3<br/></td><td>color/1<br/></td><td>numbered_color/2<br/></td></tr>
+	</table>
+>
+
+n0 [label = C0]
+n1 [label = C1]
+n2 [label = C2]
+n0 -> n2 [xlabel="+" labeldistance=0.1]
+n1 -> n2 [xlabel="+" labeldistance=0.1]
+}

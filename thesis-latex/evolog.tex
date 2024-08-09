@@ -22,6 +22,7 @@
 \usepackage[usenames,dvipsnames,table]{xcolor} % Allows the definition and use of colors. This package has to be included before tikz.
 \usepackage{nag}       % Issues warnings when best practices in writing LaTeX documents are violated.
 \usepackage{todonotes} % Provides tooltip-like todo notes.
+\usepackage{color}
 \usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
 
@@ -54,6 +55,12 @@
 
 \newtheorem{corollary}{Corollary}[section]
 
+\definecolor{pblue}{rgb}{0.13,0.13,1}
+\definecolor{pgreen}{rgb}{0,0.5,0}
+\definecolor{pred}{rgb}{0.9,0,0}
+\definecolor{pgrey}{rgb}{0.46,0.45,0.48}
+\definecolor{ppurple}{rgb}{0.49,0.18,0.52}
+
 \lstdefinestyle{code}{
 	basicstyle=\ttfamily
 }
@@ -63,6 +70,20 @@
 	frame=single,
 	numbers=left,
     stepnumber=1
+}
+
+\lstdefinestyle{java}{language=Java,
+  showspaces=false,
+  showtabs=false,
+  breaklines=true,
+  showstringspaces=false,
+  breakatwhitespace=true,
+  commentstyle=\color{pgreen},
+  keywordstyle=\color{pblue},
+  stringstyle=\color{pred},
+  basicstyle=\ttfamily,
+  moredelim=[il][\textcolor{ppurple}]{$$},
+  moredelim=[is][\textcolor{ppurple}]{\%\%}{\%\%}
 }
 
 % Set persons with 4 arguments:
@@ -164,10 +185,14 @@
 \input{preliminaries.tex}
 
 \chapter{The Evolog Language}
+\label{chap:language}
 \input{language.tex}
 
 \chapter{Evolog Reference Implementation}
 \input{implementation.tex}
+
+\appendix
+\input{appendix/examples.tex}
 
 \backmatter
 

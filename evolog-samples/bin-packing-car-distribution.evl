@@ -1,0 +1,62 @@
+person(bob).
+person(alice).
+person(dilbert).
+person(claire).
+person(cate).
+person(bill).
+person(carl).
+person(mary).
+
+car(van, 7).
+car(roadster, 2).
+car(sedan, 5).
+
+distance(150).
+cost_per_km(van, 5).
+cost_per_km(roadster, 8).
+cost_per_km(sedan, 3).
+
+owner_of(claire, van).
+owner_of(bob, roadster).
+owner_of(dilbert, sedan).
+
+% Create input instance for bin-packing module
+instance(BINS, ITEMS) :- BINS = #list{bin(C, S) : car(C, S)}, ITEMS = #list{item(P, 1) : person(P)}.
+
+% Calculate assignments and unfold list terms
+assignment_validation_output(ASSGN_VALID) :- instance(BINS, ITEMS), #bin_packing[BINS, ITEMS](ASSGN), #assignment_valid[ASSGN](ASSGN_VALID).
+assignment(A) :- assignment_validation_output(lst(assignment(A), lst_empty)).
+assignment_element(lst(E, TAIL), E, TAIL) :- assignment(lst(E, TAIL)).
+assignment_element(ASSGN, E, TAIL) :- assignment_element(ASSGN, _, lst(E, TAIL)).
+assigned(I, B, A) :- assignment_element(A, item_packed(I, B), _).
+
+% Calculate the total travelling cost for each assignment
+assignment_cost_per_km(A, C) :- C = #sum{ CKM : cost_per_km(CAR, CKM), assigned(_, CAR, A)}, assignment(A).
+
+% Find the minimum cost per km over all eligible assignments and assignments with that cost
+optimal_cost_per_km(C) :- C = #min{CKM : assignment_cost_per_km(_, CKM)}.
+optimal_cost_assignment(C, A) :- optimal_cost_per_km(C), assignment_cost_per_km(A, C).
+
+
+%% Helper module that validates an assignment. If the assignment is valid, 
+%% it constitutes the module output, otherwise, no output is returned
+#module assignment_valid(assignment/1 => {assignment/1}) {
+	assignment_element(lst(E, TAIL), E, TAIL) :- assignment(lst(E, TAIL)).
+	assignment_element(ASSGN, E, TAIL) :- assignment_element(ASSGN, _, lst(E, TAIL)).
+	assigned(I, B, A) :- assignment_element(A, item_packed(I, B), _).
+	
+	owner_of(claire, van).
+	owner_of(bob, roadster).
+	owner_of(dilbert, sedan).
+	
+	% For insurance reasons, each car must be driven by its owner,
+	% i.e. for each car, if it is used, the owner must be assinged to it.
+	car_in_use(C) :- assigned(_, C, A).
+	:- car_in_use(C), owner_of(P, C), assigned(P, C2, A), C2 != C.
+	
+	% Alice and Carl are a couple and must travel together.
+	:- assigned(alice, C1, A), assigned(carl, C2, A), C1 != C2.
+	
+	% Dilbert and Mary are not on speaking terms and must not travel together.
+	:- assigned(dilbert, C, A), assigned(mary, C, A).
+}
