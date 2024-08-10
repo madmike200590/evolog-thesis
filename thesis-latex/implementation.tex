@@ -58,6 +58,56 @@ Given an enumeration atom $a_e$ with terms $t_{enum}, t_{value}$ and $t_{ord}$ a
     \item If a mapping for $\sigma t_{enum}$ and $\sigma t_{value}$ exists, read the associated ordinal $o$, add it to $\sigma$ and return the extended substitution.
 \end{itemize}    
 From a semantics point of view, enumeration literals can intuitively be seen as "lazily assigned fixed-interpretation literals"  (see Definition~\ref{def:prelims-asp-semantics-fixedinterpretation-literals}) in the way that every enumeration atom is true for exactly the ground substitution generated upon grounding it for the first time.
+\todo{show the answer set}
 
 \subsubsection{Aggregate Atoms}
 \label{subsubsec:alpha-arch-aggregate-rewriting}
+
+Alpha supports \emph{Aggregate Listerals} as defined in~\cite[p.~3]{asp-core2} by rewriting programs containing aggregate literals into sematically equivalent aggregate-free programs. A detailed description of Alpha's implementation of Aggregate Rewriting is available at~\cite{alpha-aggregate-support}, but would exceed the scope of this Thesis. We will therefore focus on general concepts applying to all aggregate functions that are rewritten, and outline the rewriting procedure for aggregate literals where the minimum or maximum over a set of terms is calculated, which is the starting point for compilation of the newly introduced $\#list$ aggregate described in Section~\ref{def:list-aggregation}.
+
+In the context of this section, we consider literals of form $X \odot \#\mathit{func}\{t_1,\ldots,t_n : l_1,\ldots,l_m\}$, where $X$ is a term, $\odot \in \{=,\leq\}$ and $\mathit{func} \in \{\mathit{min},\mathit{max}\}$, $t_1,\ldots,t_n$ are terms and $l_1,\ldots,l_m$ literals, respectively.
+
+\begin{definition}[Aggregate Terms, Elements, Local and Global Variables, Dependencies]
+In the following, we use the notation $var(l_1,\ldots,l_n)$ for literals $l_1,\ldots,l_n$ to denote the set of variable terms occuring in said literals. Consider a rule $r$ containing aggregate literal $l_{agg} =  X \odot \#\mathit{func}\{t_1,\ldots,t_n : l_1,\ldots,l_m\}$:
+\[
+    H \leftarrow l_{agg}, b_1,\ldots,b_k.
+\]
+Then, the set $var(l_1,\ldots,l_n) \cap var(b_1,\ldots, b_k)$ is called \emph{global variables} of $l_{agg}$, denoted $glob(l_{agg})$. Roughly speaking, global variables of an aggregate literal are all variables occurring within the aggregate literal as well as other body literals of $r$. Given a set $V = glob(l_{agg})$, the set of literals $dep(l_{agg})$ is the mnimal set of literals that, given a substitution $\sigma$, must be ground after application of $\sigma$, in order for $\sigma$ to also ground $l_{agg} \cup dep(l_{agg})$.
+Intuitively, global variables of an aggregate literals are all variables for which Alpha's lazy grounding component needs a ground value, in order to be able to calculate a ground instance of the aggregate literal itself. Dependencies of an aggregate literal $l_{agg}$are all literals of which the grounder needs ground instances in order to calculate a grounding of all global variables of $l_{agg}$.
+\end{definition} 
+
+In order to translate a rule $r$ containing an aggregate literal $l_{agg} = X \odot \#\mathit{func}\{t_1,\ldots,t_n : l_1,\ldots,l_m\}$ with global variables $glob(l_{agg})$, dependencies $dep(l_{agg})$ into a semantically equivalent set of rules, the following steps are taken:
+\begin{itemize}
+    \item Generate a unique identifier $id(l_{agg})$ (typically some integer) for $l_{agg}$
+    \item Construct rule $r´$ in which $l_{agg}$ is replaced by a literal $aggregate\_result(id(l\_{agg})\_args, X)$
+    \item Generate an \emph{element rule} which derives one atom per element that is being aggregated over. Given the aggregate element $t_1,\ldots,t_n : l_1,\ldots,l_m$, the corresponding element rule is $element(t_1,\ldots,t_n) \leftarrow l_1,\ldots,l_m, dep(l_{agg})$, i. e. the element rule body consists of all literals of the aggregate element together with all dependencies of the aggregate literal.
+    \item Generate a set of \emph{encoding rules} that encode the actual aggregate function over all elements as derived by the element rule and derives instances of the $aggregate\_result/2$ predicate.
+\end{itemize}     
+
+Example~\ref{ex:aggregate-rewriting-min} demonstrates how an aggregate literal for the minimum function gets rewritten by Alpha.
+
+\begin{example}
+\label{ex:aggregate-rewriting-min}
+Consider the program from Listing~\ref{lst:aggregate-rewriting-min-source}. Based on some facts of type $employee/3$ which assert that an employee works in some department and earns a given salary, we use a $\#min$-aggregate to find the employee with the lowest salary in each department.
+\begin{lstlisting}[style=asp-code, label={lst:aggregate-rewriting-min-source}, caption={ASP program to find the worst paid employee per department.}]
+    employee(bob, sales, 2000).
+    employee(alice, development, 6000).
+    employee(dilbert, development, 4500).
+    employee(jane, sales, 3500).
+    employee(carl, controlling, 5000).
+    employee(bill, controlling, 4000).
+    employee(claire, development, 5000).
+    employee(mary, sales, 3000).
+    employee(joe, controlling, 5500).
+    
+    department(DEP) :- employee(_, DEP, _).
+    
+    min_salary(SAL, DEP) :- 
+        SAL = #min{S : employee(_, DEP, S)}, 
+        department(DEP).
+    worst_paid(DEP, EMP) :- 
+        min_salary(S, DEP), employee(EMP, DEP, S).    
+\end{lstlisting}    
+\end{example}    
+
+
