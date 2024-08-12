@@ -447,7 +447,7 @@ optimal_cost_assignment(C, A) :-
 \end{lstlisting}
 \end{example}
 
-The program from Listing~\ref{lst:bin-packing-main} has a single answer set, with 16 instances of \texttt{optimal\_cost\_assignment/2}, i.e. 16 possible assignments of people to cars which minimize the cost of a driven kilometer (Note that we use the notation $[a, b, c]$ for a list term holding terms $a, b, c$, and write terms of form $item_packed(PERSON, CAR)$ as tuples $(PERSON, CAR)$, for brevity):
+The program from Listing~\ref{lst:bin-packing-main} has a single answer set, with 16 instances of \texttt{optimal\_cost\_assignment/2}, i.e. 16 possible assignments of people to cars which minimize the cost of a driven kilometer (Note that we use the notation $[a, b, c]$ for a list term holding terms $a, b, c$, and write terms of form $item\_packed(PERSON, CAR)$ as tuples $(PERSON, CAR)$, for brevity):
 \begin{itemize}
 	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, sedan), (bob, sedan), (carl, sedan),\\(cate, sedan), (claire, van), (dilbert, sedan), (mary, van)])$
 	\item $optimal\_cost\_assignment(8, [(alice, sedan), (bill, sedan), (bob, sedan), (carl, sedan),\\(cate, van), (claire, van), (dilbert, sedan), (mary, van)])$

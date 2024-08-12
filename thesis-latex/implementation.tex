@@ -80,7 +80,7 @@ In order to translate a rule $r$ containing an aggregate literal $l_{agg} = X \o
 \begin{itemize}
     \item Generate a unique identifier $id(l_{agg})$ (typically some integer) for $l_{agg}$
     \item Construct rule $r´$ in which $l_{agg}$ is replaced by a literal $aggregate\_result(id(l\_{agg})\_args, X)$
-    \item Generate an \emph{element rule} which derives one atom per element that is being aggregated over. Given the aggregate element $t_1,\ldots,t_n : l_1,\ldots,l_m$, the corresponding element rule is $element(t_1,\ldots,t_n) \leftarrow l_1,\ldots,l_m, dep(l_{agg})$, i. e. the element rule body consists of all literals of the aggregate element together with all dependencies of the aggregate literal.
+    \item Generate an \emph{element rule} which derives one atom per element that is being aggregated over. Given the aggregate element $t_1,\ldots,t_n : l_1,\ldots,l_m$, the corresponding element rule is $id(l_{agg})\_element\_tuple(id(l\_{agg})\_args, t_1,\ldots,t_n) \leftarrow l_1,\ldots,l_m, dep(l_{agg})$, i. e. the element rule body consists of all literals of the aggregate element together with all dependencies of the aggregate literal.
     \item Generate a set of \emph{encoding rules} that encode the actual aggregate function over all elements as derived by the element rule and derives instances of the $aggregate\_result/2$ predicate.
 \end{itemize}     
 
@@ -90,24 +90,268 @@ Example~\ref{ex:aggregate-rewriting-min} demonstrates how an aggregate literal f
 \label{ex:aggregate-rewriting-min}
 Consider the program from Listing~\ref{lst:aggregate-rewriting-min-source}. Based on some facts of type $employee/3$ which assert that an employee works in some department and earns a given salary, we use a $\#min$-aggregate to find the employee with the lowest salary in each department.
 \begin{lstlisting}[style=asp-code, label={lst:aggregate-rewriting-min-source}, caption={ASP program to find the worst paid employee per department.}]
-    employee(bob, sales, 2000).
-    employee(alice, development, 6000).
-    employee(dilbert, development, 4500).
-    employee(jane, sales, 3500).
-    employee(carl, controlling, 5000).
-    employee(bill, controlling, 4000).
-    employee(claire, development, 5000).
-    employee(mary, sales, 3000).
-    employee(joe, controlling, 5500).
+employee(bob, sales, 2000).
+employee(alice, development, 6000).
+employee(dilbert, development, 4500).
+employee(jane, sales, 3500).
+employee(carl, controlling, 5000).
+employee(bill, controlling, 4000).
+employee(claire, development, 5000).
+employee(mary, sales, 3000).
+employee(joe, controlling, 5500).
     
-    department(DEP) :- employee(_, DEP, _).
+department(DEP) :- employee(_, DEP, _).
     
-    min_salary(SAL, DEP) :- 
-        SAL = #min{S : employee(_, DEP, S)}, 
-        department(DEP).
-    worst_paid(DEP, EMP) :- 
-        min_salary(S, DEP), employee(EMP, DEP, S).    
-\end{lstlisting}    
+min_salary(SAL, DEP) :- 
+    SAL = #min{S : employee(_, DEP, S)}, 
+    department(DEP).
+worst_paid(DEP, EMP) :- 
+    min_salary(S, DEP), employee(EMP, DEP, S).    
+\end{lstlisting} 
+Listing~\ref{lst:aggregate-rewriting-min-rewritten} shows a rewritten version of the original program.
+\begin{lstlisting}[style=asp-code, label={lst:aggregate-rewriting-min-rewritten}, caption={The program from Listing~\ref{lst:aggregate-rewriting-min-source} in its rewritten version.}]
+employee(bob, sales, 2000).
+employee(alice, development, 6000).
+employee(dilbert, development, 4500).
+employee(jane, sales, 3500).
+employee(carl, controlling, 5000).
+employee(bill, controlling, 4000).
+employee(claire, development, 5000).
+employee(mary, sales, 3000).
+employee(joe, controlling, 5500).
+
+department(DEP) :- employee(_0, DEP, _1).
+worst_paid(DEP, EMP) :- 
+    min_salary(S, DEP), employee(EMP, DEP, S).
+min_salary(SAL, DEP) :- 
+    min_1_result(min_1_args(DEP), SAL), department(DEP).
+min_1_element_tuple_less_than(ARGS, LESS, THAN) :- 
+    min_1_element_tuple(ARGS, LESS), 
+    min_1_element_tuple(ARGS, THAN), LESS <THAN.
+min_1_element_tuple_has_smaller(ARGS, TPL) :- 
+    min_1_element_tuple_less_than(ARGS, _3, TPL).
+min_1_min_element_tuple(ARGS, MIN) :- 
+    min_1_element_tuple(ARGS, MIN), 
+    not min_1_element_tuple_has_smaller(ARGS, MIN).
+min_1_result(ARGS, M) :- 
+    min_1_min_element_tuple(ARGS, M).
+min_1_element_tuple(min_1_args(DEP), S) :- 
+    employee(_2, DEP, S), department(DEP).
+\end{lstlisting}   
+In the rewritten version, the rule in line 14, which derives $\mathit{min\_salary/2}$ has the aggregate literal replaced with a regular literal, instances for which are derived by newly added rules that together encode the aggregate function. 
+The individual elements over which a minimum is being calculated are derived as instances of the \texttt{min\_1\_element\_tuple/2} predicate using the rule in line 26. In order to find the minimal instance of \texttt{min\_1\_element\_tuple/2}, we first establish a "less than"-relation (i.e. a partial order based on numeric comparison of the second term of the element tuple instances) using the rule in line 16. The minimum element is then the one for which we cannot find a "smaller" element. This element is derived by the rule in line 21.
+The single answer set of the rewritten program (filtered for instances of \texttt{worst\_paid/2}) is $A =\{worst\_paid(controlling,bill),~worst\_paid(development,dilbert),~worst\_paid(sales,bob)\}$.
 \end{example}    
 
+\subsection{Evaluation}
 
+TODO: general outpline of evaluation with heavy focus on stratified evaluation, ground/solve loop is not of interest in this context, point to appropriate resources for that!
+
+\section{Implementing the Evolog extension in Alpha}
+
+TODO Architecture Diagram with added parts highlighted in color
+
+\subsection{Implementing Action Support}
+
+TODO
+
+\subsection{Implementing Program Modularization}
+
+Since, formally, module atoms are just a special type of external atoms, implementing support for Modularization as described in~\ref{sec:evolog-modules} mainly has to deal with how to parse module definitions and how to construct external atoms according to Alpha's internal representation from a set of parsed module definition for atoms which reference these definitions. While not strictly necessary, this section also discusses the newly added \texttt{\#list\{...\}} aggregate, which has been added as syntactic sugar for combining a set of terms into a single list term according to Definition~\ref{def:asp-list-term}.
+
+\subsubsection{List aggregation}
+
+External atoms are defined as having input- and output-\emph{terms} (but not multisets of terms). At the same time, it is self-evident that - in most cases - one has to pass multiple input facts to a module program - for instance, a graph has sets of edges and vertices, all of which need to be passed to a module dealing with graph problems. This is where lists come in. By establishing the convention that the \emph{single} input fact to a module program always has one or more \emph{list terms} as arguements, we are able to encode all information that needs to be passed to the module into a single atom, while still staying true to external atom semantics as supported by Alpha.
+The parctical problem arising from this is that constructing list terms in ASP is rather cumbersome. One has to write rules to
+\begin{itemize}
+    \item specify \emph{what} goes into the list, i.e. one or more rules encoding eligible \emph{list elements},
+    \item specify \emph{in what sequence} elements go into the list, i.e. rules which establish a total order between list elements,
+    \item actually construct the list, i.e. starting from the end, recursively construct the term holding all list elements.
+\end{itemize}
+Listing~\ref{lst:graph-list-aggregation} shows an example of this approach, where a list term is constructed for vertices and edges of a graph, respectively.
+\begin{lstlisting}[style=asp-code, label={lst:graph-list-aggregation}, caption={ASP code to create vertex and edge lists for a given graph.}]
+%% pack vertices into a vertex list
+vertex_element(E) :- vertex(E).
+% First, establish ordering of elements
+vertex_element_less(N, K) :- 
+    vertex_element(N), vertex_element(K), N < K.
+vertex_element_not_predecessor(N, K) :- 
+    vertex_element_less(N, I), vertex_element_less(I, K).
+vertex_element_predecessor(N, K) :- 
+    vertex_element_less(N, K), 
+    not vertex_element_not_predecessor(N, K).
+vertex_element_has_predecessor(N) :- 
+    vertex_element_predecessor(_, N).
+% Now build the list as a recursively nested function term
+vertex_lst_element(IDX, list(N, list_empty)) :- 
+    vertex_element(N), 
+    not vertex_element_has_predecessor(N), 
+    IDX = 0.
+vertex_lst_element(IDX, list(N, list(K, TAIL))) :- 
+    vertex_element(N), 
+    vertex_element_predecessor(K, N), 
+    vertex_lst_elemen(PREV_IDX, list(K, TAIL)), 
+    IDX = PREV_IDX + 1.
+has_next_vertex_element(IDX) :- 
+    vertex_lst_element(IDX, _), 
+    NEXT_IDX = IDX + 1, 
+    vertex_lst_element(NEXT_IDX, _).
+vertex_lst(LIST) :- 
+    vertex_lst_element(IDX, LIST), 
+    not has_next_vertex_element(IDX).
+
+%% pack edges into an edge list
+edge_element(edge(V1, V2)) :- edge(V1, V2).
+% First, establish ordering of elements
+edge_element_less(N, K) :- 
+    edge_element(N), edge_element(K), N < K.
+edge_element_not_predecessor(N, K) :- 
+    edge_element_less(N, I), edge_element_less(I, K).
+edge_element_predecessor(N, K) :- 
+    edge_element_less(N, K), 
+    not edge_element_not_predecessor(N, K).
+edge_element_has_predecessor(N) :- 
+    edge_element_predecessor(_, N).
+% Now build the list as a recursively nested function term
+edge_lst_element(IDX, list(N, list_empty)) :- 
+    edge_element(N), 
+    not edge_element_has_predecessor(N), 
+    IDX = 0.
+edge_lst_element(IDX, list(N, list(K, TAIL))) :- 
+    edge_element(N), 
+    edge_element_predecessor(K, N), 
+    edge_lst_element(PREV_IDX,list(K, TAIL)), 
+    IDX = PREV_IDX + 1.
+has_next_edge_element(IDX) :- 
+    edge_lst_element(IDX, _), 
+    NEXT_IDX = IDX + 1, 
+    edge_lst_element(NEXT_IDX, _).
+edge_lst(LIST) :- 
+    edge_lst_element(IDX, LIST), 
+    not has_next_edge_element(IDX).
+\end{lstlisting} 
+Given facts $vertex(a),~vertex(b),~vertex(c),~edge(a,b),~edge(b,c),~edge(c,a)$, we get the following answer set (filtered for predicates $edge\_lst/1$ and $vertex\_lst/1$) $A = \{edge\_lst(list(edge(c,a), list(edge(b,c), list(edge(a,b), list\_empty)))), vertex\_lst(list(c, list(b,list(a,list\_empty))))\}$
+
+Considering Listing~\ref{lst:graph-list-aggregation}, it is easy to see that construction of a list term looks always the same, regardless of the actual elements going into the list. Furthermore, we can observe a distinct similarity to the code generated to rewrite a $\#min$-aggregate outlined in Section~\ref{subsubsec:alpha-arch-aggregate-rewriting}. In the following, we define a new aggregate function, $\#list$, which Alpha rewrites into a generalized version of the list encoding from Listing~\ref{lst:graph-list-aggregation}.
+
+\begin{definition}[List Aggregate]
+\label{def:list-aggregate}    
+A \emph{list aggregate} is an aggregate atom of the following form
+\[
+    t_{res} = \#list\{ t_{elem} : l_{1},\ldots,l_{n}\}
+\]
+where $t_{res}$ and $t_{elem}$ are terms called result- and element-term, respectively, and $l_{1},\ldots,l_{n}$ are literals.
+\end{definition}    
+Definition~\ref{def:list-aggregate} formally defines the syntax of a list aggregate. Note that - in contrast to genral aggregate atoms, only equality comparisons, i.e. $X = \#list\{...\}$, are allowed, and we permit only a single element term rather than arbitrary tuples. Listing~\ref{lst:graph-list-aggregation-lstagg} shows a much shorter version of the program from Listing~\ref{lst:graph-list-aggregation}, in which list aggregation is used instead of step-by-step construction of list terms.
+\begin{lstlisting}[style=asp-code, label={lst:graph-list-aggregation-lstagg}, caption={Creating vertex- and edge-lists using list aggregates.}]
+%% pack vertices into a vertex list
+vertex_lst(LIST) :- 
+    LIST = #list{V : vertex(V)}.
+    
+%% pack edges into an edge list
+edge_lst(LIST) :- 
+    LIST = #list{edge(V1, V2) : edge(V1, V2)}.    
+\end{lstlisting}
+
+In order to compile list-aggregates into their semantically equivalent aggregate-free versions, the following handling of list aggregates has been added to ALpha's aggregate rewriting logic:
+\begin{itemize}
+    \item Substitute list aggregates in rules according to the general rules for aggregates outlined in~\ref{subsubsec:alpha-arch-aggregate-rewriting}.
+    \item Element rules for list aggregates get constructed the same as for other aggregates, but permit only one element term rather than a tuple.
+    \item In order to encode list construction, rules are added to construct a total order over all elements that should go into the list.
+    \item List construction starts with the last element, which is defined to be the maximum element of the constructed order, successor elements are rcursively added to the front of the list.
+    \item The list is complete when a list has been constructed, such that there is no element smaller than the current head of the list.
+\end{itemize}
+Listing~\ref{lst:graph-list-aggregation-rewritten} shows the rewritten version of the program form Listing~\ref{lst:graph-list-aggregation-lstagg} (Note that in the hand-crafted example from Listing~\ref{lst:graph-list-aggregation}, lists are constructed in descending element order, rather than ascending as is the case for the aggregate-based version).
+\begin{lstlisting}[style=asp-code, label={lst:graph-list-aggregation-rewritten}, caption={Rewritten list aggregates from Listing~\ref{lst:graph-list-aggregation-lstagg}}]  
+vertex_lst(LIST) :- 
+    list_1_result(list_1_no_args, LIST).
+edge_lst(LIST) :- 
+    list_2_result(list_2_no_args, LIST).
+list_1_element_greater(ARGS, N, K) :- 
+    list_1_element(ARGS, N), 
+    list_1_element(ARGS, K), 
+    N > K.
+list_1_element_not_successor(ARGS, N, K) :- 
+    list_1_element_greater(ARGS, N, I), 
+    list_1_element_greater(ARGS, I, K).
+list_1_element_successor(ARGS, N, K) :- 
+    list_1_element_greater(ARGS, N, K), 
+    not list_1_element_not_successor(ARGS, N, K).
+list_1_element_has_successor(ARGS, N) :- 
+    list_1_element_successor(ARGS, _0, N).
+list_1_lst_element(ARGS, IDX, lst(N, lst_empty)) :- 
+    list_1_element(ARGS, N), 
+    IDX = 0,
+    not list_1_element_has_successor(ARGS, N).
+list_1_lst_element(ARGS, IDX, lst(N, lst(K, TAIL))) :- 
+    list_1_element(ARGS, N),
+     list_1_element_successor(ARGS, K, N), 
+     list_1_lst_element(ARGS, PREV_IDX, lst(K, TAIL)), 
+     IDX = PREV_IDX + 1.
+list_1_has_next_element(ARGS, IDX) :- 
+    list_1_lst_element(ARGS, IDX, _1), 
+    NEXT_IDX = IDX + 1, 
+    list_1_lst_element(ARGS, NEXT_IDX, _2).
+list_1_result(ARGS, LIST) :- 
+    list_1_lst_element(ARGS, IDX, LIST), 
+    not list_1_has_next_element(ARGS, IDX).
+list_1_element(list_1_no_args, V) :- 
+    vertex(V).
+list_2_element_greater(ARGS, N, K) :- 
+    list_2_element(ARGS, N), 
+    list_2_element(ARGS, K), 
+    N > K.
+list_2_element_not_successor(ARGS, N, K) :- 
+    list_2_element_greater(ARGS, N, I), 
+    list_2_element_greater(ARGS, I, K).
+list_2_element_successor(ARGS, N, K) :- 
+    list_2_element_greater(ARGS, N, K), 
+    not list_2_element_not_successor(ARGS, N, K).
+list_2_element_has_successor(ARGS, N) :- 
+    list_2_element_successor(ARGS, _3, N).
+list_2_lst_element(ARGS, IDX, lst(N, lst_empty)) :- 
+    list_2_element(ARGS, N), 
+    IDX = 0, 
+    not list_2_element_has_successor(ARGS, N).
+list_2_lst_element(ARGS, IDX, lst(N, lst(K, TAIL))) :- 
+    list_2_element(ARGS, N), 
+    list_2_element_successor(ARGS, K, N), 
+    list_2_lst_element(ARGS, PREV_IDX, lst(K, TAIL)), 
+    IDX = PREV_IDX + 1.
+list_2_has_next_element(ARGS, IDX) :- 
+    list_2_lst_element(ARGS, IDX, _4), 
+    NEXT_IDX = IDX + 1, 
+    list_2_lst_element(ARGS, NEXT_IDX, _5).
+list_2_result(ARGS, LIST) :- 
+    list_2_lst_element(ARGS, IDX, LIST), 
+    not list_2_has_next_element(ARGS, IDX).
+list_2_element(list_2_no_args, edge(V1, V2)) :- 
+    edge(V1, V2).   
+\end{lstlisting}    
+
+\subsubsection{Parsing Module Definitions}
+
+Module definitions are parsed together with regular ASP code. Given a file containing a set of facts and rules and an arbitrary number of module definitions, Alpha's parser will group all rules and facts outside any module definition into one ASP program (i.e. the "main program"), and emit a set containing all encountered module definitions alongside with the parsed main program. Definition~\ref{def:module-definition-technical} details the technical representation of a module definition (which is basically a data structure storing all elements specified in the syntactical definition of a module, see~\ref{def:module-definition}). The actual code used in Alpha for parsing and storing module definitions can be found in the Appendix, see Example~\ref{ex:alpha-module-parsing}.
+
+\begin{definition}[Internal module representation]
+\label{def:module-definition-technical}
+A parsed module definition gets stored as a tuple $M = (\mathit{name},\mathit{p_{in}},\mathit{OUT},\mathit{PROG})$ where
+\begin{itemize}
+    \item $\mathit{name}$ is a string representing the name of the module. This must be unique, i.e. Alpha currently has no concept of namespaces or similar means of distinguishing equally named modules,
+    \item $\mathit{p_{in}}$ is a predicate (represented as a string of form $\mathit{name}/\mathit{arity}$) called \emph{input specification},
+    \item $\mathit{OUT}$ denotes a (possibly empty) set of predicates called \emph{output specification},
+    \item and $\mathit{PROG}$ is the ASP program holding the actual implementation code for the module.
+\end{itemize}
+\end{definition}   
+
+\subsubsection{Module Literal Compilation}
+
+
+
+
+
+
+\todo{need to decide whether module recursion is a thing! (probably should be)}
+\section{Evolog applications}
+
+TODO: A few programs using both actions and modules to achieve something cool!

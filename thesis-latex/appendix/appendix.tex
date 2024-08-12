@@ -11,7 +11,7 @@ TODO: Brief how-to to install an Alpha build made for this thesis and run the ex
 TODO: Debugging features of CLI application, basic API usage.
 
 \section{Examples}
-\begin{example}
+\begin{example}[Fibonacci-Numbers using external atoms]
 \label{ex:user-supplied-externals}
 The following code snippet demonstrates how to run a program which includes user-supplied external atoms using Alpha. Since the Alpha Commandline-App currently does not support loading Atom Definitions from jar files, the solver is directly called from Java code in this example.\\
 \\
@@ -64,3 +64,38 @@ public class CustomExternalsApp {
 }
 \end{lstlisting}
 \end{example}
+
+\begin{example}[Module Parsing]
+\label{ex:alpha-module-parsing}	
+Listing~\ref{lst:apdx-alpha-module-grammar} shows the actual ANTLR-grammar used in Alpha to parse module definitions. Parsed Module Definitions are stored in instances of the \texttt{Module} type. Listing~\ref{lst:apdx-alpha-module-def} shows the corresponding Java interface definition.
+\begin{lstlisting}[style=asp-code, label={lst:apdx-alpha-module-grammar}, caption={ANTLR grammar for module definitions}]
+directive_module: 
+	SHARP DIRECTIVE_MODULE id 
+		PAREN_OPEN module_signature PAREN_CLOSE 
+			CURLY_OPEN statements CURLY_CLOSE;
+
+module_signature : 
+	predicate_spec ARROW CURLY_OPEN 
+		('*' | predicate_specs) CURLY_CLOSE;	
+
+predicate_specs: 
+	predicate_spec (COMMA predicate_specs)?;
+
+predicate_spec: id '/' NUMBER;
+\end{lstlisting}
+Note how the \texttt{module\_signature} rule permits the shorthand \texttt{*} instead of an output predicate list.
+This is used as a shorthand to express the list of all predicates derived by any rule in the module (i.e. emit full, unfiltered answer sets).	
+\begin{lstlisting}[style=java, label={lst:apdx-alpha-module-def}, caption={Java interface specifying Alpha's internal representation of a module definition.}]
+public interface Module {
+
+	String getName();
+
+	Predicate getInputSpec();
+
+	Set<Predicate> getOutputSpec();
+
+	InputProgram getImplementation();
+
+}	
+\end{lstlisting}	
+\end{example}	
