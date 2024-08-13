@@ -116,7 +116,7 @@ where $q$ is a propositional constant not occurring in any other rule in the pro
 
 \begin{definition}[Herbrand Universe]
 \label{def:prelims-asp-semantics-hu}
-The Herbrand Universe $HU_P$ of a Program $P$ is the set of all valid terms that can be constructed with respect to Definitions~\ref{def:prelims-asp-syntax-int},~\ref{def:prelims-asp-syntax-id} and \ref{def:prelims-asp-syntax-term}.
+The Herbrand Universe $HU_P$ of a Program $P$ is the set of all ground terms that can be constructed with respect to Definitions~\ref{def:prelims-asp-syntax-int},~\ref{def:prelims-asp-syntax-id} and \ref{def:prelims-asp-syntax-term}.
 Note that most papers use stricter definitions of the Herbrand Universe where $HU_P$ consists only of terms constructible from constants occurring in $P$. The broader definition used here is chosen for ease of definition with respect to some of the extensions introduced in Section~\ref{sec:evolog-actions}.
 \end{definition}
 
@@ -127,7 +127,7 @@ The Herbrand Base $HB_P$ of a Program $P$ is the set of all ground atoms that ca
 
 \begin{definition}[Herbrand Interpretation]
 \label{def:prelims-asp-semantics-herbrand-interpretation}
-A Herbrand Interpretation is a special form of first order interpretation where the domain of the interpretation is a Herbrand Universe and terms are the interpretation of a term is the term itself, i.e. the corresponding element of $HU_P$. Intuitively, Herbrand Interpretations constitute listings of atoms that are true in a given program. Since the domain of a Herbrand Interpretation is always the Herbrand Universe $HU_P$, we only need to give a predicate interpretation for the predicates occurring in a program $P$ in oder to fully specify a Herbrand Interpretation. We can therefore denote Herbrand Interpretations as sets of atoms $I \subseteq HB_P$.
+A Herbrand Interpretation is a special form of first order interpretation where the domain of the interpretation is a Herbrand Universe and the interpretation of a term is the term itself, i.e. the corresponding element of $HU_P$. Intuitively, Herbrand Interpretations constitute listings of atoms that are true in a given program. Since the domain of a Herbrand Interpretation is always the Herbrand Universe $HU_P$, we only need to give a predicate interpretation for the predicates occurring in a program $P$ in oder to fully specify a Herbrand Interpretation. We can therefore denote Herbrand Interpretations as sets of atoms $I \subseteq HB_P$.
 \end{definition}
 
 \subsubsection{Grounding}

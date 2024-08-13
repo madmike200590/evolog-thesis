@@ -145,6 +145,8 @@ The single answer set of the rewritten program (filtered for instances of \textt
 
 \subsection{Evaluation}
 
+Once a program has been parsed and compiled using the steps described in~\ref{subsec:alpha-arch-compilation}, the compiled program can be evaluated (i.e. solved). Evaluation consists of two steps - first, the stratified bottom (\emph{"common base program, CBP"},see~\ref{def:prelims-asp-semantics-cbp}) is evaluated using a bottom-up evaluation algorithm.
+
 TODO: general outpline of evaluation with heavy focus on stratified evaluation, ground/solve loop is not of interest in this context, point to appropriate resources for that!
 
 \section{Implementing the Evolog extension in Alpha}
@@ -346,8 +348,75 @@ A parsed module definition gets stored as a tuple $M = (\mathit{name},\mathit{p_
 
 \subsubsection{Module Literal Compilation}
 
+Once a program and all contained module definitions have been parsed, every module atom (i.e. call to a module from a rule body) needs to be linked to its implementation. In Alpha, external atoms are evaluated during grounding. Definition~\ref{def:external-atom-interpretation} formally defines the notion of an \emph{external predicate interpretation}, i.e. an interpretation function for ground instances of external atoms. 
 
+\begin{definition}[External Predicate Interpretation]
+\label{def:external-atom-interpretation}    
+ Given an external atom $\&\mathit{ext}[i_1,\ldots,i_n](o_1,\ldots,o_m)$ with input terms $i_1,\ldots,i_n$ and output terms $o_1,\ldots,o_m$, and a substitution $\sigma$ assigning ground values to at least all input terms of $ex$, the \emph{predicate interpretation function} $f: HU^n \mapsto 2^{HU^m}$ is a function which, for a given $n$-tuple over the Herbrand Universe $HU$, returns all $m$-tuples over $HU$ for which the ground atom $\&\mathit{ext}[\sigma(i_1),\ldots,\sigma(i_n)](r_1,\ldots,r_m)$ where $(r_1\ldots,r_m) \in f(\sigma(i_1),\ldots,\sigma(i_n))$ is true.
+\end{definition}
 
+Implementation-wise, predicate interpretations are Java methods with a specific signature. Listing~\ref{lst:predicate-interpretation-interface} shows the corrseponding interface definition. Note that, for an implementation of \texttt{PredicateInterpretation} to be valid, it must be pure functional, i.e. not have any side-effects.
+\begin{lstlisting}[style=java, label={lst:predicate-interpretation-interface}, caption={Java Interface for Predicate Interpretations}]
+@FunctionalInterface
+public interface PredicateInterpretation {
+    
+    Set<List<Term>> evaluate(List<Term> terms);
+
+}    
+\end{lstlisting}
+
+\paragraph{Constructing interpretations for Module Atoms}
+Listing~\ref{lst:module-interpretation-impl} shows the (abbreviated) Java code used in Alpha to construct a \texttt{PredicateInterpretation} for a module atom. Boundary checks and similar validations as well as auxiliary method calls are left out for easier readability. The interpretation itself is constructed using the Lambda-expression \texttt{PredicateInterpretation interpretation = terms -> \{...\}}, where \texttt{terms} is the list of input terms, which gets wrapped into an atom of the predicate defined in \texttt{inputSpec} (i.e. the module input specification). Answer sets get filtered based on predicate names according to the module's output specification. Finally, each answer set is converted to a list of list terms using function \texttt{answerSetToTerms}, and the resulting set of term lists is returned.
+\begin{lstlisting}[style=java, label={lst:module-interpretation-impl}, caption={Constructing module interpretations}]
+private ExternalAtom translateModuleAtom(ModuleAtom atom, Map<String, Module> moduleTable) {
+    ...
+    Predicate inputSpec = definition.getInputSpec();
+    ...
+    Set<Predicate> outputSpec = definition.getOutputSpec();
+    Set<Predicate> expectedOutputPredicates;
+    if (outputSpec.isEmpty()) {
+    	expectedOutputPredicates = calculateOutputPredicates(normalizedImplementation);
+    } else {
+    	expectedOutputPredicates = outputSpec;
+    }
+    ...
+    PredicateInterpretation interpretation = terms -> {
+    	BasicAtom inputAtom = Atoms.newBasicAtom(inputSpec, terms);
+    	NormalProgram program = Programs.newNormalProgram(
+            normalizedImplementation.getRules(),
+    		ListUtils.union(List.of(inputAtom), 
+            normalizedImplementation.getFacts()), 
+            normalizedImplementation.getInlineDirectives(), 
+            Collections.emptyList());
+    	java.util.function.Predicate<Predicate> filter = outputSpec.isEmpty() ? p -> true : outputSpec::contains;
+    	Stream<AnswerSet> answerSets = moduleRunner.solve(program, filter);
+    	if (atom.getInstantiationMode()
+            .requestedAnswerSets().isPresent()) {
+    		answerSets = answerSets.limit(
+                atom.getInstantiationMode()
+                    .requestedAnswerSets().get());
+    	}
+    	return answerSets.map(as -> answerSetToTerms(as, expectedOutputPredicates))
+            .collect(Collectors.toSet());
+    };
+    return Atoms.newExternalAtom(atom.getPredicate(), interpretation, atom.getInput(), atom.getOutput());
+}
+
+private static List<Term> answerSetToTerms(AnswerSet answerSet, Set<Predicate> moduleOutputSpec) {
+    List<Term> terms = new ArrayList<>();
+    for (Predicate predicate : moduleOutputSpec) {
+        if (!answerSet.getPredicates().contains(predicate)) {
+            terms.add(Terms.EMPTY_LIST);
+        } else {
+            terms.add(Terms.asListTerm(
+                    answerSet.getPredicateInstances(predicate).stream()
+                        .map(Atoms::toFunctionTerm)
+                        .collect(Collectors.toList())));
+        }
+    }
+    return terms;
+}
+\end{lstlisting}    
 
 
 
