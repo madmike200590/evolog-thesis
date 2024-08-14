@@ -3,8 +3,9 @@ While chapter~\ref{chap:language} gives a complete formal specification of the E
 
 \section{Architectural overview of Alpha}
 \label{sec:alpha-arch-overview}
+\todo{maybe move this section to preliminaries}
 
-Alpha is a lazy-grounding \gls{asp} solver implemented in Java. In a nutshell, Alpha calculates Computation Sequences (see Definition~\ref{def:prelims-asp-semantics-compseq}) for an input program using a \gls{cdnl}-inspired solving algorithm. Starting from the set of facts contained in the program, an initial truth assignment is constructed. Based on this assignment, ground instances are calculated for all rules that \emph{could potentially fire} based on the assignment. These ground instances are converted into \emph{noGoods} and passed to the solver component which, using an adapted \gls{cdnl} approach, guesses a new assignment based on the last set of noGoods. This process is repeated until no more guesses are possible, at which point the current assignment is either returned as an answer set, or some conflict is detected, in which case a new noGood is learned, and the solver backtracks. However, the actual ground-solve-loop is - while arguably at the heart of Alpha - just a small part of the process through which programs get evaluated. Figure \ref{fig:alpha-arch} gives an overview of the building blocks making up the Alpha system.
+Alpha is a lazy-grounding \gls{asp} solver implemented in Java. In a nutshell, Alpha calculates Computation Sequences (see Definition~\ref{def:prelims-asp-semantics-compseq}) for an input program using a \gls{cdnl}-inspired solving algorithm. Starting from the set of facts contained in the program, an initial truth assignment is constructed. Based on this assignment, ground instances are calculated for all rules that \emph{could potentially fire} based on the assignment. These ground instances are converted into \emph{noGoods} and passed to the solver component which, using an adapted \gls{cdnl} approach, guesses a new assignment based on the last set of noGoods. This process is repeated until no more guesses are possible, at which point the current assignment is either returned as an answer set, or some conflict is detected, in which case a new noGood is learned, and the solver backtracks. However, the actual ground-solve-loop is - while arguably at the heart of Alpha - just a small part of the process through which programs get evaluated. Figure \ref{fig:alpha-arch} gives an overview of the building blocks making up the Alpha system.\todo{cite alpha paper here}
 
 \begin{figure}[t]
     \includegraphics[width=\linewidth]{graphics/alpha-architecture.drawio.png}
@@ -145,7 +146,11 @@ The single answer set of the rewritten program (filtered for instances of \textt
 
 \subsection{Evaluation}
 
-Once a program has been parsed and compiled using the steps described in~\ref{subsec:alpha-arch-compilation}, the compiled program can be evaluated (i.e. solved). Evaluation consists of two steps - first, the stratified bottom (\emph{"common base program, CBP"},see~\ref{def:prelims-asp-semantics-cbp}) is evaluated using a bottom-up evaluation algorithm.
+Once a program has been parsed and compiled using the steps described in~\ref{subsec:alpha-arch-compilation}, the compiled program can be evaluated (i.e. solved). Evaluation consists of two steps - first, the stratified bottom (\emph{"common base program, CBP"},see~\ref{def:prelims-asp-semantics-cbp}) is evaluated using a bottom-up evaluation algorithm which is computationally more efficient than Alpha's \gls{cdnl}-based ground-/solve-loop.
+
+\subsubsection{Stratified Evaluation in Alpha}
+
+Based on a compiled program, $P_{comp}$
 
 TODO: general outpline of evaluation with heavy focus on stratified evaluation, ground/solve loop is not of interest in this context, point to appropriate resources for that!
 
