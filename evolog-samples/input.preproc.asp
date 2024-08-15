@@ -1,43 +1,39 @@
-list_2_element_greater(list_2_no_args, edge(b, c), edge(a, b)).
-list_1_lst_element(list_1_no_args, 2, lst(a, lst(b, lst(c, lst_empty)))).
-list_1_element_has_successor(list_1_no_args, a).
-list_2_element_greater(list_2_no_args, edge(c, a), edge(b, c)).
-list_2_has_next_element(list_2_no_args, 0).
-list_2_element(list_2_no_args, edge(a, b)).
-list_1_element_successor(list_1_no_args, c, b).
-list_1_lst_element(list_1_no_args, 0, lst(c, lst_empty)).
-list_1_element(list_1_no_args, b).
-list_1_element_greater(list_1_no_args, b, a).
-list_1_has_next_element(list_1_no_args, 0).
+coloring_vertex(b).
+exclude_vertex(d).
+edge(b, d).
 edge(a, b).
-list_1_result(list_1_no_args, lst(a, lst(b, lst(c, lst_empty)))).
-list_1_element(list_1_no_args, a).
-list_1_element_greater(list_1_no_args, c, a).
-list_2_element_has_successor(list_2_no_args, edge(a, b)).
+edge(c, d).
+edge(c, b).
+coloring_edge(b, c).
+coloring_edge(a, c).
+coloring_edge(b, a).
+edge(a, d).
+coloring_edge(c, a).
 vertex(c).
-list_1_element_not_successor(list_1_no_args, c, a).
 vertex(a).
-list_2_element_successor(list_2_no_args, edge(b, c), edge(a, b)).
-list_2_lst_element(list_2_no_args, 2, lst(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty)))).
-list_1_lst_element(list_1_no_args, 1, lst(b, lst(c, lst_empty))).
-list_2_element_successor(list_2_no_args, edge(c, a), edge(b, c)).
-list_2_element_not_successor(list_2_no_args, edge(c, a), edge(a, b)).
-list_1_element_has_successor(list_1_no_args, b).
-list_2_element_greater(list_2_no_args, edge(c, a), edge(a, b)).
-list_2_has_next_element(list_2_no_args, 1).
-list_2_element(list_2_no_args, edge(b, c)).
-list_1_element(list_1_no_args, c).
-list_1_element_successor(list_1_no_args, b, a).
-list_1_element_greater(list_1_no_args, c, b).
-list_2_element(list_2_no_args, edge(c, a)).
-list_1_has_next_element(list_1_no_args, 1).
+edge(d, b).
+exclude_edge(d, b).
+exclude_edge(c, d).
+exclude_edge(a, d).
+coloring_vertex(c).
+exclude_edge(b, d).
+coloring_vertex(a).
+edge(a, c).
 edge(b, c).
-list_2_result(list_2_no_args, lst(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty)))).
-list_2_element_has_successor(list_2_no_args, edge(b, c)).
-edge_lst(lst(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty)))).
-list_2_lst_element(list_2_no_args, 0, lst(edge(c, a), lst_empty)).
+edge(b, a).
+edge(d, c).
+coloring_edge(a, b).
+coloring_edge(c, b).
+vertex(d).
+exclude_edge(d, a).
 vertex(b).
-vertex_lst(lst(a, lst(b, lst(c, lst_empty)))).
 edge(c, a).
-list_2_lst_element(list_2_no_args, 1, lst(edge(b, c), lst(edge(c, a), lst_empty))).
+exclude_edge(d, c).
+edge(d, a).
+red(V) :- coloring_vertex(V), not green(V), not blue(V).
+green(V) :- coloring_vertex(V), not red(V), not blue(V).
+blue(V) :- coloring_vertex(V), not red(V), not green(V).
+:- coloring_vertex(V1), coloring_vertex(V2), coloring_edge(V1, V2), red(V1), red(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), coloring_edge(V1, V2), green(V1), green(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), coloring_edge(V1, V2), blue(V1), blue(V2).
 

@@ -1,27 +1,23 @@
 vertex(a).
 vertex(b).
 vertex(c).
+vertex(d).
 edge(a, b).
+edge(a, c).
+edge(a, d).
 edge(b, c).
-edge(c, a).
-vertex_lst(LIST) :- list_1_result(list_1_no_args, LIST).
-edge_lst(LIST) :- list_2_result(list_2_no_args, LIST).
-list_1_element_greater(ARGS, N, K) :- list_1_element(ARGS, N), list_1_element(ARGS, K), N > K.
-list_1_element_not_successor(ARGS, N, K) :- list_1_element_greater(ARGS, N, I), list_1_element_greater(ARGS, I, K).
-list_1_element_successor(ARGS, N, K) :- list_1_element_greater(ARGS, N, K), not list_1_element_not_successor(ARGS, N, K).
-list_1_element_has_successor(ARGS, N) :- list_1_element_successor(ARGS, _0, N).
-list_1_lst_element(ARGS, IDX, lst(N, lst_empty)) :- list_1_element(ARGS, N), IDX = 0, not list_1_element_has_successor(ARGS, N).
-list_1_lst_element(ARGS, IDX, lst(N, lst(K, TAIL))) :- list_1_element(ARGS, N), list_1_element_successor(ARGS, K, N), list_1_lst_element(ARGS, PREV_IDX, lst(K, TAIL)), IDX = PREV_IDX + 1.
-list_1_has_next_element(ARGS, IDX) :- list_1_lst_element(ARGS, IDX, _1), NEXT_IDX = IDX + 1, list_1_lst_element(ARGS, NEXT_IDX, _2).
-list_1_result(ARGS, LIST) :- list_1_lst_element(ARGS, IDX, LIST), not list_1_has_next_element(ARGS, IDX).
-list_1_element(list_1_no_args, V) :- vertex(V).
-list_2_element_greater(ARGS, N, K) :- list_2_element(ARGS, N), list_2_element(ARGS, K), N > K.
-list_2_element_not_successor(ARGS, N, K) :- list_2_element_greater(ARGS, N, I), list_2_element_greater(ARGS, I, K).
-list_2_element_successor(ARGS, N, K) :- list_2_element_greater(ARGS, N, K), not list_2_element_not_successor(ARGS, N, K).
-list_2_element_has_successor(ARGS, N) :- list_2_element_successor(ARGS, _3, N).
-list_2_lst_element(ARGS, IDX, lst(N, lst_empty)) :- list_2_element(ARGS, N), IDX = 0, not list_2_element_has_successor(ARGS, N).
-list_2_lst_element(ARGS, IDX, lst(N, lst(K, TAIL))) :- list_2_element(ARGS, N), list_2_element_successor(ARGS, K, N), list_2_lst_element(ARGS, PREV_IDX, lst(K, TAIL)), IDX = PREV_IDX + 1.
-list_2_has_next_element(ARGS, IDX) :- list_2_lst_element(ARGS, IDX, _4), NEXT_IDX = IDX + 1, list_2_lst_element(ARGS, NEXT_IDX, _5).
-list_2_result(ARGS, LIST) :- list_2_lst_element(ARGS, IDX, LIST), not list_2_has_next_element(ARGS, IDX).
-list_2_element(list_2_no_args, edge(V1, V2)) :- edge(V1, V2).
+edge(b, d).
+edge(c, d).
+exclude_vertex(d).
+edge(X, Y) :- edge(Y, X).
+exclude_edge(V1, V2) :- edge(V1, V2), exclude_vertex(V1).
+exclude_edge(V1, V2) :- exclude_edge(V2, V1).
+coloring_vertex(V) :- vertex(V), not exclude_vertex(V).
+coloring_edge(V1, V2) :- edge(V1, V2), not exclude_edge(V1, V2).
+red(V) :- coloring_vertex(V), not green(V), not blue(V).
+green(V) :- coloring_vertex(V), not red(V), not blue(V).
+blue(V) :- coloring_vertex(V), not red(V), not green(V).
+:- coloring_vertex(V1), coloring_vertex(V2), coloring_edge(V1, V2), red(V1), red(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), coloring_edge(V1, V2), green(V1), green(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), coloring_edge(V1, V2), blue(V1), blue(V2).
 

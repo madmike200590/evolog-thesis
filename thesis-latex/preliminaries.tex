@@ -263,7 +263,7 @@ In a nutshell, a \emph{stratifiable} logic program is a program, for which we ca
 \label{def:prelims-asp-semantics-stratification}	
 Given a program $P = \{r_{0}, ..., r_{n}\}$, $P$ is called \emph{stratifiable} iff there is a partition $P = P_{S_0} \cup\ ... \cup\ P_{S_n}$ so that for each $0 \le i \leq n$ the following holds:
 \begin{itemize}
-	\item For every positive body literal $l_{b}$ of every rule in $P_{S_i}$, every rule that derives instances of thepredicate $\mathit{pred}(l_{b})$, i.e. where the predicate of the head atom $\mathit{pred}(a_H)$ is $\mathit{pred}(l_{b})$, is contained in some $P_{S_j}$ with $j \leq i$.
+	\item For every positive body literal $l_{b}$ of every rule in $P_{S_i}$, every rule that derives instances of the predicate $\mathit{pred}(l_{b})$, i.e. where the predicate of the head atom $\mathit{pred}(a_H)$ is $\mathit{pred}(l_{b})$, is contained in some $P_{S_j}$ with $j \leq i$.
 	\item For every negative body literal $\mathit{not}\ l_{b}$ of every rule in $P_{S_i}$, every rule that derivesinstances of the predicate $\mathit{pred}(l_{b})$, i.e. where the predicate of the head atom $\mathit{pred}(a_H)$is $\mathit{pred}(l_{b})$, is contained in some $P_{j}$ with $j < i$.
 \end{itemize}
 The individual subprograms $P_{S_i}$ are called strata. A \emph{stratification} $S = \{P_{S_0},\ldots, P_{S_n}\}$refers to the set of all strata making up a partition which satisfies the criteria above.
@@ -320,7 +320,7 @@ In this case, the least model of $P$ can be calculated using the method from Def
 \end{align*}	
 \end{example}	
 
-However, in general, ASP programs are not stratifiable. Example~\ref{ex:prelims-nonstrat} shows a typical non-stratifiable program.- Alpha addresses this in two ways - first, programs are analyzed in order to find a "stratified bottom", which can be evaluated using an algorithm based on Definition~\ref{def:prelims-asp-semantics-stratified-compseq}. Finally, the remaining program is solved using an algorithm based on the \gls{cdnl}-method also employed by classic two-phased ASP solvers.
+However, in general, ASP programs are not stratifiable. Example~\ref{ex:prelims-nonstrat} shows a typical non-stratifiable program.
 
 \begin{example}[A non-stratifiable program]
 \label{ex:prelims-nonstrat}
@@ -355,22 +355,101 @@ blue(V) :- coloring_vertex(V), not red(V), not green(V).
 Clearly, $P_{col}$ is not stratifiable - the color assignment rules cyclically depend on each other through negated body literals. In other words, the rules on lines 15 to 17 are \emph{mutually exclusive}, i.e. a solver has to \emph{choose} which of the three should fire for a given ground instance of $coloring\_vertex/1$.
 \end{example}
 
-TODO: example of non-stratified program and naive trial-and-error for comp. sequences
-TODO: Definition common base program (no evaluation algorithm here!)
-TODO: short high-level description of alpha core solver.
+The program from Example~\ref{ex:prelims-nonstrat} can not be evaluated by iterative fixpoint-calculation as in Example~\ref{ex:prelims-strat-eval} becuase it is not stratifiable. However, it is still possible to evaluate at least a part of it using this method, rather than a computationally more complex "trial-and-error"-approach. This partial evaluation approach uses \emph{splitting sets}, which are characterized in Definition~\ref{def:prelims-asp-semantics-splitting-set}. Intuitively, a splitting set $S$ is a set of atoms, such that if an atom $a$ is in $S$, also all atoms it depends on (i.e. body atoms of rules deriving $a$) are in $S$. By the splitting set theorem, a splitting sets lets us partition a program $P$ such that it can be evaluated incrementally, by first evaluating the bottom $B_U(P)$ and then the top $T_U(P)$. Since this section deals with non-ground programs specifically, we also give an adapted definition for splitting sets of nonground programs, see Definition~\ref{def:prelims-asp-semantics-nonground-splitting-set}. Example~\ref{ex:prelims-nonstrat-splitting-sets} applies the splitting set theorem to the program from Example~\ref{ex:prelims-nonstrat}.
 
 \begin{definition}[Splitting Set, adapted from~\cite{splitting-sets}]
 \label{def:prelims-asp-semantics-splitting-set}
-Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.\\
+Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also theatoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules definingthe atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$is called \emph{top} of $P$, which is denoted as $T_U(P)$.\\
 \end{definition}
 
 \begin{theorem}[Splitting Set Theorem, adapted from~\cite{splitting-sets}]
-Given a program $P$ and splitting set $U$ which splits $P$ into bottom $B_U(P)$ and top $T_U(P) = P \setminus B_U(P)$. Then a set of atoms $A$ is an answer set if and only if $A = X \cup Y$ for sets $X$ and $Y$ where
+Given a program $P$ and splitting set $U$ which splits $P$ into bottom $B_U(P)$ and top $T_U(P) = P \setminus B_U(P)$. Then aset of atoms $A$ is an answer set if and only if $A = X \cup Y$ for sets $X$ and $Y$ where
 \begin{itemize}
 	\item $X \in AS(B_U(P))$, i.e. $X$ is an answer set of bottom $B_U(P)$ and
 	\item $Y \in AS(T_U(P) \cup X)$, i.e. $Y$ is an answer set of the program resulting from adding $X$ as facts to $T_U(P)$ 
 \end{itemize}	
 \end{theorem}	
+
+\begin{definition}[Nonground splitting set]
+\label{def:prelims-asp-semantics-nonground-splitting-set}
+Given a non-ground program $P$, we denote splitting sets as sets of predicates rather than atoms. 
+For a given predicate $p$, we denote as $dep(p)$ the \emph{dependencies} of $p$:
+ \[
+	dep(p) = \{q~|~\exists r \in P: pred(h(r)) = p \land \exists l \in b(r): pred(l) = q\}
+\]
+Intuitively, the dependencies of a predicate $p$ are all predicates of which all ground instances must be known in ordertocompute all ground instances of $p$.
+A set $S$ of predicates $p_1,\ldots,p_n$ is a splitting set of $P$ if the following holds. 
+\[
+	\forall p:  p \in S \Rightarrow dep(p) \in S
+\]
+A non-ground splitting set $S_{ng}$ is sematically equivalent to the ground splitting set $S_{grnd}$ one gets by taking all ground instances of all predicates in $S_{ng}$ from the ground program $grnd(P)$.
+\end{definition}
+
+\begin{example}[Partial evaluation using splitting sets]
+\label{ex:prelims-nonstrat-splitting-sets}
+Given program $P_{col}$ from Listing~\ref{lst:prelims-3col-var} in Example~\ref{ex:prelims-nonstrat}, let $S$ be the following (non-ground) splitting set:
+\begin{align*}
+	S = \{&coloring\_vertex/1,~coloring\_edge/2,~vertex/1,~exclude\_vertex/1, \\
+		  &edge/2,~exclude\_edge/2\}
+\end{align*}
+Using $S$, we can split $P_{col}$ into bottom $B_S(P_{col})$, which is shown in Listing~\ref{lst:prelims-3col-var-bot}, and top $T_S(P_{col})$ in Listing~\ref{lst:prelims-3col-var-top}.
+\begin{lstlisting}[style=asp-code, label={lst:prelims-3col-var-bot}, caption={The bottom part of $P_{col}$}]
+vertex(a). vertex(b). vertex(c). vertex(d).
+edge(a, b). edge(a, c). edge(a, d).
+edge(b, c). edge(b, d). edge(c, d).
+edge(X, Y) :- edge(Y, X).
+	
+exclude_vertex(d).
+exclude_edge(V1, V2) :- edge(V1, V2), exclude_vertex(V1).
+exclude_edge(V1, V2) :- exclude_edge(V2, V1).
+	
+coloring_vertex(V) :- vertex(V), not exclude_vertex(V).
+coloring_edge(V1, V2) :- 
+	edge(V1, V2), not exclude_edge(V1, V2).
+\end{lstlisting}
+Looking at $B_S(P_{col})$, we can observe that this sub-program of $P_{col}$ is now stratified, and can therefore be evaluated using the straight-forward computation employed in Example~\ref{ex:prelims-strat-eval}. We arrive at the following model for $B_S(P_{col})$:
+\begin{align*}
+	LM(B_S(P_{col})) = \{&coloring\_vertex(b),~exclude\_vertex(d),~edge(b, d), \\
+						 &edge(a, b),~edge(c, d),~edge(c, b),~coloring\_edge(b, c),\\
+						 &coloring\_edge(a, c),~coloring\_edge(b, a),~edge(a, d),\\
+						 &coloring\_edge(c, a),~vertex(c),~	vertex(a),~edge(d, b), \\
+						 &exclude\_edge(d, b),~exclude\_edge(c, d),~exclude\_edge(a, d),\\
+						 &coloring\_vertex(c),~exclude\_edge(b, d),~coloring\_vertex(a),\\
+						 &edge(a, c),~edge(b, c),~edge(b, a),~edge(d, c),coloring\_edge(a, b)\\
+						 &coloring\_edge(c, b),~vertex(d),~exclude\_edge(d, a),~vertex(b)\\
+						 &edge(c, a),~exclude\_edge(d, c),~edge(d, a)\}
+\end{align*}		
+\begin{lstlisting}[style=asp-code, label={lst:prelims-3col-var-top}, caption={The top part of $P_{col}$}]
+% Guess colors
+red(V) :- coloring_vertex(V), not green(V), not blue(V).
+green(V) :- coloring_vertex(V), not red(V), not blue(V).
+blue(V) :- coloring_vertex(V), not red(V), not green(V).
+	
+% Filter invalid guesses
+:- coloring_vertex(V1), coloring_vertex(V2), 
+	coloring_edge(V1, V2), red(V1), red(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), 
+	coloring_edge(V1, V2), green(V1), green(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), 
+	coloring_edge(V1, V2), blue(V1), blue(V2).
+\end{lstlisting}	
+In order to compute the answer sets of the complete program, we now have to compute the answer sets of $T_S(P_{col}) \cup pr(LM(B_S(P_{col})))$. A simple (but computationally expensive) way to do this would be to perform an exhaustive search over all combinations of ground instances of the rules from lines 2 to 4 and drop all model candidates where any of the constraints fire.
+We finally get the following answer sets (filtered for predicates $red/1$, $green/1$ and $blue/1$):
+\begin{align*}
+	A_1 &= \{blue(c),~green(b),~red(a)\}\\
+	A_2 &= \{blue(b),~green(c),~red(a)\}\\
+	A_3 &= \{blue(b),~green(a),~red(c)\}\\
+	A_4 &= \{blue(c),~green(a),~red(b)\}\\
+	A_5 &= \{blue(a),~green(b),~red(c)\}\\
+	A_6 &= \{blue(a),~green(c),~red(b)\}
+\end{align*}	
+\end{example}	
+
+
+
+TODO: example of non-stratified program and naive trial-and-error for comp. sequences
+TODO: Definition common base program (no evaluation algorithm here!)
+TODO: short high-level description of alpha core solver.
 
 % \begin{definition}[Unification]
 % \label{def:prelims-asp-semantics-unification}
