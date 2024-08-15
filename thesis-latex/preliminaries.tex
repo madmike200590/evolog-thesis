@@ -278,7 +278,7 @@ Then the least model $LM(P_{strat})$ of $P_{strat}$ is defined as follows.
 The sequence $\langle M_{S_i} \rangle,\ 0 \leq i \leq n$ with $M_{S_0} = \mathit{lfp}(T_{P_{S_0}})$ and $M_{S_i} = \mathit{lfp}(T_{(P_{S_{i}} \cup\ pr(M_{S_{i-1}}))})$ for all $1 \leq i \leq n$ defines the (iterative) least model for each stratum. The least model $LM(P_{strat})$ of program $P_{strat}$ is then the iterative least model of the highest stratum $M_{S_n}$, i.e. the end of the sequence $\langle M_{S_i} \rangle$.
 \end{definition}
 
-Since the evaluation mode described in Definition~\ref{def:prelims-asp-semantics-stratified-compseq} does not require any backtracking, i.e. the result of each step is part of the final result, we observe that te intermediate results of the immediate consequence operator yield a computation sequence for $P$. Example~\todo{build an example} illustrates evaluation of a short stratifiable program.
+Since the evaluation mode described in Definition~\ref{def:prelims-asp-semantics-stratified-compseq} does not require any backtracking, i.e. the result of each step is part of the final result, we observe that te intermediate results of the immediate consequence operator yield a computation sequence for $P$. Example~\ref{ex:prelims-strat-eval} illustrates evaluation of a short stratifiable program.
 
 \begin{example}[Evaluating a stratified program]
 \label{ex:prelims-strat-eval}	
@@ -433,7 +433,7 @@ blue(V) :- coloring_vertex(V), not red(V), not green(V).
 :- coloring_vertex(V1), coloring_vertex(V2), 
 	coloring_edge(V1, V2), blue(V1), blue(V2).
 \end{lstlisting}	
-In order to compute the answer sets of the complete program, we now have to compute the answer sets of $T_S(P_{col}) \cup pr(LM(B_S(P_{col})))$. A simple (but computationally expensive) way to do this would be to perform an exhaustive search over all combinations of ground instances of the rules from lines 2 to 4 and drop all model candidates where any of the constraints fire.
+In order to compute the answer sets of the complete program, by the splitting set theorem, we only have to compute the answer sets of $T_S(P_{col}) \cup pr(LM(B_S(P_{col})))$. A simple (but computationally expensive) way to do this would be to perform an exhaustive search over all combinations of ground instances of the rules from lines 2 to 4 and drop all model candidates where any of the constraints fire.
 We finally get the following answer sets (filtered for predicates $red/1$, $green/1$ and $blue/1$):
 \begin{align*}
 	A_1 &= \{blue(c),~green(b),~red(a)\}\\
@@ -445,87 +445,108 @@ We finally get the following answer sets (filtered for predicates $red/1$, $gree
 \end{align*}	
 \end{example}	
 
-
-
-TODO: example of non-stratified program and naive trial-and-error for comp. sequences
-TODO: Definition common base program (no evaluation algorithm here!)
-TODO: short high-level description of alpha core solver.
-
-% \begin{definition}[Unification]
-% \label{def:prelims-asp-semantics-unification}
-% Let $l_1$, $l_2$ be literals. Then a substitution $\sigma$ is a \emph{unifier} of $l_1$ and $l2$ iff $l_{1}\sigma$ = $l_{2}\sigma$. Two literals for which a unifier exists are said to be \emph{unifiable}. We use the notation $l_1 \uplus l_2$ to express that $l_1$ and $l_2$ are unifiable.
-% \end{definition}
-
-\begin{definition}[Defining rules]
-\label{def:prelims-asp-semantics}
-Given an \gls{asp} program $P$ and literal $l$ of form $a$ or $\NOT\ a$ with atom $a$, the set $\mathit{def}(l)$ of \emph{defining rules} of $l$ is defined as
-\[
-	\mathit{def}(l) = \{ r\ |\ r \in P \land h(r) \uplus a \}
-\]
-i.e. all rules in $P$ whose head is unifiable with $a$.
-\end{definition}
-
-\begin{definition}[Stratification, adapted from~\cite{stratification}]
-\label{def:prelims-asp-semantics-stratification}
-Given a (non-ground) \gls{asp} program $P$, a stratification is a partition $S$ of $P$ into sub-programs called \emph{strata} $(P_0,\ldots,P_1)$ such that
-\begin{itemize}
-	\item $\cup^{n}_{i = 0} P_i = P$, i.e. $S$ is total,
-	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{+}(r): \mathit{def}(l) \subseteq \cup^{i}_{j = 0} P_j$, i. e. for every positive body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with lower or equal index to the stratum $r$ resides in, and
-	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{-}(r): \mathit{def}(l) \subseteq \cup^{i - 1}_{j = 0} P_j$, i. e. for every negative body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with strictly lower index than the stratum $r$ resides in.
-\end{itemize}
-A program is called \emph{stratified} iff a stratification exists for it.
-\end{definition}
-
-\begin{definition}[Stratified Evaluation, adapted from~\cite{asp-primer} and~\cite{stratification}]
-\label{def:prelims-asp-semantics-stratified-eval}
-Let $P$ be an \gls{asp} program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T_{P_i}$ with $0 \leq i \leq n$ the immediate consequence operator for sub-program $P_i \in S$ respectively. Then the least model $\mathit{LM}(P)$ of $P$ is defined as follows.
-The sequence $\langle M_{P_i} \rangle,\ 0 \leq i \leq n$ with $M_{P_0} = \mathit{lfp}(T_{P_0})$ and $M_{P_i} = \mathit{lfp}(T_{P_i \cup\ M_{S_{i-1}}})$ for all $1 \leq i \leq n$ defines the least model for each stratum. The least model $LM(P)$ of program $P$ is then the least model of the highest stratum $M_{P_n}$, i.e. the end of the sequence $\langle M_{P_i} \rangle$.
-\end{definition}
-
-\begin{definition}[Dependencies]
-\label{def:prelims-asp-semantics-dependencies}
-Let $P$ be an \gls{asp} program and $r \in P$ a rule contained in $P$. a rule $d$ is a \emph{positive dependency} of $r$ , i.e. $ r \DEP{+} d$ iff one the following holds:
-\begin{itemize}
-	\item $\exists l \in b^{+}(r): d \in \mathit{def}(l) $, i.e. $d$ is a defining rule for some positive body literalof $r$, or
-	\item $\exists d_1 \in P: r \DEP{+} d_1 \land d_1 \DEP{+} d$, i.e. there is some positive dependency $d_1$ of $r$ of which $d$ is a (transitive) positive dependency.
-\end{itemize}
-\emph{Negative dependencies} are defined in the same way, i.e. a rule $d$ is a negative dependency of $r$, $r \DEP{-} d$ iff
-\begin{itemize}
-	\item $\exists l \in b^{-}(r): d \in \mathit{def}(l)$, i.e. $d$ is a defining rule for some negative body literalof $r$, or
-	\item $\exists d_1 \in P: r \DEP{-} d_1 \land d_1 \DEP{-} d$, i.e. there is some negative dependency $d_1$ of $r$ of which $d$ is a (transitive) negative dependency.
-\end{itemize}
-Any positive or negative dependency $d$ of $r$ is a \emph{dependency} of $r$, i.e. $r \DEP{} d$.
-We denote the set of dependencies of a rule as $D(r) = \{ d\ |\ r \DEP{} d\}$ and positive and negative dependencies as $D^{+}(r) = \{ d\ |\ r \DEP{+} d\}$ and $D^{-}(r) = \{ d\ |\ r \DEP{-} d\}$ respectively. Any non-transitive dependency of a rule is called a \emph{direct dependency}.
-\end{definition}
-
-\begin{definition}[Dependency Graph]
-\label{def:prelims-asp-semantics-depgraph}
-Let $P$ be an \gls{asp} program. Then the \emph{dependency graph}  $\mathit{DG}_P = (R, D)$ is a directed graph with vertex set $R$, which has one element for each rule in $P$, and (dependency-)edge set $D$ such that
-\begin{align*}
-	D = &\{ (r_1, r_2, +)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ positive\ dependency\ of}\ r_1 \}\\ &\cup
-\{ (r_1, r_2, -)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ negative\ dependency\ of}\ r_1 \}
-\end{align*}
-Edges are represented as 3-tuples where the first two values represent target and destination vertices and the third value indicates the "polarity", i. e. positive ("+") or negative ("-"), of the dependency.
-\end{definition}
-
-\begin{definition}[Component Graph]
-\label{def:prelims-asp-semantics-compgraph}
-The component graph $\mathit{CG}_P = (C, D)$ of a program $P$ is defined as the "condensed" dependency graph, i. e. vertices of $\mathit{CG}_P$ represent strongly connected components of $\mathit{DG}_P$. Each vertex of $\mathit{CG}_P$ is labelled "$+$" if the respective strongly connected component is connected only by positive edges, or "$-$" if there is a negative edge in the component. Edges of $\mathit{CG}_P$ are those edges of $\mathit{DG}_P$ that connect vertices from different strongly connected components where douuble edges resulting from multiple rule-level dependencies of same polarity between components are condensed into single edges.
-\end{definition}
-
-\begin{definition}[Splitting Set, adapted from~\cite{splitting-sets}]
-\label{def:prelims-asp-semantics-splitting-set}
-Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.
-\end{definition}
+Expanding on Example~\ref{ex:prelims-nonstrat-splitting-sets}, it is clear that a stratifiable bottom with respect to some splitting set always exists - every program has at least the empty set as a trivial splitting set. We call the maximal stratifiable sub-program that only depends on facts (i.e. is a bottom w.r.t some splitting set) \gls{cbp}, see Definition~\ref{def:prelims-asp-semantics-cbp}.
 
 \begin{definition}[Common Base Program, adapted from~\cite{partial-eval}]
 \label{def:prelims-asp-semantics-cbp}
 Given a splitting set $S$ of program $P$, the bottom $B_S(P)$ is called \emph{common base program}, i.e. $CBP(P)$ if it is stratified and maximal in the sense that adding any further rule to $B_S(P)$ would destroy the property of $B_S(P)$ of being stratified.
 \end{definition}
 
-Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}.\\
+In Alpha, solving programs is a two-step process, where first the model of the \gls{cbp} is computed, and then the remaining program is solved using an algorithm based on \gls{cdnl}~\cite{lazy-cdnl}. Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} gives a highlevel overview of Alpha's ground-and-solve component. TODO some general stuff about cdnl, reference to clingo as a typical cdnl-solver, "in the following we briefly introduce Alpha's superfacny variation on it"
 
-Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using the simplified bottom-up algorithm outlined in Algorithm \ref{alg:cbp-eval} and then only using the - computationally more complex - \gls{cdnl}-based algorithm for the top part.
+\subsection{CDNL-based solving in a lazy-grounding Answer Set Solver}
+\label{subsec:prelims-lazygrounding-alpha-cdnl}
+
+\begin{definition}[Alpha-Assignment, Nogood~\cite{lazy-cdnl}]
+An \emph{Alpha-Assignment}, in the following just \emph{assignment} is a sequence $A = \{sl1,\ldots,sl_n\}$ of literals $l_1\ldots,l_n$ preceded by a \emph{sign} $s \in \{T, M, F\}$. Intuitively, a signed literal $sl_i$ assigns the truth value $s$ to literal $l$. Possible truth values are \emph{true} ($T$), \emph{false} ($F$) and \emph{must-be-true} ($M$). Must-be-true is used as truth value for literals that are deemed by the solver to necessarily be true (e.g. because of a constraint precluding any other truth value), but there is no known firing rule (yet) which would allow assigning $T$. The \emph{boolean projection} $A^{\mathcal{B}}$ of an assignment $A$ is defined as: 
+\[
+	A^{\mathcal{B}} = \{ Ta~|~Ta \in A \lor Ma \in A\} \cup \{ Fa~|~Fa \in A\}
+\]
+\\
+A \emph{nogood}, in the variant used by Alpha, is a set of signed literals intuitively characterizing a set of literals that may not occur in an assignment with the given truth values:
+\[
+	ng = \{ sl_1,\ldots,sl_n \}, s \in \{T, F\}
+\]
+An assignment $A$ \emph{satisfies} a nogood $ng$ if $ng \nsubseteq A^{\mathcal{B}}$. Furthermore, an assignment $A$ is a \emph{solution} to a set $\Delta$ of nogoods if $\{a~|~Ta \in A^{\mathcal{B}}\} \cap \{a~|~Fa \in A^{\mathcal{B}}\} = \emptyset$,  $\{a~|~Ta \in A^{\mathcal{B}}\} \cup \{a~|~Fa \in A^{\mathcal{B}}\} = A^{\mathcal{B}}$ and $\forall ng in \Delta: ng \nsubseteq A^{\mathcal{B}}$.
+\end{definition}
+
+\begin{definition}[Nogood representation of rules~\cite{lazy-cdnl}]
+\end{definition}	
+
+
+
+% \begin{definition}[Unification]
+% \label{def:prelims-asp-semantics-unification}
+% Let $l_1$, $l_2$ be literals. Then a substitution $\sigma$ is a \emph{unifier} of $l_1$ and $l2$ iff $l_{1}\sigma$ = $l_{2}\sigma$. Two literals for which a unifier exists are said to be \emph{unifiable}. We use the notation $l_1 \uplus l_2$ to express that $l_1$ and $l_2$ are unifiable.
+% \end{definition}
+
+% \begin{definition}[Defining rules]
+% \label{def:prelims-asp-semantics}
+% Given an \gls{asp} program $P$ and literal $l$ of form $a$ or $\NOT\ a$ with atom $a$, the set $\mathit{def}(l)$ of \emph{defining rules} of $l$ is defined as
+% \[
+% 	\mathit{def}(l) = \{ r\ |\ r \in P \land h(r) \uplus a \}
+% \]
+% i.e. all rules in $P$ whose head is unifiable with $a$.
+% \end{definition}
+
+% \begin{definition}[Stratification, adapted from~\cite{stratification}]
+% \label{def:prelims-asp-semantics-stratification}
+% Given a (non-ground) \gls{asp} program $P$, a stratification is a partition $S$ of $P$ into sub-programs called \emph{strata} $(P_0,\ldots,P_1)$ such that
+% \begin{itemize}
+% 	\item $\cup^{n}_{i = 0} P_i = P$, i.e. $S$ is total,
+% 	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{+}(r): \mathit{def}(l) \subseteq \cup^{i}_{j = 0} P_j$, i. e. for every positive body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with lower or equal index to the stratum $r$ resides in, and
+% 	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{-}(r): \mathit{def}(l) \subseteq \cup^{i - 1}_{j = 0} P_j$, i. e. for every negative body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with strictly lower index than the stratum $r$ resides in.
+% \end{itemize}
+% A program is called \emph{stratified} iff a stratification exists for it.
+% \end{definition}
+
+% \begin{definition}[Stratified Evaluation, adapted from~\cite{asp-primer} and~\cite{stratification}]
+% \label{def:prelims-asp-semantics-stratified-eval}
+% Let $P$ be an \gls{asp} program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T_{P_i}$ with $0 \leq i \leq n$ the immediate consequence operator for sub-program $P_i \in S$ respectively. Then the least model $\mathit{LM}(P)$ of $P$ is defined as follows.
+% The sequence $\langle M_{P_i} \rangle,\ 0 \leq i \leq n$ with $M_{P_0} = \mathit{lfp}(T_{P_0})$ and $M_{P_i} = \mathit{lfp}(T_{P_i \cup\ M_{S_{i-1}}})$ for all $1 \leq i \leq n$ defines the least model for each stratum. The least model $LM(P)$ of program $P$ is then the least model of the highest stratum $M_{P_n}$, i.e. the end of the sequence $\langle M_{P_i} \rangle$.
+% \end{definition}
+
+% \begin{definition}[Dependencies]
+% \label{def:prelims-asp-semantics-dependencies}
+% Let $P$ be an \gls{asp} program and $r \in P$ a rule contained in $P$. a rule $d$ is a \emph{positive dependency} of $r$ , i.e. $ r \DEP{+} d$ iff one the following holds:
+% \begin{itemize}
+% 	\item $\exists l \in b^{+}(r): d \in \mathit{def}(l) $, i.e. $d$ is a defining rule for some positive body literalof $r$, or
+% 	\item $\exists d_1 \in P: r \DEP{+} d_1 \land d_1 \DEP{+} d$, i.e. there is some positive dependency $d_1$ of $r$ of which $d$ is a (transitive) positive dependency.
+% \end{itemize}
+% \emph{Negative dependencies} are defined in the same way, i.e. a rule $d$ is a negative dependency of $r$, $r \DEP{-} d$ iff
+% \begin{itemize}
+% 	\item $\exists l \in b^{-}(r): d \in \mathit{def}(l)$, i.e. $d$ is a defining rule for some negative body literalof $r$, or
+% 	\item $\exists d_1 \in P: r \DEP{-} d_1 \land d_1 \DEP{-} d$, i.e. there is some negative dependency $d_1$ of $r$ of which $d$ is a (transitive) negative dependency.
+% \end{itemize}
+% Any positive or negative dependency $d$ of $r$ is a \emph{dependency} of $r$, i.e. $r \DEP{} d$.
+% We denote the set of dependencies of a rule as $D(r) = \{ d\ |\ r \DEP{} d\}$ and positive and negative dependencies as $D^{+}(r) = \{ d\ |\ r \DEP{+} d\}$ and $D^{-}(r) = \{ d\ |\ r \DEP{-} d\}$ respectively. Any non-transitive dependency of a rule is called a \emph{direct dependency}.
+% \end{definition}
+
+% \begin{definition}[Dependency Graph]
+% \label{def:prelims-asp-semantics-depgraph}
+% Let $P$ be an \gls{asp} program. Then the \emph{dependency graph}  $\mathit{DG}_P = (R, D)$ is a directed graph with vertex set $R$, which has one element for each rule in $P$, and (dependency-)edge set $D$ such that
+% \begin{align*}
+% 	D = &\{ (r_1, r_2, +)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ positive\ dependency\ of}\ r_1 \}\\ &\cup
+% \{ (r_1, r_2, -)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ negative\ dependency\ of}\ r_1 \}
+% \end{align*}
+% Edges are represented as 3-tuples where the first two values represent target and destination vertices and the third value indicates the "polarity", i. e. positive ("+") or negative ("-"), of the dependency.
+% \end{definition}
+
+% \begin{definition}[Component Graph]
+% \label{def:prelims-asp-semantics-compgraph}
+% The component graph $\mathit{CG}_P = (C, D)$ of a program $P$ is defined as the "condensed" dependency graph, i. e. vertices of $\mathit{CG}_P$ represent strongly connected components of $\mathit{DG}_P$. Each vertex of $\mathit{CG}_P$ is labelled "$+$" if the respective strongly connected component is connected only by positive edges, or "$-$" if there is a negative edge in the component. Edges of $\mathit{CG}_P$ are those edges of $\mathit{DG}_P$ that connect vertices from different strongly connected components where douuble edges resulting from multiple rule-level dependencies of same polarity between components are condensed into single edges.
+% \end{definition}
+
+% \begin{definition}[Splitting Set, adapted from~\cite{splitting-sets}]
+% \label{def:prelims-asp-semantics-splitting-set}
+% Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.
+% \end{definition}
+
+
+
+% Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}.\\
+
+% Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using the simplified bottom-up algorithm outlined in Algorithm \ref{alg:cbp-eval} and then only using the - computationally more complex - \gls{cdnl}-based algorithm for the top part.
 
 \begin{algorithm}[!h]
 \SetAlgoLined
