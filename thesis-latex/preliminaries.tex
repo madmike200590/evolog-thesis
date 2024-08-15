@@ -261,7 +261,7 @@ In a nutshell, a \emph{stratifiable} logic program is a program, for which we ca
 
 \begin{definition}[Stratifiable answer set program, as stated in~\ref{partial-eval}, adapted from\cite{stratification},~\cite{asp-primer}]
 \label{def:prelims-asp-semantics-stratification}	
-Given a program $P = \{r_{0}, ..., r_{n}\}$, $P$ is called \emph{stratifiable} iff there is a partition $P = P{S_0} \cup\ ... \cup\ P_{S_n}$ so that for each $0 \le i \leq n$ the following holds:
+Given a program $P = \{r_{0}, ..., r_{n}\}$, $P$ is called \emph{stratifiable} iff there is a partition $P = P_{S_0} \cup\ ... \cup\ P_{S_n}$ so that for each $0 \le i \leq n$ the following holds:
 \begin{itemize}
 	\item For every positive body literal $l_{b}$ of every rule in $P_{S_i}$, every rule that derives instances of thepredicate $\mathit{pred}(l_{b})$, i.e. where the predicate of the head atom $\mathit{pred}(a_H)$ is $\mathit{pred}(l_{b})$, is contained in some $P_{S_j}$ with $j \leq i$.
 	\item For every negative body literal $\mathit{not}\ l_{b}$ of every rule in $P_{S_i}$, every rule that derivesinstances of the predicate $\mathit{pred}(l_{b})$, i.e. where the predicate of the head atom $\mathit{pred}(a_H)$is $\mathit{pred}(l_{b})$, is contained in some $P_{j}$ with $j < i$.
@@ -280,7 +280,80 @@ The sequence $\langle M_{S_i} \rangle,\ 0 \leq i \leq n$ with $M_{S_0} = \mathit
 
 Since the evaluation mode described in Definition~\ref{def:prelims-asp-semantics-stratified-compseq} does not require any backtracking, i.e. the result of each step is part of the final result, we observe that te intermediate results of the immediate consequence operator yield a computation sequence for $P$. Example~\todo{build an example} illustrates evaluation of a short stratifiable program.
 
-However, in general, ASP programs are not stratifiable. Alpha addresses this in two ways - first, programs are analyzed in order to find a "stratified bottom", which can be evaluated using an algorithm based on Definition~\ref{def:prelims-asp-semantics-stratified-compseq}. Finally, the remaining program is solved using an algorithm based on the \gls{cdnl}-method also employed by classic two-phased ASP solvers.
+\begin{example}[Evaluating a stratified program]
+\label{ex:prelims-strat-eval}	
+Consider the program $P$ from Listing~\ref{lst:prelims-strat-eval}.
+\begin{lstlisting}[style=asp-code, label={lst:prelims-strat-eval}, caption={A stratifiable program.}]
+p(a). p(b). p(c). q(c). q(d).
+
+s(X) :- p(X), q(X).
+t(X) :- p(X), not s(X).
+u(X) :- q(X), not p(X).
+
+v(X, Y) :- t(X), u(Y), X != Y.
+\end{lstlisting}
+A possible stratification $S$ of $P$ could look as follows:
+\begin{align*}
+	S_0 = \{&p(a).~p(b).~p(c).~q(c).~q(d). \\
+			&s(X)~\leftarrow~p(X),~q(X).\} \\
+	S_1 = \{&t(X)~\leftarrow~p(X),~not~s(X). \\
+			&u(X)~\leftarrow~q(X),~not~p(X).\} \\
+	S_2 = \{&v(X, Y)~\leftarrow~t(X),~u(Y),~X~!=~Y.\}
+\end{align*}
+In this case, the least model of $P$ can be calculated using the method from Definition~\ref{def:prelims-asp-semantics-stratified-compseq}. The individual results of the $T_P$ operator constitute a computation sequence.
+\begin{align*}
+	T_{P_{S_0}}^1 &= T_{P_{S_0}}(\emptyset) = \{p(a), p(b), p(c), q(c), q(d)\} \\
+	T_{P_{S_0}}^2 &= T_{P_{S_0}}(T_{P_{S_0}}^1) = \{p(a), p(b), p(c), q(c), q(d), s(c)\} \\
+	T_{P_{S_0}}^3 &= T_{P_{S_0}}(T_{P_{S_0}}^2) = \{p(a), p(b), p(c), q(c), q(d), s(c)\} = lfp(T_{P_{S_0}})\\
+	\\
+	T_{P_{E1}} &= T_{P_{S_1\cup pr(lfp(T_{P_{S_0}}))}}\\
+	T_{P_{E1}}^1 &= T_{P_{E1}}(\emptyset) = \{p(a), p(b), p(c), q(c), q(d), s(c)\} \\
+	T_{P_{E1}}^2 &= T_{P_{E1}}(T_{P_{E1}}^1) = \{p(a), p(b), p(c), q(c), q(d), s(c), t(a), t(b), u(d)\} \\
+	T_{P_{E1}}^3 &= T_{P_{E1}}(T_{P_{E1}}^2) = \{p(a), p(b), p(c), q(c), q(d), s(c), t(a), t(b), u(d)\} = lfp(T_{P_{E1}}) \\
+	\\
+	T_{P_{E2}} &= T_{P_{S_2\cup pr(lfp(T_{P_{E1}}))}}\\
+	T_{P_{E2}}^1 &= T_{P_{E2}}(\emptyset) = \{p(a), p(b), p(c), q(c), q(d), s(c), t(a), t(b), u(d)\} \\
+	T_{P_{E2}}^2 &= T_{P_{E2}}(T_{P_{E2}}^1) = \{p(a), p(b), p(c), q(c), q(d), s(c), t(a), t(b), u(d), v(a, d), v(b, d)\} \\
+	T_{P_{E2}}^3 &= T_{P_{E2}}(T_{P_{E2}}^2) = \{p(a), p(b), p(c), q(c), q(d), s(c), t(a), t(b), u(d), v(a, d), v(b, d)\} = lfp(T_{P_{E2}})\\
+	\\
+	LM(P) &= lfp(T_{P_{E2}})
+\end{align*}	
+\end{example}	
+
+However, in general, ASP programs are not stratifiable. Example~\ref{ex:prelims-nonstrat} shows a typical non-stratifiable program.- Alpha addresses this in two ways - first, programs are analyzed in order to find a "stratified bottom", which can be evaluated using an algorithm based on Definition~\ref{def:prelims-asp-semantics-stratified-compseq}. Finally, the remaining program is solved using an algorithm based on the \gls{cdnl}-method also employed by classic two-phased ASP solvers.
+
+\begin{example}[A non-stratifiable program]
+\label{ex:prelims-nonstrat}
+Consider a variant of the well-known 3-coloring problem for undirected graphs, where some vertices "stay blank", i.e. they are excluded from coloring. Essentially, prior to calculating actual colorings, we remove all ignored vertices and their corresponding edges from the graph and color only the resulting subgraph. Program $P_{col}$ in Listing~\ref{lst:prelims-3col-var} shows a possible encoding of this problem.
+\begin{lstlisting}[style=asp-code, label={lst:prelims-3col-var}, caption={Graph 3-coloring with excluded vertices}]
+vertex(a). vertex(b). vertex(c). vertex(d).
+edge(a, b). edge(a, c). edge(a, d).
+edge(b, c). edge(b, d). edge(c, d).
+edge(X, Y) :- edge(Y, X).
+
+exclude_vertex(d).
+exclude_edge(V1, V2) :- edge(V1, V2), exclude_vertex(V1).
+exclude_edge(V1, V2) :- exclude_edge(V2, V1).
+
+coloring_vertex(V) :- vertex(V), not exclude_vertex(V).
+coloring_edge(V1, V2) :- 
+	edge(V1, V2), not exclude_edge(V1, V2).
+
+% Guess colors
+red(V) :- coloring_vertex(V), not green(V), not blue(V).
+green(V) :- coloring_vertex(V), not red(V), not blue(V).
+blue(V) :- coloring_vertex(V), not red(V), not green(V).
+
+% Filter invalid guesses
+:- coloring_vertex(V1), coloring_vertex(V2), 
+	coloring_edge(V1, V2), red(V1), red(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), 
+	coloring_edge(V1, V2), green(V1), green(V2).
+:- coloring_vertex(V1), coloring_vertex(V2), 
+	coloring_edge(V1, V2), blue(V1), blue(V2).
+\end{lstlisting}
+Clearly, $P_{col}$ is not stratifiable - the color assignment rules cyclically depend on each other through negated body literals. In other words, the rules on lines 15 to 17 are \emph{mutually exclusive}, i.e. a solver has to \emph{choose} which of the three should fire for a given ground instance of $coloring\_vertex/1$.
+\end{example}
 
 TODO: example of non-stratified program and naive trial-and-error for comp. sequences
 TODO: Definition common base program (no evaluation algorithm here!)
