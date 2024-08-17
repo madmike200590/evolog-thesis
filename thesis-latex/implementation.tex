@@ -146,17 +146,47 @@ The single answer set of the rewritten program (filtered for instances of \textt
 
 \subsection{Evaluation}
 
-Once a program has been parsed and compiled using the steps described in~\ref{subsec:alpha-arch-compilation}, the compiled program can be evaluated (i.e. solved). Evaluation consists of two steps - first, the stratified bottom (\emph{"common base program, CBP"},see~\ref{def:prelims-asp-semantics-cbp}) is evaluated using a bottom-up evaluation algorithm which is computationally more efficient than Alpha's \gls{cdnl}-based ground-/solve-loop.
+Once a program has been parsed and compiled using the steps described in~\ref{subsec:alpha-arch-compilation}, the compiled program can be evaluated (i.e. solved). Evaluation consists of two steps - first, the stratified bottom (\emph{"common base program, CBP"}, see~\ref{def:prelims-asp-semantics-cbp}) is evaluated using a bottom-up evaluation algorithm based on iterative fixpoint calculation as described in Definition~\ref{def:prelims-asp-semantics-stratified-compseq}. The remainder of the program, i.e. the part which cannot be handlud using stratified evaluation is then solved using Alpha's \gls{cdnl}-based answer set search described in Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl}. Since the stratified evaluation component is where Evolog Actions are handled, Section~\ref{subsubsec:impl-stratified-eval} gives an overview of how stratified evaluation is implemented in Alpha.
 
-\subsubsection{Stratified Evaluation in Alpha}
+\subsubsection{Stratified Evaluation in Alpha~\cite{partial-eval}}
+\label{subsubsec:impl-stratified-eval}
 
-Based on a compiled program, $P_{comp}$
+Alpha's stratified evaluation component takes a normalized program as described in Section~\ref{subsec:alpha-arch-compilation} as its input. A dependency graph for the program in question is calculated based on predicate dependencies based on Definition~\ref{def:prelims-asp-semantics-nonground-splitting-set} where each dependency is labelled either "+" or "-" to distinguish dependencies through positive and negative body literals, respectively. Calculating the component graph (i.e. the graph resulting from condensing the dependency graph into its stronlgy connected components), one ends up with a directed acyclic graph, which is labelled such that all component nodes containing cycles through negative (i.e. labelled "-") dependencies get labelled as "unstratifiable". The \gls{cbp} is then the program consisting of all rules from components that are not reachable by any path containing an unstratifiable component node. Based on the resulting subset of the component graph, a partition satisfying the criteria for a stratification according to Definition~\ref{def:prelims-asp-semantics-stratification} is calculated.\\
+\\
+The stratified part of the input program is then evaluated in order of ascending stratum using Algorithm~\ref{alg:cbp-eval}. For each stratum, we first calculate applicable ground rules based on all facts in the program as well as those derived when evaluating lower strata. As long as rule application yields new atoms, additional ground rules are computed and evaluate, until no new information can be derived, in which case a fixpoint has been reached on the current stratum. The result of the evaluation procedure is a program consisting of the rules of the non-stratified part of the input program, plus original facts as well as all new facts dervied during stratified evaluation.
 
-TODO: general outpline of evaluation with heavy focus on stratified evaluation, ground/solve loop is not of interest in this context, point to appropriate resources for that!
+\begin{algorithm}[!h]
+\SetAlgoLined
+\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
+\SetKwRepeat{Do}{do}{while}
+\Input{Stratification $S = \{S_0,\ldots,S_n\}$}
+\Input{Input Program $P = (F_{in}, R_{in})$ consisting of facts and rules $F_{in}$, $R_{in}$}
+\Output{partially evaluated program $P_{eval}$}
+Facts $F_{out}$ = \emph{facts($F_{in}$)} \\
+\ForEach{stratum $S_i$ \emph{\textbf{in}} $S_0 \ldots S_n$}{
+    initialize derived atoms in stratum $A = F_{out}$ \\
+    initialize derived atoms in individual run $A_{new} = A$ \\
+    \Do{new atoms derived in last run, i.e. $A_{new} \ne A$}{
+        $A \leftarrow A \cup A_{new}$ \\
+        $A_{new} = \emptyset$ \\
+        calculate applicable ground rules $R_{app}$ in $P_{S_i}$ based on $A$\\
+        \ForEach{rule $r \in R_{app}$}{
+            $A_{new} \leftarrow A_{new} \cup fireRule(r)$ \\
+        }
+    }
+    add newly derived atoms to output facts, $F_{out} \leftarrow F_{out} \cup A$ \\
+}
+\textbf{return} $P_{eval} = (F_{out}, (P \setminus S))$\\
+\caption{Stratified up-front evaluation of \gls{cbp} in Alpha}\label{alg:cbp-eval}
+\end{algorithm}
 
 \section{Implementing the Evolog extension in Alpha}
 
-TODO Architecture Diagram with added parts highlighted in color
+\begin{figure}[t]
+    \includegraphics[width=\linewidth]{graphics/alpha-evolog-architecture.drawio.png}
+    \caption{Alpha for Evolog System Architecture}
+    \label{fig:alpha-arch}
+\end{figure}
 
 \subsection{Implementing Action Support}
 
@@ -425,7 +455,7 @@ private static List<Term> answerSetToTerms(AnswerSet answerSet, Set<Predicate> m
 
 
 
-\todo{need to decide whether module recursion is a thing! (probably should be)}
+%\todo{need to decide whether module recursion is a thing! (probably should be)}
 \section{Evolog applications}
 
 TODO: A few programs using both actions and modules to achieve something cool!

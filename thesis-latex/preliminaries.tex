@@ -201,30 +201,21 @@ Note that $P^{I}$ is a positive logic program.
 A Herbrand Interpretation $I$ of an \gls{asp} program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$. We denote the set of Answer Sets of a program $P$ as $\mathit{AS}(P)$.
 \end{definition}
 
-% \subsection{Two-phased ASP solving}
-% In traditional \gls{asp} solving systems such as SModels~\cite{smodels}, DLV~\cite{dlv} or Clingo~\cite{clingo}, grounding an input program and solving the resulting propositional program are distinct sequential steps in the overall solving process. Consequently, in order to obtain answer sets of a program, one has to calculate a grounding for the entire program first, and can only then start the actual solver. Since the grounding of an arbitrary program may be exponentially larger than the nonground program or, in some extreme cases, not even finite, calculating a full grounding is often not feasible, especially for programs where only very few ground rules can actually fire. Lazy-grounding systems like Alpha try to alleviate this by interleaving the grounding- and solving steps and ideally ground only as much of the input programs as is necessary to find all answer sets.
+\section{Lazy-grounding answer-set solving using Alpha}
 
-% \subsection{Conceptual solving workflow in Alpha}
-
-% The formal basis of lazy-grounding architectures lies in the notion of a \emph{computation sequence}, i.e. a set of rules firing in a given order in order to get to an interpretation that is an answer set. Definition \ref{def:prelims-asp-semantics-compseq} formally introduces computation sequences.
-
-% Obviously, computation sequences can be easily found by simple iterative application of the $T_P$ operator for programs that do not use negation in rules. However, since in general once negation comes into play, solvers may have to retract assignments of atoms ("backtrack"), over the course of the solving process. \todo{Example of mutually blocking rules!} Lazy-grounding solvers suffer from a performance penalty compared to two-phased systems in that respect. This penalty results from algorithms based on \gls{cdnl}~\cite{clasp-cdnl} achieving higher performance since conflicts occur faster and more nogoods can be learned from them with a full grounding available. A key challenge in designing lazy-grounding systems is therefore identifying classes of programs as well as groups of rules within programs that can be evaluated using simplified deterministic algorithms in order to minimize the number of potential backtracks.
-
-\section{The Alpha System for Lazy-Grounding Answer Set Solving}
-
-The theoretical notion underlying lazy-grounding answer-set solving is that of a \emph{Computation Sequence}, which is formalized in Definition~\ref{def:def:prelims-asp-semantics-compseq}. Intuitively, a computation sequence is a sequence of (ground) rules firing, such that, at the end, the atoms derived by the rules from the computation sequence (together with all facts of the program) constitute an answer set.
+The theoretical notion underlying lazy-grounding answer-set solving is that of a \emph{Computation Sequence}, which is formalized in Definition~\ref{def:prelims-asp-semantics-compseq}. Intuitively, a computation sequence is a sequence of (ground) rules firing, such that, at the end, the atoms derived by the rules from the computation sequence (together with all facts of the program) constitute an answer set.
 
 \begin{definition}[Computation Sequence, adapted from~\cite{lazy-cdnl} and~\cite{asperix-fw-chain}]
-	\label{def:prelims-asp-semantics-compseq}
-	Let $P$ be an \gls{asp} program and $S = (A_0,\ldots,A_{\infty})$ a sequence of assignments, i.e. herbrand interpretations denoted by a set of atoms assumed to be true, then $S$ is called a \emph{computation sequence} iff
-	\begin{itemize}
-		\item $A_0 = \emptyset$
-		\item $\forall i \geq 1: A_i \subseteq T_P(A_{i - 1})$, i.e. every $A_i$ is a consequence of its predecessor in the sequence,
-		\item $\forall i \geq 1: A_{i - 1} \subseteq A_{i}$, i.e. S is monotonic,
-		\item $A_{\infty} = \cup^{\infty}_{i = 0} A_i = T_P(A_{\infty})$, i.e. $S$ converges toward a fixpoint and
-		\item $\forall i \geq 1: \forall a \ \in A_i \setminus A_{i - 1}, \exists r \in P: h(r) = a \land \forall j \geq i - 1: A_j \models a$, i.e. applicability of rules is persistent.
-	\end{itemize}
-	$A_{\infty}$ is an answer set of $P$ iff $S$ is a computation sequence. Note that there may exist an arbitrary number of computation sequences leading to the same answer set.
+\label{def:prelims-asp-semantics-compseq}
+Let $P$ be an \gls{asp} program and $S = (A_0,\ldots,A_{\infty})$ a sequence of assignments, i.e. herbrand interpretations denoted by a set of atoms assumed to be true, then $S$ is called a \emph{computation sequence} iff
+\begin{itemize}
+	\item $A_0 = \emptyset$
+	\item $\forall i \geq 1: A_i \subseteq T_P(A_{i - 1})$, i.e. every $A_i$ is a consequence of its predecessor in the sequence,
+	\item $\forall i \geq 1: A_{i - 1} \subseteq A_{i}$, i.e. S is monotonic,
+	\item $A_{\infty} = \cup^{\infty}_{i = 0} A_i = T_P(A_{\infty})$, i.e. $S$ converges toward a fixpoint and
+	\item $\forall i \geq 1: \forall a \ \in A_i \setminus A_{i - 1}, \exists r \in P: h(r) = a \land \forall j \geq i - 1: A_j \models a$, i.e. applicability of rules is persistent.
+\end{itemize}
+$A_{\infty}$ is an answer set of $P$ iff $S$ is a computation sequence. Note that there may exist an arbitrary number of computation sequences leading to the same answer set.
 \end{definition}
 
 It is easily observed that, in order to calculate computation sequences, one does not need a full grounding of the input program. Since facts are ground by definition, rules that only depend on facts can be grounded (and evaluated) based on facts alone. The same holds for rules depending on facts and rules from the previous step, etc. Example~\ref{ex:compseq-naive-calc} demonstrates how a computation sequence for a very simple positive program can be caluclated using a naive algorithm based on repeated application of the $T_P$-operator.
@@ -259,7 +250,7 @@ In order to arrive a the correct answer set $A = \{p(a), p(b), p(c), q(c), s(c),
 
 In a nutshell, a \emph{stratifiable} logic program is a program, for which we can calculate a partition into sub-programs, such that, when evaluating the sub-programs sequentially, one always ends up with a correct computation sequence. Definition~\ref{def:prelims-asp-semantics-stratification} formally characterizes stratifiable programs.
 
-\begin{definition}[Stratifiable answer set program, as stated in~\ref{partial-eval}, adapted from\cite{stratification},~\cite{asp-primer}]
+\begin{definition}[Stratifiable answer set program, as stated in~\cite{partial-eval}, adapted from\cite{stratification},~\cite{asp-primer}]
 \label{def:prelims-asp-semantics-stratification}	
 Given a program $P = \{r_{0}, ..., r_{n}\}$, $P$ is called \emph{stratifiable} iff there is a partition $P = P_{S_0} \cup\ ... \cup\ P_{S_n}$ so that for each $0 \le i \leq n$ the following holds:
 \begin{itemize}
@@ -454,10 +445,10 @@ Given a splitting set $S$ of program $P$, the bottom $B_S(P)$ is called \emph{co
 
 What remains is to solve the remaining, non-stratifiable part of a program. State-of-the-art two-phased solvers such as Clingo employ solving techniques based on~\gls{cdnl} for this~\cite{clasp-cdnl}. The basic idea of \gls{cdnl} is to encode a ground program as a set of constraints called \emph{nogoods}, i.e. sets of literals that must not be contained in any answer set. Based on these nogoods, truth assignments over $H_B(P)$ are "guessed" and conflicting guesses are used to potentially learn new nogoods using techniques originating in SAT-solving. However, these techniques normally require an input program to fully ground, and therefore do not lend themselves to lazy-grounding approaches. Alpha uses a solving approach that is inspired by \gls{cdnl}, but makes a number of modifications to apply the same principles in a lazy-grounding scenario. Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} gives a highlevel overview of how answer set search is realized in Alpha.
 
-\subsection{CDNL-based solving in a lazy-grounding Answer Set Solver}
+\subsection{Lazy-grounding answer set search}
 \label{subsec:prelims-lazygrounding-alpha-cdnl}
 
-Just like two-phased solvers, Alpha also uses \emph{nogoods} to encode rules and constraints. However, Alpha does not have a full grounding of the program it solves, which necessitates a number of modifications. Without a full grounding, a solver must be able to distinguish between atoms in an assignment (i.e. answer set candidate) that are \emph{true because some rule fired}, and atoms that \emph{must be true because some constraint does not permit otherwise} (but haven't been derived by a rule). Lazy-grounding solvers introduce a third truth value, \emph{must-be-true} (MBT), to reflect this. For an assignment to be an answer set, it must not contain any MBT values. Definitions~\ref{def:prelims-alpha-nogood} and~\ref{def:prelims-alpha-nogood-ruleencoding} formally decribe nogoods and their use to represent rules in Alpha.
+Just like two-phased solvers, Alpha also uses \emph{nogoods} to encode rules and constraints. However, Alpha does not have a full grounding of the program it solves, which necessitates a number of modifications. Without a full grounding, a solver must be able to distinguish between atoms in an assignment (i.e. answer set candidate) that are \emph{true because some rule fired}, and atoms that \emph{must be true because some constraint does not permit otherwise} (but haven't been derived by a rule). Lazy-grounding solvers introduce a third truth value, \emph{must-be-true} (MBT), to reflect this. For an assignment to be an answer set, it must not contain any MBT values. Definitions~\ref{def:prelims-alpha-nogood} and~\ref{def:prelims-alpha-nogood-ruleencoding} formally describe nogoods and their use to represent rules in Alpha.
 
 \begin{definition}[Alpha-Assignment, Nogood~\cite{lazy-cdnl}]
 \label{def:prelims-alpha-nogood}	
@@ -486,10 +477,9 @@ Given a rule $r$ with head $h(r) = a_0$, positive body $b^{+}(r) = a_1,\ldots,a_
 \end{definition}
 
 
-
 \paragraph{Lazy Grounding and solving in Alpha~\cite{alpha-techniques}}
 Alpha's grounder always calculates ground substitutions for all rules that are \emph{applicable} with respect to a (partial) assignment $A$. A rule $r$ is said to be applicable w.r.t $A$, if, given a ground substitution $\sigma$ $b^{+}(r\sigma) \subseteq A^{\mathcal{B}}$ and $b^{-}(r\sigma) \cap \{a~|~Ta \in A^{\mathcal{B}}\} = \emptyset$, i.e. a ground rule is applicable, if its positive body is satisifed and its negative body is not contradicted by an assignment.
-When solving a program, Alpha's grounder constructs an initial partial assignmentg from all facts and the model of the previously solved \gls{cbp}. Based on this partial assignment, ground instances for applicable rules are computed and translated into nogoods. The partial assignment and generated nogoods are passed to the solver. The solver then first applies propagation, i.e. extends assignment $A$ based on unit nogoods as described in Definition~\ref{def:prelims-alpha-nogood-unitness}. Then, if a conflict between the (possibly extended) assignment and the current set of nogoods exists, the conflict is analyzed, a new nogood describing the conflict cause is added, and the solver \emph{backtracks} (i.e. retracts enough of the assignment to get to a conflict-free state). If there are no conflicts, and applicable rules exist, the solver guesses (based on a heuristic), which rule to apply. If there are no applicable rules or unassigned atoms, and no atom is assigned \emph{must-be-true}, the solver has found an answer set. In this case, the answer set is stored, a new nogood which prevents finding the same answer set again is added, and the solver backtracks. Algorithm~\ref{alg:prelims-alpha-search} gives a highlevel summary of Alpha's answer set search procedure.
+When solving a program, Alpha's grounder constructs an initial partial assignment from all facts and the model of the previously solved \gls{cbp}. Based on this partial assignment, ground instances for applicable rules are computed and translated into nogoods. The partial assignment and generated nogoods are passed to the solver. The solver then first applies propagation, i.e. extends assignment $A$ based on unit nogoods as described in Definition~\ref{def:prelims-alpha-nogood-unitness}. Then, if a conflict between the (possibly extended) assignment and the current set of nogoods exists, the conflict is analyzed, a new nogood describing the conflict cause is added, and the solver \emph{backtracks} (i.e. retracts enough of the assignment to get to a conflict-free state). If there are no conflicts, and applicable rules exist, the solver guesses (based on a heuristic), which rule to apply. If there are no applicable rules or unassigned atoms, and no atom is assigned \emph{must-be-true}, the solver has found an answer set. In this case, the answer set is stored, a new nogood which prevents finding the same answer set again is added, and the solver backtracks. Algorithm~\ref{alg:prelims-alpha-search} gives a highlevel summary of Alpha's answer set search procedure.
 
 \begin{definition}[Weak and strongly unit nogoods~\cite{lazy-cdnl}]
 \label{def:prelims-alpha-nogood-unitness}	
@@ -533,99 +523,4 @@ Run lazy grounder, obtain initial nogoods $\Delta$ from facts.\\
 }
 \textbf{return} $AS$
 \caption{Alpha's answer set search procedure~\cite{alpha-techniques}}\label{alg:prelims-alpha-search}
-\end{algorithm}
-
-% \begin{definition}[Unification]
-% \label{def:prelims-asp-semantics-unification}
-% Let $l_1$, $l_2$ be literals. Then a substitution $\sigma$ is a \emph{unifier} of $l_1$ and $l2$ iff $l_{1}\sigma$ = $l_{2}\sigma$. Two literals for which a unifier exists are said to be \emph{unifiable}. We use the notation $l_1 \uplus l_2$ to express that $l_1$ and $l_2$ are unifiable.
-% \end{definition}
-
-% \begin{definition}[Defining rules]
-% \label{def:prelims-asp-semantics}
-% Given an \gls{asp} program $P$ and literal $l$ of form $a$ or $\NOT\ a$ with atom $a$, the set $\mathit{def}(l)$ of \emph{defining rules} of $l$ is defined as
-% \[
-% 	\mathit{def}(l) = \{ r\ |\ r \in P \land h(r) \uplus a \}
-% \]
-% i.e. all rules in $P$ whose head is unifiable with $a$.
-% \end{definition}
-
-% \begin{definition}[Stratification, adapted from~\cite{stratification}]
-% \label{def:prelims-asp-semantics-stratification}
-% Given a (non-ground) \gls{asp} program $P$, a stratification is a partition $S$ of $P$ into sub-programs called \emph{strata} $(P_0,\ldots,P_1)$ such that
-% \begin{itemize}
-% 	\item $\cup^{n}_{i = 0} P_i = P$, i.e. $S$ is total,
-% 	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{+}(r): \mathit{def}(l) \subseteq \cup^{i}_{j = 0} P_j$, i. e. for every positive body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with lower or equal index to the stratum $r$ resides in, and
-% 	\item $\forall i \geq 0: \forall r \in P_i: \forall l \in b^{-}(r): \mathit{def}(l) \subseteq \cup^{i - 1}_{j = 0} P_j$, i. e. for every negative body literal $l$ of every rule $r$, it holds that all rules defining $l$ reside in a stratum with strictly lower index than the stratum $r$ resides in.
-% \end{itemize}
-% A program is called \emph{stratified} iff a stratification exists for it.
-% \end{definition}
-
-% \begin{definition}[Stratified Evaluation, adapted from~\cite{asp-primer} and~\cite{stratification}]
-% \label{def:prelims-asp-semantics-stratified-eval}
-% Let $P$ be an \gls{asp} program, $S = (P_0,\ldots,P_n)$ a stratification of $P$ and $T_{P_i}$ with $0 \leq i \leq n$ the immediate consequence operator for sub-program $P_i \in S$ respectively. Then the least model $\mathit{LM}(P)$ of $P$ is defined as follows.
-% The sequence $\langle M_{P_i} \rangle,\ 0 \leq i \leq n$ with $M_{P_0} = \mathit{lfp}(T_{P_0})$ and $M_{P_i} = \mathit{lfp}(T_{P_i \cup\ M_{S_{i-1}}})$ for all $1 \leq i \leq n$ defines the least model for each stratum. The least model $LM(P)$ of program $P$ is then the least model of the highest stratum $M_{P_n}$, i.e. the end of the sequence $\langle M_{P_i} \rangle$.
-% \end{definition}
-
-% \begin{definition}[Dependencies]
-% \label{def:prelims-asp-semantics-dependencies}
-% Let $P$ be an \gls{asp} program and $r \in P$ a rule contained in $P$. a rule $d$ is a \emph{positive dependency} of $r$ , i.e. $ r \DEP{+} d$ iff one the following holds:
-% \begin{itemize}
-% 	\item $\exists l \in b^{+}(r): d \in \mathit{def}(l) $, i.e. $d$ is a defining rule for some positive body literalof $r$, or
-% 	\item $\exists d_1 \in P: r \DEP{+} d_1 \land d_1 \DEP{+} d$, i.e. there is some positive dependency $d_1$ of $r$ of which $d$ is a (transitive) positive dependency.
-% \end{itemize}
-% \emph{Negative dependencies} are defined in the same way, i.e. a rule $d$ is a negative dependency of $r$, $r \DEP{-} d$ iff
-% \begin{itemize}
-% 	\item $\exists l \in b^{-}(r): d \in \mathit{def}(l)$, i.e. $d$ is a defining rule for some negative body literalof $r$, or
-% 	\item $\exists d_1 \in P: r \DEP{-} d_1 \land d_1 \DEP{-} d$, i.e. there is some negative dependency $d_1$ of $r$ of which $d$ is a (transitive) negative dependency.
-% \end{itemize}
-% Any positive or negative dependency $d$ of $r$ is a \emph{dependency} of $r$, i.e. $r \DEP{} d$.
-% We denote the set of dependencies of a rule as $D(r) = \{ d\ |\ r \DEP{} d\}$ and positive and negative dependencies as $D^{+}(r) = \{ d\ |\ r \DEP{+} d\}$ and $D^{-}(r) = \{ d\ |\ r \DEP{-} d\}$ respectively. Any non-transitive dependency of a rule is called a \emph{direct dependency}.
-% \end{definition}
-
-% \begin{definition}[Dependency Graph]
-% \label{def:prelims-asp-semantics-depgraph}
-% Let $P$ be an \gls{asp} program. Then the \emph{dependency graph}  $\mathit{DG}_P = (R, D)$ is a directed graph with vertex set $R$, which has one element for each rule in $P$, and (dependency-)edge set $D$ such that
-% \begin{align*}
-% 	D = &\{ (r_1, r_2, +)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ positive\ dependency\ of}\ r_1 \}\\ &\cup
-% \{ (r_1, r_2, -)\ |\ r_1,\ r_2 \in P \land r_2\ \mathit{is\ direct\ negative\ dependency\ of}\ r_1 \}
-% \end{align*}
-% Edges are represented as 3-tuples where the first two values represent target and destination vertices and the third value indicates the "polarity", i. e. positive ("+") or negative ("-"), of the dependency.
-% \end{definition}
-
-% \begin{definition}[Component Graph]
-% \label{def:prelims-asp-semantics-compgraph}
-% The component graph $\mathit{CG}_P = (C, D)$ of a program $P$ is defined as the "condensed" dependency graph, i. e. vertices of $\mathit{CG}_P$ represent strongly connected components of $\mathit{DG}_P$. Each vertex of $\mathit{CG}_P$ is labelled "$+$" if the respective strongly connected component is connected only by positive edges, or "$-$" if there is a negative edge in the component. Edges of $\mathit{CG}_P$ are those edges of $\mathit{DG}_P$ that connect vertices from different strongly connected components where douuble edges resulting from multiple rule-level dependencies of same polarity between components are condensed into single edges.
-% \end{definition}
-
-% \begin{definition}[Splitting Set, adapted from~\cite{splitting-sets}]
-% \label{def:prelims-asp-semantics-splitting-set}
-% Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules defining the atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$ is called \emph{top} of $P$, which is denoted as $T_U(P)$.
-% \end{definition}
-
-
-
-% Intuitively, a set of rule heads is a splitting set if for every rule head in the set, all rule heads on which it depends are in the set as well. The importance of the notion of a splitting set lies in the fact that answer set computation can be split up using splitting sets: Given a splitting set, we can first calculate all answer sets of the bottom, and then solve the top with respect to each of those answer sets~\cite{splitting-sets}.\\
-
-% Alpha's evaluation logic makes use of this by evaluating first the maximum stratified bottom (\emph{common base program}, see Definition~\ref{def:prelims-asp-semantics-cbp}) using the simplified bottom-up algorithm outlined in Algorithm \ref{alg:cbp-eval} and then only using the - computationally more complex - \gls{cdnl}-based algorithm for the top part.
-
-\begin{algorithm}[!h]
-\SetAlgoLined
-\SetKwInOut{Input}{Input}\SetKwInOut{Output}{Output}
-\SetKwRepeat{Do}{do}{while}
-\Input{Stratification $S$}
-\Input{Program $P$}
-\Output{partially evaluated program $P_{eval}$}
-Facts $F$ = \emph{facts($P$)};\\
-$n~\leftarrow~(\mid S \mid~-~1)$;\\
-\ForEach{$i~$\emph{\textbf{in}} $0 \ldots n$}{
-	Program $grnd(P_{S_i})$ = \emph{ground($P_{S_i}$)};\\
-	Facts $F_{old} = \emptyset$;\\
-	\Do{$F_{old} \neq F$}{
-		$F_{old} = F$;\\ 
-		$F \leftarrow pr(T_{grnd(P_{S_i})}(F))$;\\
-	}
-	$P \leftarrow P \backslash P_{S_i}$;\\
-}
-\textbf{return} $P_{eval} = P~\cup~F$;\\
-\caption{Procedure \emph{evaluateCommonBaseProgram}}\label{alg:cbp-eval}
 \end{algorithm}
