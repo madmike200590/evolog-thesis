@@ -5,8 +5,6 @@ The Evolog language extends (non-disjunctive) ASP as defined in the ASP-Core2 st
 
 Actions allow for an ASP program to encode operations with \emph{side-effects} while maintaining fully declarative semantics. Actions are modelled in a functional style loosely based on the concept of monads as used in Haskell~\todo{cite something here!}. Intuitively, to maintain declarative semantics, actions need to behave as pure functions, meaning the result of executing an action (i.e. evaluating the respective function) must be reproducible for each input value across all executions. On first glance, this seems to contradict the nature of IO operations, which inherently depend on some state, e.g. the result of evaluating a function $getFileHandle(f)$ for a file $f$ will be different depending on whether $f$ exists, is readable, etc. However, at any given point in time - in other words, in a given state of the world - the operation will have exactly one result (i.e. a file handle or an error will be returned). A possible solution to making state-dependent operations behave as functions is therefore to make the state of the world at the time of evaluation part of the function's input. A function $f(x)$ is then turned into $f'(s, x)$  where $s$ represents a specific world state. The rest of this section deals with formalizing this notion of actions.
 
-\todo{Define non-disjunctive ASP-Core2 in detail in preliminaries. Give detailed definition of all "standard ASP" elements referenced here!}
-
 \subsection{Syntax}
 \label{subsec:evolog-actions-syntax}
 
@@ -35,8 +33,6 @@ To properly define the semantics of an action program according to the intuition
 \label{subsubsec:evolog-actions-semantics-expansion}
 
 To get from the practical-minded action syntax from Definition~\ref{def:action-rule-syntax} to the formal representation of an action as a function of some state and an input, we use the helper construct of an action rule's \emph{expansion} to bridge the gap. Intuitively, the expansion of an action rule is a syntactic transformation that results in a more verbose version of the original rule called \emph{application rule} and a second rule only dependent on the application rule called \emph{projection rule}. A (ground) application rule's head atom uniquely identifies the ground instance of the rule that derived it. As one such atom corresponds to one action executed, we call a ground instance of an application rule head in an answer set an \emph{action witness}. 
-
-\todo{define (classic ASP) grounding and substitutions in preliminaries}
 
 \begin{definition}[Action Rule Expansion]
 \label{def:action-rule-expansion}
@@ -137,14 +133,6 @@ A herbrand interpretation $I$ of an Evolog Program is an \emph{Evolog Model} ("a
 \subsection{Restrictions on Program Structure}
 \label{subsec:evolog-actions-restrictions}
 
-% Following goals are listed in introduction
-%     \item declarative programs, i.e. order in which actions occur in code does not affect semantics,
-%     \item actions behaving in a functional fashion, i.e. an action always gives the same result for the
-%      same input. Especially, actions have to be idempotent in the sense that, for an ASP rule that is
-%      associated with some action, the result of the action never changes, no matter how often the rule
-%      fires.
-%     \item transparent action execution, i.e. every action that is executed during evaluation of a program must be reflected in an answer set.
-
 While the action semantics outlined so far addresses the requirements for both declarativity and functionality of actions outlined in the introduction (see \ref{goals:actions}), we haven't yet addressed the demand for transparency, i.e. that every action that is executed must be reflected in an aswer set of the respective program. With just the semantics outlined in Section \ref{subsec:evolog-actions-semantics}, it would be possible to write programs such as the one shown in Example \ref{ex:unsat-with-sideeffects} where an action rule can fire, but the program is unsatisfiable.
 
 \begin{example}[Unsatisfiable Program with Side-effects]
@@ -167,8 +155,7 @@ An action rule $r_a$ of an Evolog program $P$ is \emph{transparent} if, for ever
 For an Evolog program to be valid, all its action rules must be transparent.
 \end{definition}
 
-It follows from Definition \ref{def:evolog-actions-transparency} that only satisfiable programs can be transparent. Furthermore, note that Definition~\ref{def:evolog-actions-transparency} aims to be as permissive as possible in terms of program structure. In general, it can not be assumed that transparency of all rules in a program can be guaranteed up-front. Implementations may therefore impose further restrictions on what is considered a valid Evolog program. \todo{It might make sense to introduce the restriction P = CBP(P) for a valid program already here (anything more permissive cannot be linted without a theorem prover!)}
-
+It follows from Definition \ref{def:evolog-actions-transparency} that only satisfiable programs can be transparent. Furthermore, note that Definition~\ref{def:evolog-actions-transparency} aims to be as permissive as possible in terms of program structure. In general, it can not be assumed that transparency of all rules in a program can be guaranteed up-front. Implementations may therefore impose further restrictions on what is considered a valid Evolog program.
 
 \section{Program Modularization in Evolog}
 \label{sec:evolog-modules}

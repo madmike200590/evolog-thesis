@@ -182,15 +182,30 @@ Facts $F_{out}$ = \emph{facts($F_{in}$)} \\
 
 \section{Implementing the Evolog extension in Alpha}
 
+After the technical overview of Alpha in Section~\ref{sec:alpha-arch-overview}, we now turn to how Alpha has been adapted to implement the Evolog language extension specified in Chapter~\ref{chap:language}. Specifically, additions were made in the following areas:
+\begin{itemize}
+    \item \emph{Parsing} - Alpha's program parser has been extended to be able to handle rules with action heads, module definitions, and references to modules from rule bodies.
+    \item \emph{Aggregate Rewriting} - In order to accomodate \emph{list aggregation literals}, a concise construction syntax for list terms, additional logic to compile this new type of aggregate literal has been added.
+    \item \emph{Action Execution Service} - A new component responsible for executing actions has been added. It ensures idempotency of action rule application and serves as an abstraction layer between actual action implementations and Alpha's stratified evaluation component.
+    \item \emph{Module Atom Compilation} - A new program preprocessing component has been added in order to compile module atoms, i.e. link name-based references to modules with the actual implementation code.
+\end{itemize}    
+Figure~\ref{fig:alpha-evolog-arch} shows an updated overview of Alpha's architecture, with new components highlighted.
+
 \begin{figure}[t]
     \includegraphics[width=\linewidth]{graphics/alpha-evolog-architecture.drawio.png}
     \caption{Alpha for Evolog System Architecture}
-    \label{fig:alpha-arch}
+    \label{fig:alpha-evolog-arch}
 \end{figure}
 
 \subsection{Implementing Action Support}
+\label{subsec:implementation-actions}
 
-TODO
+In this section, we give a detailed description of how Action support, conforming to definitions from Section~\ref{sec:evolog-actions} is implemented in Alpha.
+
+\subsubsection{Supported Programs}
+As stated in Section~\ref{subsec:evolog-actions-restrictions}, Evolog programs are required to be \emph{transparent} in terms of action execution, i.e.for every action that gets executed, there must be a corresponding witnessing atom in the respective answer set. This requirement is formalized in Definition~\ref{def:evolog-actions-transparency}. While the formal definition only states that if an action rule fires (i.e. an action is executed), the corresponding head must be contained in an answer set - which, aside from the effect that is applied on the outside world, is not any different from the general meaning of a rule that, if a the body is true, the head is as well - this leads directly to the practical problem of how to enforce this in an implementation. Since actions taken in the "outside world" (such as sending data over a network interface, writing into a file, ending a process, etc.) can not be retracted, an Evolog interpreter must be able to establish action rule transparency \emph{prior to actual execution}. In general, any answer set search algorithm based on guesses and propagation through nogoods as described in Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} does not know up-front whether an atom that gets assigned as true at some point in search, will be true in a resulting answer set - every later propagation step could lead to a violation of one or more nogoods and subsequent backtracking. With that in mind, we establish that it is not feasible to have any form of guesses depend on the result of an action, since whenever a solver makes a guess, there is a chance the program might be unsatisfiable, in which case the action would not be any transparent anymore. While it may certainly possible to identify classes of programs with guesses where action transparency can be assured through clever static analysis, our implementation takes a simple approach. In the reference implementation based on Alpha, an Evolog program $P$ is supported, if and only if $P = cbp(e)$, using the notion of the common base program as given in Definition~\ref{def:prelims-asp-semantics-cbp}. Since the \gls{cbp} of a program is by definition stratified, we can be sure there will be an answer set, and therefore have a guarantee of action transparency as well. At the same time, programs using the guess-and-check pattern can still be executed under this restriction, by encapsulating the guess-and-check part in a module. Example~\ref{ex:implementation-guess-and-check-encapsulation} demonstrates the necessary program structure.
+
+\todo{Do the example ex:implementation-guess-and-check-encapsulation}
 
 \subsection{Implementing Program Modularization}
 

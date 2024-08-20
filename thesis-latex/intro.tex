@@ -46,10 +46,10 @@ Intuitively, each answer set constitues a valid solution to the problem specifie
 \end{example}    
 
 As Example \ref{ex:asp-first-intro} illustrates, \gls{asp} offers a declarative and concise description language for complex problems, where formulating an imperative algorithm is non-trivial. Since its inception, \gls{asp} has been applied in a wide range of applications such as logistics~\cite{gioia-tauro}~\cite{train-scheduling}, automated music composition~\cite{blues-composition} and even spaceflight~\cite{space-shuttle}.
-\todo{use stuff from "answer set programming at a glance"}..
+\todo{add more content here, e.g. from "answer set programming at a glance"}..
 
-First implementations 
-"blabla as example \ref{ex:bla} shows, ASP is well suited to all kinds of planning problems... it has successfully been used for ... more software-engineering-like tasks could also benefit from that kind of declarative brevity (hint: parsers, configuration, etc), but for ease of coding ,we don't want to write connectors all day...."
+% First implementations 
+% "blabla as example \ref{ex:bla} shows, ASP is well suited to all kinds of planning problems... it has successfully been used for ... more software-engineering-like tasks could also benefit from that kind of declarative brevity (hint: parsers, configuration, etc), but for ease of coding ,we don't want to write connectors all day...."
 
 Apart from the established use of \gls{asp} as a formalization language for decision- or optimization problems, more recent developments in the field are increasingly targeted toward working with continuous external data in \gls{asp} programs. A prominent example from this direction of research is the stream reasoning framework LARS~\cite{lars}. Closely related to the concept of processing external data is the notion of actually influencing the outside world, for instance by writing data to a network buffer, from an \gls{asp} program, while still preserving declarative semantics. The DLV-extension Acthex~\cite{acthex} is an example of a system with basic action support. The goal of this thesis is to implement action support in the lazy-grounding solver Alpha~\cite{alpha}, along with a basic modularization concept, thus enabling the development of arbitrary programs fully within \gls{asp}.
 
@@ -109,7 +109,7 @@ The program from Example \ref{ex:asp-binary-parsing} is a (very simple) example 
 
 \section{State of the Art}
 \label{sec:state-of-the-art}
-\todo{Mostly copied from proposal for now -- refine a bit!}
+%\todo{Mostly copied from proposal for now -- refine a bit!}
 This work aims to blend action support with modularization in the context of lazy-grounding ASP solving - all three of these areas have seen a substantial amount of research in the past.
 
 Both Clingo~\cite{clingo4} and DLVHEX, through the ACTHEX~\cite{acthex} extension, offer their own flavours of support for triggering actions from programs. While Clingo does not directly support actions as a dedicated feature - and therefore offers no strictly enforced semantics for this - similar behavior can be achieved using external functions and the reactive solving features first introduced in oClingo~\cite{oclingo}. ACTHEX has thoroughly defined semantics for actions. In the ACTHEX model, answer set search and action execution are separate steps, where executability of actions is only determined after answer sets are calculated. While this gives users a high degree of flexibility in working with actions, it does not directly lend itself to the idea of a general purpose language where program behavior may be influenced by continuous two-way communication between a program and its environment.
