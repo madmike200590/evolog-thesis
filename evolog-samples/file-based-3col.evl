@@ -1,0 +1,24 @@
+infile("C:\Users\micha\git\evolog-thesis\evolog-samples\graph.xml").
+infile_open(PATH, HD) : @fileInputStream[PATH] = HD :- infile(PATH).
+
+% Handle file opening error
+error(io, MSG) :- infile_open(_, error(MSG)).
+
+% Read all lines from infile 
+readline_result(PATH, 0, RES) : @streamReadLine[STREAM] = RES :- infile(PATH), infile_open(PATH, success(stream(STREAM))).
+readline_result(PATH, LINE_NO, RES) : @streamReadLine[STREAM] = RES :- 
+	infile(PATH), 
+	infile_open(PATH, success(stream(STREAM))), 
+	readline_result(PATH, PREV_LINE_NO, PREV_LINE_RES), 
+	PREV_LINE_RES != success(line(eof)), 
+	LINE_NO = PREV_LINE_NO + 1.
+
+% close stream after getting eof
+infile_closed(PATH, RES) : @inputStreamClose[STREAM] = RES :- infile(PATH), infile_open(PATH, success(stream(STREAM))), readline_result(PATH, _, ok(eof)).
+
+% Now create a list of content lines
+file_lines(PATH, LST) :- LST = #list{line(LINE_NO, LINE) : readline_result(PATH, LINE_NO, success(line(LINE))), LINE != eof}, infile(PATH).
+
+%#module parse_graph_xml(input_lines/1=>{graph/2}) {
+%
+%}

@@ -1,0 +1,20 @@
+<graph directed="false">
+    <vertices>
+        <vertex>a</vertex>
+        <vertex>b</vertex>
+        <vertex>c</vertex>
+    </vertices>
+    <edges>
+        <edge>
+            <source>a</source>
+            <target>b</target>
+        </edge>
+        <edge>
+            <source>b</source>
+            <target>c</target>
+        </edge>
+        <edge>
+            <source>c</source>
+            <target>a</target>
+        </edge>
+</graph>
