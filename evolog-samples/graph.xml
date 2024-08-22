@@ -17,4 +17,5 @@
             <source>c</source>
             <target>a</target>
         </edge>
+    </edges>    
 </graph>
