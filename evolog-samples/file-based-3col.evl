@@ -19,12 +19,56 @@ infile_closed(PATH, RES) : @inputStreamClose[STREAM] = RES :- infile(PATH), infi
 % Now create a list of content lines
 file_lines(PATH, LST) :- LST = #list{line(LINE_NO, LINE) : readline_result(PATH, LINE_NO, success(line(LINE))), LINE != eof}, infile(PATH).
 
-file_dom(PATH, dom(ELEMENTS, ATTRIBUTES, PARENTS, TEXTS)) :- 
+% Parse the string content of individual lines into a DOM-like representation
+file_dom(PATH, dom(ELEMENTS, CHILDREN, TEXTS, ATTRIBUTES)) :- 
 	file_lines(PATH, LINES), 
-	#xml_dom[LINES](ELEMENTS, ATTRIBUTES, PARENTS, TEXTS).
+	#xml_dom[LINES](ELEMENTS, CHILDREN, TEXTS, ATTRIBUTES).
 
-% TODO we could give the actual tree as function term out of DOM parsing (not sure if useful)
-#module xml_dom(input_lines/1 => {element/7, element_attribute/8, element_parent/6, element_text/4}) {
+% Unwrap list elements from module output
+dom_element_entry(NAME, ID, TAIL) :- file_dom(_, dom(lst(dom_element(NAME, ID), TAIL), _, _, _)).
+dom_element_entry(NAME, ID, TAIL) :- dom_element_entry(_, _, lst(dom_element(NAME, ID), TAIL)).
+dom_element(NAME, ID) :- dom_element_entry(NAME, ID, _).
+dom_element_child_entry(NAME, ID, CHILD_ID, TAIL) :- file_dom(_,dom(_, lst(dom_element_child(NAME, ID, CHILD_ID), TAIL), _, _)).
+dom_element_child_entry(NAME, ID, CHILD_ID, TAIL) :- dom_element_child_entry(_, _, _, lst(dom_element_child(NAME, ID, CHILD_ID), TAIL)).
+dom_element_child(NAME, ID, CHILD_ID) :- dom_element_child_entry(NAME, ID, CHILD_ID, _).
+dom_element_text_entry(NAME, ID, TEXT, TAIL) :- file_dom(_,dom(_, _, lst(dom_element_text(NAME, ID, TEXT), TAIL), _)).
+dom_element_text_entry(NAME, ID, TEXT, TAIL) :- dom_element_text_entry(_, _, _, lst(dom_element_text(NAME, ID, TEXT), TAIL)).
+dom_element_text(NAME, ID, TEXT) :- dom_element_text_entry(NAME, ID, TEXT, _).
+dom_element_attribute_entry(NAME, ID, ATTR_NAME, ATTR_VALUE, TAIL) :- file_dom(_,dom(_, _, _, lst(dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE), TAIL))).
+dom_element_attribute_entry(NAME, ID, ATTR_NAME, ATTR_VALUE, TAIL) :- dom_element_attribute_entry(_, _, _, lst(dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE), TAIL)).
+dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :- dom_element_attribute_entry(NAME, ID, ATTR_NAME, ATTR_VALUE, _).
+
+% Translate generic DOM-elements into graphs
+graph(ID) :- dom_element("graph", ID).
+graph_vertex(ID, VERTEX) :- 
+	graph(ID), dom_element("graph", ID), dom_element_child("graph", ID, VERTEX_LIST_ID), 
+	dom_element("vertices", VERTEX_LIST_ID), dom_element("vertex", VERTEX_ID), dom_element_child("vertices", VERTEX_LIST_ID, VERTEX_ID),
+	dom_element_text("vertex", VERTEX_ID, VERTEX).
+graph_directedness(ID, DIRECTED) :- 
+	graph(ID), dom_element("graph", ID), dom_element_attribute("graph", ID, "directed", DIRECTED).
+graph_undirected(ID) :- graph_directedness(ID, "false").
+graph_directed(ID) :- graph_directedness(ID, "true").
+graph_edge(ID, EDGE) :- 
+	graph(ID), graph_vertex(ID, SRC_ID), graph_vertex(ID, TARGET_ID), dom_element("graph", ID), dom_element_child("graph", ID, EDGE_LIST_ID), 
+	dom_element("edges", EDGE_LIST_ID), dom_element("edge", EDGE_ID), dom_element_child("edges", EDGE_LIST_ID, EDGE_ID),
+	dom_element("source", SRC_ELEM_ID), dom_element_child("edge", EDGE_ID, SRC_ELEM_ID), dom_element_text("source", SRC_ELEM_ID, SRC_ID),
+	dom_element("target", TARGET_ELEM_ID), dom_element_child("edge", EDGE_ID, TARGET_ELEM_ID), dom_element_text("target", TARGET_ELEM_ID, TARGET_ID),
+	EDGE = e(SRC_ID, TARGET_ID).
+graph_edge(ID, e(TARGET, SRC)) :- graph_edge(ID, e(SRC, TARGET)), graph_undirected(ID).	
+
+% Calculate 3-colorings for each parsed graph
+graph_threecol(ID, COL) :- 
+	graph(ID), 
+	VERTEX_LIST = #list{V : graph_vertex(ID, V)}, 
+	EDGE_LIST = #list{edge(V1, V2) : graph_edge(ID, e(V1, V2))}, 
+	#threecol[VERTEX_LIST, EDGE_LIST](COL).
+
+% TODO: Write calculated colorings to file
+
+% Note: we could give the actual tree as function term out of DOM parsing (not sure if useful)
+#module xml_dom(input_lines/1 => {dom_element/2, dom_element_child/3, dom_element_text/3, dom_element_attribute/4}) {
+	#enumeration_predicate_is id_enum.
+
 	token_regex(tag_open, "(<(\w+)( (\w+=\\"\w+\\"))*>)").
 	token_regex(tag_close, "(</\w+>)").
 	opening_tag_name_regex("<(\w+)( (\w+=\\"\w+\\"))*>").
@@ -145,4 +189,30 @@ file_dom(PATH, dom(ELEMENTS, ATTRIBUTES, PARENTS, TEXTS)) :-
 	element_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
 		element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
 		not element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO).
+
+
+	dom_element_id(e(NAME, POS_FROM, POS_TO), ID) :- 
+		element(NAME, START_LINE_NO, START_FROM, START_TO, END_LINE_NO, END_FROM, END_TO),
+		POS_FROM = pos(START_LINE_NO, START_FROM),
+		POS_TO = pos(END_LINE_NO, END_TO),
+		id_enum(element_ids, e(NAME, POS_FROM, POS_TO), ID).
+
+	dom_element(NAME, ID) :-
+		dom_element_id(e(NAME, _, _), ID).	
+
+	dom_element_child(NAME, ID, CHILD_ID) :-
+		dom_element(NAME, ID),
+		dom_element_id(e(NAME, POS_FROM, POS_TO), ID),	
+		dom_element_id(e(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO), CHILD_ID),
+		element_parent(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO, NAME, POS_FROM, POS_TO).
+
+	dom_element_text(NAME, ID, TEXT) :-
+		dom_element(NAME, ID),
+		dom_element_id(e(NAME, POS_FROM, POS_TO), ID),
+		element_text(NAME, POS_FROM, POS_TO, TEXT).	
+
+	dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :-
+		dom_element(NAME, ID),
+		dom_element_id(e(NAME, pos(START_LINE_NO, START_FROM), pos(END_LINE_NO, END_TO)), ID),
+		element_attribute(NAME, START_LINE_NO, START_FROM, _, END_LINE_NO, _, END_TO, attribute(ATTR_NAME, ATTR_VALUE)).	
 }
