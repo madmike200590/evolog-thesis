@@ -1,4 +1,12 @@
-infile("C:\Users\micha\git\evolog-thesis\evolog-samples\graph.xml").
+#enumeration_predicate_is ids.
+
+enter_input_prompt("Please enter a path to read graphs from: ").
+enter_output_prompt("Please enter a path to write calculated colorings to: ").
+
+write_input_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- enter_input_prompt(PROMPT), &stdout(STDOUT).
+usr_input_res(INP) : @streamReadLine[STDIN] = INP :- write_input_prompt_res(success(_)), &stdin(STDIN).
+
+infile(PATH) :- usr_input_res(success(line(PATH))).
 infile_open(PATH, HD) : @fileInputStream[PATH] = HD :- infile(PATH).
 
 % Handle file opening error
@@ -63,7 +71,47 @@ graph_threecol(ID, COL) :-
 	EDGE_LIST = #list{edge(V1, V2) : graph_edge(ID, e(V1, V2))}, 
 	#threecol[VERTEX_LIST, EDGE_LIST](COL).
 
-% TODO: Write calculated colorings to file
+graph_coloring(GRAPH, COLORING, ID) :- ids(coloring_ids, gcol(GRAPH, COLORING), ID), graph_threecol(GRAPH, COLORING).
+
+% Unwrap colorings and assign identifiers.
+graph_coloring_entry(GRAPH, COLORING_ID, VERTEX, COLOR, TAIL) :- graph_coloring(GRAPH, lst(col(VERTEX, COLOR), TAIL), COLORING_ID).
+graph_coloring_entry(GRAPH, COLORING_ID, VERTEX, COLOR, TAIL) :- graph_coloring_entry(GRAPH, COLORING_ID, _, _, lst(col(VERTEX, COLOR), TAIL)).
+graph_coloring_vertex(GRAPH, COLORING_ID, VERTEX, COLOR) :- graph_coloring_entry(GRAPH, COLORING_ID, VERTEX, COLOR, _).
+
+% Establish an ordering of coloring entries
+graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2) :-
+	graph_coloring_vertex(GRAPH1, COLORING_ID1, VERTEX1, COLOR1),
+	graph_coloring_vertex(GRAPH2, COLORING_ID2, VERTEX2, COLOR2),
+	GRAPH1 < GRAPH2.	
+graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2) :-
+	graph_coloring_vertex(GRAPH1, COLORING_ID1, VERTEX1, COLOR1),
+	graph_coloring_vertex(GRAPH2, COLORING_ID2, VERTEX2, COLOR2),
+	GRAPH1 = GRAPH2,
+	COLORING_ID1 < COLORING_ID2.
+graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2) :-
+	graph_coloring_vertex(GRAPH1, COLORING_ID1, VERTEX1, COLOR1),
+	graph_coloring_vertex(GRAPH2, COLORING_ID2, VERTEX2, COLOR2),
+	GRAPH1 = GRAPH2,
+	COLORING_ID1 = COLORING_ID2,
+	VERTEX1 < VERTEX2.
+graph_coloring_vertex_not_pred(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH3, COLORING_ID3, VERTEX3, COLOR3) :-
+	graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2)
+	graph_coloring_vertex_less_than(GRAPH2, COLORING_ID2, VERTEX2, COLOR2, GRAPH3, COLORING_ID3, VERTEX3, COLOR3),
+	terms(GRAPH2, COLORING_ID2, VERTEX2, COLOR2) != terms(GRAPH3, COLORING_ID3, VERTEX3, COLOR3).
+	
+	
+
+% Prompt user for a path to which to write the calculated colorings
+write_output_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- enter_output_prompt(PROMPT), &stdout(STDOUT).
+usr_output_res(INP) : @streamReadLine[STDIN] = INP :- write_output_prompt_res(success(_)), &stdin(STDIN).
+
+% Open the output file
+outfile(PATH) :- usr_output_res(success(line(PATH))).
+outfile_open(PATH, HD) : @fileOutputStream[PATH] = HD :- outfile(PATH).
+
+% Write every vertex coloring along with graph and coloring ids to output file
+% Assign a unique id to every line we want to write -> Slight abuse of enum semantics: Technically we cannot assume ids to be consecutive integers
+
 
 % Note: we could give the actual tree as function term out of DOM parsing (not sure if useful)
 #module xml_dom(input_lines/1 => {dom_element/2, dom_element_child/3, dom_element_text/3, dom_element_attribute/4}) {
