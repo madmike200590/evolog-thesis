@@ -1,0 +1,15 @@
+prompt_text("Hello user, tell me something: ").
+cancel_cmd("EXIT").
+
+write_prompt_res(R, 0) : @streamWrite[STDOUT, PROMPT] = R :- prompt_text(PROMPT), &stdout(STDOUT).
+write_prompt_res(R, N) : @streamWrite[STDOUT, PROMPT] = R :- prompt_text(PROMPT), write_echo_res(success(_), K), N = K + 1, &stdout(STDOUT).
+usr_input_res(INP, N) : @streamReadLine[STDIN] = INP :- write_prompt_res(success(_), N), &stdin(STDIN).
+write_echo_res(R, N) : @streamWrite[STDOUT, ECHO] = R :- 
+	usr_input_res(success(line(TEXT)), N), TEXT != CANCEL_CMD, cancel_cmd(CANCEL_CMD), &stdlib_string_concat["You said: ", TEXT](ECHO), &stdout(STDOUT).
+	
+write_goodbye_res(R) : @streamWrite[STDOUT, "Goodbye, user! Sad to see you leave"] = R :- usr_input_res(success(line(TEXT)), _), cancel_cmd(CMD), TEXT = CMD, &stdout(STDOUT).
+
+
+
+
+
