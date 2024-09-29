@@ -206,6 +206,15 @@ In this section, we give a detailed description of how Action support, conformin
 \label{subsubsec:implementation-actions-support}
 As stated in Section~\ref{subsec:evolog-actions-restrictions}, Evolog programs are required to be \emph{transparent} in terms of action execution, i.e.for every action that gets executed, there must be a corresponding witnessing atom in the respective answer set. This requirement is formalized in Definition~\ref{def:evolog-actions-transparency}. While the formal definition only states that if an action rule fires (i.e. an action is executed), the corresponding head must be contained in an answer set - which, aside from the effect that is applied on the outside world, is not any different from the general meaning of a rule that, if a the body is true, the head is as well - this leads directly to the practical problem of how to enforce this in an implementation. Since actions taken in the "outside world" (such as sending data over a network interface, writing into a file, ending a process, etc.) can not be retracted, an Evolog interpreter must be able to establish action rule transparency \emph{prior to actual execution}. In general, any answer set search algorithm based on guesses and propagation through nogoods as described in Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} does not know up-front whether an atom that gets assigned as true at some point in search, will be true in a resulting answer set - every later propagation step could lead to a violation of one or more nogoods and subsequent backtracking. With that in mind, we establish that it is not feasible to have any form of guesses depend on the result of an action, since whenever a solver makes a guess, there is a chance the program might be unsatisfiable, in which case the action would not be any transparent anymore. While it may certainly possible to identify classes of programs with guesses where action transparency can be assured through clever static analysis, our implementation takes a simple approach. In the reference implementation based on Alpha, an Evolog program $P$ is supported, if and only if $P = cbp(e)$, using the notion of the common base program as given in Definition~\ref{def:prelims-asp-semantics-cbp}. Since the \gls{cbp} of a program is by definition stratified, we can be sure there will be an answer set, and therefore have a guarantee of action transparency as well. At the same time, programs using the guess-and-check pattern can still be executed under this restriction, by encapsulating the guess-and-check part in a module. Consider the program from Example~\ref{ex:bin-packing-module}, which has a single answer set, in which individual atoms correspond to answer sets of the used modules. In a program structured like that, on can use modules to encapsulate arbitrarily complicated calculations with any number of guesses while maintaining stratifiability of the top-level program.
 
+\todo{example of simple supported vs unsupported programs}
+\todo{also an example of theoretically transparent, but not supported program}
+
+\subsubsection{Action Implementation}
+
+NOTE: this is just a basic write-up about how it works, not the final text
+
+Action execution in Alpha is tied into the stratified evaluation component described in Section~\ref{subsubsec:impl-stratified-eval}. Specifically, whenever a ground instance of an action rule is fired, the corresponding action function is evaluated. The expansion of action rules described in Definition~\ref{def:action-rule-expansion} happens implicitly: State and Input terms ....
+
 \subsubsection{Implemented Actions}
 \label{subsubsec:implementation-actions-basic-actions}
 
@@ -219,8 +228,35 @@ The actual actions provided in the reference implementation are intended to be s
     \item close an output stream
 \end{itemize}
 
-\paragraph{Action Result Terms} The way action results are represented in Alpha takes its inspiration from the \texttt{Either} type present in many functional programming languages. For example, an instance of type \texttt{Either<InputStream, Exception>}
+\paragraph{Action Result Terms} The way action results are represented in Alpha takes its inspiration from the \texttt{Either} type present in many functional programming languages or libraries such as Vavr~\cite{vavr-io}. For example, an instance of type \texttt{Either<InputStream, Exception>}
 can either hold an instance of the "left" type, i.e. \texttt{InputStream} or an instance of the "right" type, i.e. \texttt{Exception}. Similarly, \emph{action result terms} as defined in Definition~\ref{def:action-rule-syntax} are function terms of form $r_t(r_v)$, where $r_t \in \{success, error\}$ is the \emph{result type} and $r_v$ the \emph{result value}. Result type $success$ indicates the action completed normally, and in this case, $r_v$ holds the result of the successful action, e.g. a term representing an input stream. If the result type is $error$, for example when trying to obtain a read handle on a non-existing file, $r_v$ typically holds an error message.
+Listing~\ref{lst:implementation-actions-actionfunc} shows the Java Interface specifying an Action result term in Alpha.
+
+\begin{lstlisting}[style=java, label={lst:implementation-actions-actionfunc}, caption={Java definition of an action result term.}]
+public interface ActionResultTerm<T extends Term> extends FunctionTerm {
+    public static final String SUCCESS_SYMBOL = "success";
+    public static final String ERROR_SYMBOL = "error";
+    /**
+     * True if the action that generated this 
+     * result was successful (i.e. executed normally).
+     */
+    boolean isSuccess();
+    /**
+     * True if the action that generated this 
+     * result failed (i.e. threw an error in execution).
+     */
+    boolean isError();
+    /**
+     * Gets the actual value wrapped in this result.
+     * Either a term representing the action return 
+     * value or a string term representing an error
+     * message.
+     */
+    T getValue();
+}    
+\end{lstlisting}   
+
+
 
 
 \subsubsection{Action Caching - Ensuring idempotency of action rules}
@@ -263,7 +299,7 @@ In this example, we take a detailed look at an evolog application intended to si
     \item Use actions to write the calculated colorings to an output file
 \end{itemize}        
 \label{ex:implementation-actions-program-with-guesses}
-\todo{I'm not sure where to best put this - maybe it hsould go to chapter 5.}
+\todo{I'm not sure where to best put this - maybe it should go to chapter 5.}
 \end{example}    
 
 \subsection{Implementing Program Modularization}
