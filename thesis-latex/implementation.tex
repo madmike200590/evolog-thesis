@@ -153,7 +153,7 @@ Once a program has been parsed and compiled using the steps described in~\ref{su
 
 Alpha's stratified evaluation component takes a normalized program as described in Section~\ref{subsec:alpha-arch-compilation} as its input. A dependency graph for the program in question is calculated based on predicate dependencies based on Definition~\ref{def:prelims-asp-semantics-nonground-splitting-set} where each dependency is labelled either "+" or "-" to distinguish dependencies through positive and negative body literals, respectively. Calculating the component graph (i.e. the graph resulting from condensing the dependency graph into its stronlgy connected components), one ends up with a directed acyclic graph, which is labelled such that all component nodes containing cycles through negative (i.e. labelled "-") dependencies get labelled as "unstratifiable". The \gls{cbp} is then the program consisting of all rules from components that are not reachable by any path containing an unstratifiable component node. Based on the resulting subset of the component graph, a partition satisfying the criteria for a stratification according to Definition~\ref{def:prelims-asp-semantics-stratification} is calculated.\\
 \\
-The stratified part of the input program is then evaluated in order of ascending stratum using Algorithm~\ref{alg:cbp-eval}. For each stratum, we first calculate applicable ground rules based on all facts in the program as well as those derived when evaluating lower strata. As long as rule application yields new atoms, additional ground rules are computed and evaluate, until no new information can be derived, in which case a fixpoint has been reached on the current stratum. The result of the evaluation procedure is a program consisting of the rules of the non-stratified part of the input program, plus original facts as well as all new facts dervied during stratified evaluation.
+The stratified part of the input program is then evaluated in order of ascending stratum using Algorithm~\ref{alg:cbp-eval}. For each stratum, we first calculate applicable ground rules based on all facts in the program as well as those derived when evaluating lower strata. As long as rule application yields new atoms, additional ground rules are computed and evaluated, until no new information can be derived, in which case a fixpoint has been reached on the current stratum. The result of the evaluation procedure is a program consisting of the rules of the non-stratified part of the input program, plus original facts as well as all new facts dervied during stratified evaluation.
 
 \begin{algorithm}[!h]
 \SetAlgoLined
@@ -204,16 +204,103 @@ In this section, we give a detailed description of how Action support, conformin
 
 \subsubsection{Supported Programs}
 \label{subsubsec:implementation-actions-support}
-As stated in Section~\ref{subsec:evolog-actions-restrictions}, Evolog programs are required to be \emph{transparent} in terms of action execution, i.e.for every action that gets executed, there must be a corresponding witnessing atom in the respective answer set. This requirement is formalized in Definition~\ref{def:evolog-actions-transparency}. While the formal definition only states that if an action rule fires (i.e. an action is executed), the corresponding head must be contained in an answer set - which, aside from the effect that is applied on the outside world, is not any different from the general meaning of a rule that, if a the body is true, the head is as well - this leads directly to the practical problem of how to enforce this in an implementation. Since actions taken in the "outside world" (such as sending data over a network interface, writing into a file, ending a process, etc.) can not be retracted, an Evolog interpreter must be able to establish action rule transparency \emph{prior to actual execution}. In general, any answer set search algorithm based on guesses and propagation through nogoods as described in Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} does not know up-front whether an atom that gets assigned as true at some point in search, will be true in a resulting answer set - every later propagation step could lead to a violation of one or more nogoods and subsequent backtracking. With that in mind, we establish that it is not feasible to have any form of guesses depend on the result of an action, since whenever a solver makes a guess, there is a chance the program might be unsatisfiable, in which case the action would not be any transparent anymore. While it may certainly possible to identify classes of programs with guesses where action transparency can be assured through clever static analysis, our implementation takes a simple approach. In the reference implementation based on Alpha, an Evolog program $P$ is supported, if and only if $P = cbp(e)$, using the notion of the common base program as given in Definition~\ref{def:prelims-asp-semantics-cbp}. Since the \gls{cbp} of a program is by definition stratified, we can be sure there will be an answer set, and therefore have a guarantee of action transparency as well. At the same time, programs using the guess-and-check pattern can still be executed under this restriction, by encapsulating the guess-and-check part in a module. Consider the program from Example~\ref{ex:bin-packing-module}, which has a single answer set, in which individual atoms correspond to answer sets of the used modules. In a program structured like that, on can use modules to encapsulate arbitrarily complicated calculations with any number of guesses while maintaining stratifiability of the top-level program.
+As stated in Section~\ref{subsec:evolog-actions-restrictions}, Evolog programs are required to be \emph{transparent} in terms of action execution, i.e. for every action that gets executed, there must be a corresponding witnessing atom in the respective answer set. This requirement is formalized in Definition~\ref{def:evolog-actions-transparency}. While the formal definition only states that if an action rule fires (i.e. an action is executed), the corresponding head must be contained in an answer set - which, aside from the effect that is applied on the outside world, is not any different from the general meaning of a rule that, if a the body is true, the head is as well - this leads directly to the practical problem of how to enforce this in an implementation. Since actions taken in the "outside world" (such as sending data over a network interface, writing into a file, ending a process, etc.) can not be retracted, an Evolog interpreter must be able to establish action rule transparency \emph{prior to actual execution}. In general, any answer set search algorithm based on guesses and propagation through nogoods as described in Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} does not know up-front whether an atom that gets assigned as true at some point in search, will be true in a resulting answer set - every later propagation step could lead to a violation of one or more nogoods and subsequent backtracking. With that in mind, we establish that it is not feasible to have any form of guesses depend on the result of an action, since whenever a solver makes a guess, there is a chance the program might be unsatisfiable, in which case the action would not be any transparent anymore. While it may certainly possible to identify classes of programs with guesses where action transparency can be assured through clever static analysis, our implementation takes a simple approach. In the reference implementation based on Alpha, an Evolog program $P$ is supported, if and only if $P = cbp(e)$, using the notion of the common base program as given in Definition~\ref{def:prelims-asp-semantics-cbp}. Since the \gls{cbp} of a program is by definition stratified, we can be sure there will be an answer set, and therefore have a guarantee of action transparency as well. At the same time, programs using the guess-and-check pattern can still be executed under this restriction, by encapsulating the guess-and-check part in a module. Consider the program from Example~\ref{ex:bin-packing-module}, which has a single answer set, in which individual atoms correspond to answer sets of the used modules. In a program structured like that, one can use modules to encapsulate arbitrarily complicated calculations with any number of guesses while maintaining stratifiability of the top-level program.
+Example~\ref{ex:implementation-actions-unsupported} demonstrates an unsupported program as well as a supported version of it based on a short interactive application.
+
+\begin{example}
+\label{ex:implementation-actions-unsupported}    
+The program in Listing~\ref{lst:implementation-actions-unsupported1} is intended to be a very short "greeter" application. The user is asked to enter their name, which is then prependen with "Hello" and printed to the terminal. However, the constraints \texttt{:- usr\_input\_res(success(line(""))).} and \texttt{:- usr\_input\_res(error(\_)).} render the program \emph{unsupported}. In fact, the program is unsatisfiable with respect to any Frame (see Definition~\ref{def:evolog-frame}) where the user input is either empty or reading from \texttt{stdin} results in an error. Since, however, in order to evaluate the constraints in question, two actions with side-effects have to be performed first - namely one line needs to be written to \texttt{stdout} and one read from \texttt{stdin} - we would inevitably end up in a state where some side-effects have been applied to the outside world, but no corresponding action witness in an answer set exists.
+
+\begin{lstlisting}[style=asp-code, label={lst:implementation-actions-unsupported1}, caption={An unsupported "greeter" application.}]
+    prompt_text("Hello user, enter your name: ").
+        
+    write_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- 
+        prompt_text(PROMPT), &stdout(STDOUT).
+    usr_input_res(INP) : @streamReadLine[STDIN] = INP :- 
+        write_prompt_res(success(_)), &stdin(STDIN).
+
+    :- usr_input_res(success(line(""))).
+    :- usr_input_res(error(_)).  
+
+    write_greeting_res(R) : @streamWrite[STDOUT, GREETING] = R :- 
+        usr_input_res(success(line(TEXT)), _),
+        &stdlib_string_concat["Hello ", TEXT](GREETING).
+        &stdout(STDOUT).   
+\end{lstlisting}       
+
+Listing~\ref{lst:implementation-actions-supported1} shows a supported version of the program from Listing~\ref{lst:implementation-actions-unsupported1}. Here, rather than constraints, regular rules are used for error checking, and in case of an error, a corresponding message is written to \texttt{stdout}. In this version, the program might not run in the "intended" fashion, but there will always be an answer set, i.e. effects the program applies on the outside world will always be made transparent.
+
+\begin{lstlisting}[style=asp-code, label={lst:implementation-actions-supported1}, caption={A supported version of the "greeter" application.}]
+    prompt_text("Hello user, enter your name: ").
+        
+    write_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- 
+        prompt_text(PROMPT), &stdout(STDOUT).
+    usr_input_res(INP) : @streamReadLine[STDIN] = INP :- 
+        write_prompt_res(success(_)), &stdin(STDIN).
+
+    error("Input String empty") :- usr_input_res(success(line(""))).
+    error(MSG):- usr_input_res(error(MSG)).
+    error_occurred :- error(_).  
+
+    write_greeting_res(R) : @streamWrite[STDOUT, GREETING] = R :- 
+        usr_input_res(success(line(TEXT)), _), not error_occurred.
+        &stdlib_string_concat["Hello ", TEXT](GREETING),
+        &stdout(STDOUT).
+        
+    write_errmsg_res(R) : @streamWrite[STDOUT, ERRMSG] = R :-
+        error(ERR),
+        &stdlib_string_concat["An error occurred: ", ERR](ERRMSG),
+        &stdout(STDOUT).
+\end{lstlisting}       
+
+\end{example}     
+
 
 \todo{example of simple supported vs unsupported programs}
 \todo{also an example of theoretically transparent, but not supported program}
 
 \subsubsection{Action Implementation}
+\label{subsucsec:implementation-actions-execution}
 
 NOTE: this is just a basic write-up about how it works, not the final text
 
-Action execution in Alpha is tied into the stratified evaluation component described in Section~\ref{subsubsec:impl-stratified-eval}. Specifically, whenever a ground instance of an action rule is fired, the corresponding action function is evaluated. The expansion of action rules described in Definition~\ref{def:action-rule-expansion} happens implicitly: State and Input terms ....
+Action execution in Alpha is tied into the stratified evaluation component described in Section~\ref{subsubsec:impl-stratified-eval}. Specifically, whenever a ground instance of an action rule is fired, the corresponding action function is evaluated. The expansion of action rules described in Definition~\ref{def:action-rule-expansion} happens implicitly:
+Instead of actually splitting a rule with an action head into an application- and projection-rule as described in the formal definition, the implementation constructs an internal representation of the ground rule in question, which is equivalent to an \emph{action application term} $f_{act}(S, I)$ (see Definition~\ref{def:action-rule-expansion}) in that it uniquely identifies a ground instance of an action rule within a program. After calculating the application for the ground rule to be fired, Alpha's action execution component queries an in-memory table called \emph{action record} for existing entries where the key is equal to the calculated action application term. If such a mapping exists, the cached action result is returned, otherwise, the java method associated with the action function is executed, and a new mapping is added to the action record. The action record, i.e. action result cache, is used to make sure actions only get executed once, regardless of how often a certain ground instance of a rule is "fired" during program evaluation. Listing~\ref{lst:implementation-actions-execution-service} shows an (abbreviated) version of Alpha's action execution component.
+
+\begin{lstlisting}[style=java, label={lst:implementation-actions-execution-service}, caption={Alpha's action execution logic}]
+public class ActionExecutionServiceImpl implements ActionExecutionService {
+
+	private final ActionImplementationProvider actionProvider;
+	private final Map<ActionInput, ActionWitness> actionRecord = new HashMap<>();
+
+	// [Constructors and utility methods omitted for brevity]
+
+	@Override
+	public ActionWitness execute(String actionName, int sourceRuleId, Substitution sourceRuleInstance, List<Term> inputTerms) {
+		ActionInput actInput = new ActionInput(actionName, sourceRuleId, sourceRuleInstance, inputTerms);
+		return actionRecord.computeIfAbsent(actInput, this::execute);
+	}
+
+	private ActionWitness execute(ActionInput input) {
+		Action action = actionProvider.getSupportedActions().get(input.name);
+		FunctionTerm result = action.execute(input.inputTerms);
+		return new ActionWitness(input.sourceRule, input.instance, input.name, input.inputTerms, result);
+	}
+
+	private static class ActionInput {
+
+		private final String name;
+		private final int sourceRule;
+		private final Substitution instance;
+		private final List<Term> inputTerms;
+
+        // [Constructors and utility methods omitted for brevity]
+
+	}
+
+}
+\end{lstlisting}    
+
 
 \subsubsection{Implemented Actions}
 \label{subsubsec:implementation-actions-basic-actions}
