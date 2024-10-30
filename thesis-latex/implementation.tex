@@ -202,6 +202,18 @@ Figure~\ref{fig:alpha-evolog-arch} shows an updated overview of Alpha's architec
 
 In this section, we give a detailed description of how Action support, conforming to definitions from Section~\ref{sec:evolog-actions} is implemented in Alpha.
 
+\paragraph{Implemented Actions} 
+The actual actions provided in the reference implementation are intended to be sufficient for basic file (i.e. stream-)based input- and output operations. Specifically, Alpha offers actions to
+\begin{itemize}
+    \item open a file handle for reading, i.e. obtaining an input stream,
+    \item read from an input stream,
+    \item close an input stream
+    \item open a file handle for writing, i.e. obtaining an output stream,
+    \item write to an output stream
+    \item close an output stream
+\end{itemize}
+The idea of this selection of actions is that these can be used as the basic building blocks from which many more complex IO-Tasks, such as parsing specific file formats, waiting for user input, implementing command shells, etc. can be composed.
+
 \subsubsection{Supported Programs}
 \label{subsubsec:implementation-actions-support}
 As stated in Section~\ref{subsec:evolog-actions-restrictions}, Evolog programs are required to be \emph{transparent} in terms of action execution, i.e. for every action that gets executed, there must be a corresponding witnessing atom in the respective answer set. This requirement is formalized in Definition~\ref{def:evolog-actions-transparency}. While the formal definition only states that if an action rule fires (i.e. an action is executed), the corresponding head must be contained in an answer set - which, aside from the effect that is applied on the outside world, is not any different from the general meaning of a rule that, if a the body is true, the head is as well - this leads directly to the practical problem of how to enforce this in an implementation. Since actions taken in the "outside world" (such as sending data over a network interface, writing into a file, ending a process, etc.) can not be retracted, an Evolog interpreter must be able to establish action rule transparency \emph{prior to actual execution}. In general, any answer set search algorithm based on guesses and propagation through nogoods as described in Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} does not know up-front whether an atom that gets assigned as true at some point in search, will be true in a resulting answer set - every later propagation step could lead to a violation of one or more nogoods and subsequent backtracking. With that in mind, we establish that it is not feasible to have any form of guesses depend on the result of an action, since whenever a solver makes a guess, there is a chance the program might be unsatisfiable, in which case the action would not be any transparent anymore. While it may certainly possible to identify classes of programs with guesses where action transparency can be assured through clever static analysis, our implementation takes a simple approach. In the reference implementation based on Alpha, an Evolog program $P$ is supported, if and only if $P = cbp(e)$, using the notion of the common base program as given in Definition~\ref{def:prelims-asp-semantics-cbp}. Since the \gls{cbp} of a program is by definition stratified, we can be sure there will be an answer set, and therefore have a guarantee of action transparency as well. At the same time, programs using the guess-and-check pattern can still be executed under this restriction, by encapsulating the guess-and-check part in a module. Consider the program from Example~\ref{ex:bin-packing-module}, which has a single answer set, in which individual atoms correspond to answer sets of the used modules. In a program structured like that, one can use modules to encapsulate arbitrarily complicated calculations with any number of guesses while maintaining stratifiability of the top-level program.
@@ -230,6 +242,8 @@ The program in Listing~\ref{lst:implementation-actions-unsupported1} is intended
 
 Listing~\ref{lst:implementation-actions-supported1} shows a supported version of the program from Listing~\ref{lst:implementation-actions-unsupported1}. Here, rather than constraints, regular rules are used for error checking, and in case of an error, a corresponding message is written to \texttt{stdout}. In this version, the program might not run in the "intended" fashion, but there will always be an answer set, i.e. effects the program applies on the outside world will always be made transparent.
 
+\todo{This suggests a definition of transparency based on being satisfiable in all frames}
+
 \begin{lstlisting}[style=asp-code, label={lst:implementation-actions-supported1}, caption={A supported version of the "greeter" application.}]
     prompt_text("Hello user, enter your name: ").
         
@@ -251,13 +265,9 @@ Listing~\ref{lst:implementation-actions-supported1} shows a supported version of
         error(ERR),
         &stdlib_string_concat["An error occurred: ", ERR](ERRMSG),
         &stdout(STDOUT).
-\end{lstlisting}       
+\end{lstlisting} 
 
 \end{example}     
-
-
-\todo{example of simple supported vs unsupported programs}
-\todo{also an example of theoretically transparent, but not supported program}
 
 \subsubsection{Action Implementation}
 \label{subsucsec:implementation-actions-execution}
@@ -283,7 +293,7 @@ public class ActionExecutionServiceImpl implements ActionExecutionService {
 
 	private ActionWitness execute(ActionInput input) {
 		Action action = actionProvider.getSupportedActions().get(input.name);
-		FunctionTerm result = action.execute(input.inputTerms);
+		ActionResultTerm<?> result = action.execute(input.inputTerms);
 		return new ActionWitness(input.sourceRule, input.instance, input.name, input.inputTerms, result);
 	}
 
@@ -301,55 +311,11 @@ public class ActionExecutionServiceImpl implements ActionExecutionService {
 }
 \end{lstlisting}    
 
+Example~\ref{ex:implementation-actions-loop} demonstrates a program where actions are used in recursive rules where ground instances potentially have to be evaluated multiple times and the aforementioned caching of action results comes into play.
 
-\subsubsection{Implemented Actions}
-\label{subsubsec:implementation-actions-basic-actions}
-
-The actual actions provided in the reference implementation are intended to be sufficient for basic file (i.e. stream-)based input- and output operations. Specifically, Alpha offers actions to
-\begin{itemize}
-    \item open a file handle for reading, i.e. obtaining an input stream,
-    \item read from an input stream,
-    \item close an input stream
-    \item open a file handle for writing, i.e. obtaining an output stream,
-    \item write to an output stream
-    \item close an output stream
-\end{itemize}
-
-\paragraph{Action Result Terms} The way action results are represented in Alpha takes its inspiration from the \texttt{Either} type present in many functional programming languages or libraries such as Vavr~\cite{vavr-io}. For example, an instance of type \texttt{Either<InputStream, Exception>}
-can either hold an instance of the "left" type, i.e. \texttt{InputStream} or an instance of the "right" type, i.e. \texttt{Exception}. Similarly, \emph{action result terms} as defined in Definition~\ref{def:action-rule-syntax} are function terms of form $r_t(r_v)$, where $r_t \in \{success, error\}$ is the \emph{result type} and $r_v$ the \emph{result value}. Result type $success$ indicates the action completed normally, and in this case, $r_v$ holds the result of the successful action, e.g. a term representing an input stream. If the result type is $error$, for example when trying to obtain a read handle on a non-existing file, $r_v$ typically holds an error message.
-Listing~\ref{lst:implementation-actions-actionfunc} shows the Java Interface specifying an Action result term in Alpha.
-
-\begin{lstlisting}[style=java, label={lst:implementation-actions-actionfunc}, caption={Java definition of an action result term.}]
-public interface ActionResultTerm<T extends Term> extends FunctionTerm {
-    public static final String SUCCESS_SYMBOL = "success";
-    public static final String ERROR_SYMBOL = "error";
-    /**
-     * True if the action that generated this 
-     * result was successful (i.e. executed normally).
-     */
-    boolean isSuccess();
-    /**
-     * True if the action that generated this 
-     * result failed (i.e. threw an error in execution).
-     */
-    boolean isError();
-    /**
-     * Gets the actual value wrapped in this result.
-     * Either a term representing the action return 
-     * value or a string term representing an error
-     * message.
-     */
-    T getValue();
-}    
-\end{lstlisting}   
-
-
-
-
-\subsubsection{Action Caching - Ensuring idempotency of action rules}
-\label{subsubsec:implementation-actions-caching}
-
-Consider the program from Listing~\ref{lst:implementation-actions-loop}, where a set of recursive rules is used to obtain behavior similar to a "for each"-loop.
+\begin{example}
+\label{ex:implementation-actions-loop}
+Listing~\ref{lst:implementation-actions-loop} shows the "echo" program. It asks the user to enter text on the command line, and "echoes", i.e. prints, the previous input until the user enters \texttt{EXIT}, at which point the program terminates. The "loop-like" behavior is realized through a positive recursive dependency cycle over predicates \texttt{write\_prompt\_res/2}, \texttt{usr\_input\_res/2} and \texttt{write\_echo\_res/2}.
 
 \begin{lstlisting}[style=asp-code, label={lst:implementation-actions-loop}, caption={An "echo" application which echoes user input written using Evolog actions.}]
 prompt_text("Hello user, tell me something: ").
@@ -373,8 +339,36 @@ write_goodbye_res(R) : @streamWrite[STDOUT, MSG] = R :-
     &stdout(STDOUT).   
 \end{lstlisting}    
 
+\end{example}    
 
-%Example~\ref{ex:implementation-guess-and-check-encapsulation} demonstrates the necessary program structure.
+
+\paragraph{Action Result Terms} The way action results are represented in Alpha takes its inspiration from the \texttt{Either} type present in many functional programming languages or libraries such as Vavr~\cite{vavr-io}. For example, an instance of type \texttt{Either<InputStream, Exception>}
+can either hold an instance of the "left" type, i.e. \texttt{InputStream} or an instance of the "right" type, i.e. \texttt{Exception}. Similarly, \emph{action result terms} as defined in Definition~\ref{def:action-rule-syntax} are function terms of form $r_t(r_v)$, where $r_t \in \{success, error\}$ is the \emph{result type} and $r_v$ the \emph{result value}. Result type $success$ indicates the action completed normally, and in this case, $r_v$ holds the result of the successful action, e.g. a term representing an input stream. If the result type is $error$, for example when trying to obtain a read handle on a non-existing file, $r_v$ typically holds an error message.
+Listing~\ref{lst:implementation-actions-actionfunc} shows the Java Interface specifying an Action result term in Alpha.
+
+\begin{lstlisting}[style=java, label={lst:implementation-actions-actionfunc}, caption={Java definition of an action result term.}]
+    public interface ActionResultTerm<T extends Term> extends FunctionTerm {
+        public static final String SUCCESS_SYMBOL = "success";
+        public static final String ERROR_SYMBOL = "error";
+        /**
+         * True if the action that generated this 
+         * result was successful (i.e. executed normally).
+         */
+        boolean isSuccess();
+        /**
+         * True if the action that generated this 
+         * result failed (i.e. threw an error in execution).
+         */
+        boolean isError();
+        /**
+         * Gets the actual value wrapped in this result.
+         * Either a term representing the action return 
+         * value or a string term representing an error
+         * message.
+         */
+        T getValue();
+    }    
+\end{lstlisting}   
 
 \begin{example}
 In this example, we take a detailed look at an evolog application intended to simulate possible real-world uses. We assume that graphs are stored as XML files, and construct an application that uses Evolog modules and actions to
@@ -649,10 +643,3 @@ private static List<Term> answerSetToTerms(AnswerSet answerSet, Set<Predicate> m
     return terms;
 }
 \end{lstlisting}    
-
-
-
-%\todo{need to decide whether module recursion is a thing! (probably should be)}
-\section{Evolog applications}
-
-TODO: A few programs using both actions and modules to achieve something cool!
