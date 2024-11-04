@@ -1,2 +1,113 @@
-In this chapter, we apply the Evolog extension to Alpha to a larger example. In order to showcase the kind of applications that can be written in pure Evolog (without the need to resort to any additional programming language), we implement an application that:
-XMP PARSING
+In this chapter, we apply Alpha's Evolog extension to a larger example. In order to showcase the kind of applications that can be written in pure Evolog (without the need to resort to any additional programming language), we implement an application that:
+\begin{itemize}
+    \item asks the user to enter a path to a file containing a graph represented in XML format,
+    \item reads and parses the XML content of the given files,
+    \item calculates 3-colorings of the graph from the XML file,
+    \item and finally writes the list of obtained colorings to a user-supplied file path.
+\end{itemize}    
+
+We first describe the program itself and then move on to a discussion of observations that can be made from the example.
+
+\section{Interactive XML-based Graph Coloring}
+\label{sec:results-xml-graphcol}
+
+TODO: Reference full program in appendix. Maybe lose a few words about overall structure again.
+
+\subsection{Reading files from user-supplied paths}
+
+First, the user is asked to enter a file path. The content of the given file is then read line-by-line and aggregateed into a list term. Listing~\ref{lst:results-xml-graphcol-userinput} shows this part of the program.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-userinput}, caption={Reading a file based on user input.}] 
+enter_input_prompt("Please enter a path to read graphs from: ").
+
+write_input_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- 
+    enter_input_prompt(PROMPT), &stdout(STDOUT).
+usr_input_res(INP) : @streamReadLine[STDIN] = INP :- 
+    write_input_prompt_res(success(_)), &stdin(STDIN).
+
+infile(PATH) :- usr_input_res(success(line(PATH))).
+infile_open(PATH, HD) : @fileInputStream[PATH] = HD :- 
+    infile(PATH).
+
+% Handle file opening error
+error(io, MSG) :- infile_open(_, error(MSG)).
+
+% Read all lines from infile 
+readline_result(PATH, 0, RES) : 
+    @streamReadLine[STREAM] = RES :- 
+    infile(PATH), infile_open(PATH, success(stream(STREAM))).
+readline_result(PATH, LINE_NO, RES) : 
+    @streamReadLine[STREAM] = RES :- 
+    infile(PATH), 
+    infile_open(PATH, success(stream(STREAM))), 
+    readline_result(PATH, PREV_LINE_NO, PREV_LINE_RES), 
+    PREV_LINE_RES != success(line(eof)), 
+    LINE_NO = PREV_LINE_NO + 1.
+
+% close stream after getting eof
+infile_closed(PATH, RES) : 
+    @inputStreamClose[STREAM] = RES :- 
+    infile(PATH), 
+    infile_open(PATH, success(stream(STREAM))),
+    readline_result(PATH, _, ok(eof)).
+
+% Now create a list of content lines
+file_lines(PATH, LST) :- 
+    LST = #list{ 
+        line(LINE_NO, LINE) : 
+            readline_result(PATH, LINE_NO, success(line(LINE))), 
+            LINE != eof },
+    infile(PATH). 
+\end{lstlisting}    
+
+The rule on line 3 derives the predicate \texttt{write\_input\_prompt\_res/1}, which wraps the result of a stream output operation - which in this case writes a prompt text to stdout. Note that the \emph{standard output stream} \texttt{STDOUT} does not need to be opened using an Evolog action, but is always available to an application. A reference to \texttt{STDOUT} can be obtained through the external atom \texttt{stdout/1}.
+
+If writing the prompt text succeeds, i.e. in case the result term of the write action has structure \texttt{success(\_)}, user input is read from the \emph{standard input stream} \texttt{STDIN}. The result of the read operation is derived on line 5 using  predicate \texttt{usr\_input\_res/1}. Note that, as with stdout, \texttt{STDIN} does not have to be opened, but is obtained using the external atom \texttt{stdin/1}.
+
+In case the read operation succeeded, we attempt to open an input stream on the file entered by the user. The rule on line 9 derives the result of this operation in the \texttt{infile\_open/2} predicate. The first term is the path of the respective file, the second is an action result term which either takes the form \texttt{error(MSG)} or holds a reference to a file input stream \texttt{STREAM} wrapped in a function term \texttt{success(stream(STREAM))}.
+
+If opening succeeds, the openend file is read line-wise, using the rules on lines 16 and 19. Lines are numbered in order to keep positional information of file content. Reading stops once the result from the last \texttt{@streamReadLine} action is \texttt{success(line(eof))} where \texttt{eof} denotes \emph{end-of-file}.
+
+\subsection{Parsing XML data}
+\label{subsec:results-xml-parsing}
+
+The interactive graph coloring program reads XML files which describe graphs. Input files are expected to conform to the \gls{dtd} in Listing\ref{lst:results-xml-graphcol-input}.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-input}, caption={\gls{dtd} for graph XML files.}]  
+<!ELEMENT graph (vertices, edges)>
+<!ATTLIST graph directed (true | false) #REQUIRED>
+
+<!ELEMENT vertices (vertex+)>
+<!ELEMENT vertex (#PCDATA)>
+
+<!ELEMENT edges (edge+)>
+<!ELEMENT edge (source, target)>
+<!ELEMENT source (#PCDATA)>
+<!ELEMENT target (#PCDATA)>    
+\end{lstlisting}    
+
+Listing~\ref{lst:results-xml-graphcol-input-ex} shows an example input file describing the complete graph $K_3$.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-input}, caption={The complete graph $K_3$ represented according to the \gls{dtd} from Listing~\ref{lst:results-xml-graphcol-input}.}]
+<graph directed="false">
+    <vertices>
+        <vertex>a</vertex>
+        <vertex>b</vertex>
+        <vertex>c</vertex>
+    </vertices>
+    <edges>
+        <edge>
+            <source>a</source>
+            <target>b</target>
+        </edge>
+        <edge>
+            <source>b</source>
+            <target>c</target>
+        </edge>
+        <edge>
+            <source>c</source>
+            <target>a</target>
+        </edge>
+    </edges>    
+</graph>
+\end{lstlisting} 
