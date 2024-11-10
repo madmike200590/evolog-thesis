@@ -68,10 +68,12 @@ In case the read operation succeeded, we attempt to open an input stream on the 
 
 If opening succeeds, the openend file is read line-wise, using the rules on lines 16 and 19. Lines are numbered in order to keep positional information of file content. Reading stops once the result from the last \texttt{@streamReadLine} action is \texttt{success(line(eof))} where \texttt{eof} denotes \emph{end-of-file}.
 
+After all lines of the input file have been read successfully an \texttt{@inputStreamClose} action is used to close the input file (see line 28). Finally, all lines from a file are aggregated into a single list term using a \texttt{\#list} aggregate in the rule on line 35.
+
 \subsection{Parsing XML data}
 \label{subsec:results-xml-parsing}
 
-The interactive graph coloring program reads XML files which describe graphs. Input files are expected to conform to the \gls{dtd} in Listing\ref{lst:results-xml-graphcol-input}.
+Based on the list of lines in an input file, the contained XML data is parsed using a separate Evolog Module \texttt{xml\_dom}, which is described in more detail in Section~\ref{subsec:results-xml-parsing-details}. Input files are expected to conform to the \gls{dtd} in Listing\ref{lst:results-xml-graphcol-input}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-input}, caption={\gls{dtd} for graph XML files.}]  
 <!ELEMENT graph (vertices, edges)>
@@ -86,9 +88,9 @@ The interactive graph coloring program reads XML files which describe graphs. In
 <!ELEMENT target (#PCDATA)>    
 \end{lstlisting}    
 
-Listing~\ref{lst:results-xml-graphcol-input-ex} shows an example input file describing the complete graph $K_3$.
+Listing~\ref{lst:results-xml-graphcol-input-ex} shows an example input file conforming to the \gls{dtd} which describes the complete graph $K_3$.
 
-\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-input}, caption={The complete graph $K_3$ represented according to the \gls{dtd} from Listing~\ref{lst:results-xml-graphcol-input}.}]
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-input-ex}, caption={The complete graph $K_3$ represented according to the \gls{dtd} from Listing~\ref{lst:results-xml-graphcol-input}.}]
 <graph directed="false">
     <vertices>
         <vertex>a</vertex>
@@ -111,3 +113,53 @@ Listing~\ref{lst:results-xml-graphcol-input-ex} shows an example input file desc
     </edges>    
 </graph>
 \end{lstlisting} 
+
+The XML-parsing module has 4 output terms which represent lists of \gls{dom} elements, parent-child relationships between \gls{dom} elements, text content of elements as well as attributes, respectively. Listing~\ref{lst:results-xml-graphcol-dom-unpack} shows the Evolog code to parse XML content of an input file and "unwrap" the list terms returned by the XML parsing module.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-dom-unpack}, caption={Parsing and consuming XML data in an Evolog program.}]
+% Parse the string content of individual lines into a 
+% DOM-like representation
+file_dom(PATH, dom(ELEMENTS, CHILDREN, TEXTS, ATTRIBUTES)) :- 
+    file_lines(PATH, LINES), 
+    #xml_dom[LINES](ELEMENTS, CHILDREN, TEXTS, ATTRIBUTES).
+
+% Unwrap list elements from module output
+dom_element_entry(NAME, ID, TAIL) :- 
+    file_dom(_, dom(lst(dom_element(NAME, ID), TAIL), _, _, _)).
+dom_element_entry(NAME, ID, TAIL) :- 
+    dom_element_entry(_, _, lst(dom_element(NAME, ID), TAIL)).
+dom_element(NAME, ID) :- 
+    dom_element_entry(NAME, ID, _).
+dom_element_child_entry(NAME, ID, CHILD_ID, TAIL) :- 
+    file_dom(_,dom(_, lst(
+        dom_element_child(NAME, ID, CHILD_ID), TAIL), _, _)).
+dom_element_child_entry(NAME, ID, CHILD_ID, TAIL) :- 
+    dom_element_child_entry(_, _, _, lst(
+        dom_element_child(NAME, ID,CHILD_ID), TAIL)).
+dom_element_child(NAME, ID, CHILD_ID) :- 
+    dom_element_child_entry(NAME, ID, CHILD_ID, _).
+dom_element_text_entry(NAME, ID, TEXT, TAIL) :- 
+    file_dom(_,dom(_, _, lst
+    (dom_element_text(NAME, ID, TEXT), TAIL), _)).
+dom_element_text_entry(NAME, ID, TEXT, TAIL) :- 
+    dom_element_text_entry(_, _, _, lst(
+        dom_element_text(NAME, ID, TEXT), TAIL)).
+dom_element_text(NAME, ID, TEXT) :- 
+    dom_element_text_entry(NAME, ID, TEXT, _).
+dom_element_attribute_entry(
+    NAME, ID, ATTR_NAME, ATTR_VALUE, TAIL) :- 
+    file_dom(_,dom(_, _, _, lst(
+        dom_element_attribute(
+            NAME,ID, ATTR_NAME, ATTR_VALUE), TAIL))).
+dom_element_attribute_entry(
+    NAME, ID, ATTR_NAME, ATTR_VALUE, TAIL) :- 
+    dom_element_attribute_entry(_, _, _, lst(
+        dom_element_attribute(
+            NAME, ID, ATTR_NAME, ATTR_VALUE), TAIL)).
+dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :- 
+    dom_element_attribute_entry(
+        NAME, ID, ATTR_NAME, ATTR_VALUE, _).   
+\end{lstlisting}  
+
+\section{A DOM-based XML parser in ASP}
+\label{subsec:results-xml-parsing-details}
