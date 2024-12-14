@@ -153,16 +153,6 @@ graph_coloring_vertex(GRAPH, COLORING_ID, VERTEX, COLOR) :- graph_coloring_entry
 		&regex_matches[TAG_NAME_REGEX, TOK_VALUE](TAG_NAME, _, _),
 		closing_tag_name_regex(TAG_NAME_REGEX). 
 
-	%% Extract attributes
-	tag_opening_attribute(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO, attribute(NAME, VALUE)) :-
-		tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO),
-		&regex_matches[ATTRIBUTE_REGEX, TOK_VALUE](ATTRIBUTE_STR, _, _),
-		attribute_regex(ATTRIBUTE_REGEX),
-		&regex_matches[ATTRIBUTE_VALUE_REGEX, ATTRIBUTE_STR](VALUE, _, _), 
-		attribute_value_regex(ATTRIBUTE_VALUE_REGEX),
-		&regex_matches[ATTRIBUTE_NAME_REGEX, ATTRIBUTE_STR](NAME, _, _),
-		attribute_name_regex(ATTRIBUTE_NAME_REGEX).
-
 	% We have an opening/closing tag pair if tag name is the same, 
 	% opening tag is before closing tag, and no opening tag of same name between.
 	tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
@@ -181,6 +171,17 @@ graph_coloring_vertex(GRAPH, COLORING_ID, VERTEX, COLOR) :- graph_coloring_entry
 		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
 		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
 		not tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+	
+	%% Extract attributes
+	tag_opening_attribute(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO, attribute(NAME, VALUE)) :-
+		tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO),
+		&regex_matches[ATTRIBUTE_REGEX, TOK_VALUE](ATTRIBUTE_STR, _, _),
+		attribute_regex(ATTRIBUTE_REGEX),
+		&regex_matches[ATTRIBUTE_VALUE_REGEX, ATTRIBUTE_STR](VALUE, _, _), 
+		attribute_value_regex(ATTRIBUTE_VALUE_REGEX),
+		&regex_matches[ATTRIBUTE_NAME_REGEX, ATTRIBUTE_STR](NAME, _, _),
+		attribute_name_regex(ATTRIBUTE_NAME_REGEX).
+	
 	element_attribute(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO, attribute(NAME, VALUE)) :-
 		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
 		tag_opening_attribute(TAG_NAME, t(tag_open, _), OPEN_LINE_NO, OPEN_FROM, OPEN_TO, attribute(NAME, VALUE)).
@@ -229,7 +230,7 @@ graph_coloring_vertex(GRAPH, COLORING_ID, VERTEX, COLOR) :- graph_coloring_entry
 		ENC_POS_TO = pos(ENC_CLOSE_LINE_NO, ENC_CLOSE_TO),
 		LOWER_POS_FROM = pos(LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM),
 		LOWER_POS_TO = pos(LOWER_CLOSE_LINE_NO, LOWER_CLOSE_TO).
-	% A element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed by E1.   
+	% An element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed by E1.   
 	element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
 		element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
 		element_encloses(P, P_POS_FROM, P_POS_TO, I, I_POS_FROM, I_POS_TO),
