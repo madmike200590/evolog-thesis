@@ -267,31 +267,80 @@ element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO,
 Having parsed all XML elements, the next step is to determine which of these are terminal elements in the sense that they only contain text, as opposed to elements which consist of further XML elements. This is achieved using the code form Listing~\ref{lst:results-xml-parse-element-types}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-element-types}, caption={Parsing details of XML elements}]
-	% Any string between two tags with no other opening or closing tags between is content
-	any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
-		token_before(t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
-	any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
-		token_before(t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO). 
-	any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :-
-		any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).       
-	terminal(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		not any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+% Any string between two tags with no other opening 
+% or closing tags between is content
+any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+	element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+	token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
+	token_before(t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+	element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+	token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
+	token_before(t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO). 
+any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :-
+	any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).       
+terminal(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+	element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	not any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+% Extract content between tags (currently assumes start and end tags to be on the same line)
+element_text(ELEMENT_NAME, FROM_POS, TO_POS, TEXT) :-
+	terminal(ELEMENT_NAME, LINE_NO, OPEN_FROM, OPEN_TO, LINE_NO, CLOSE_FROM, CLOSE_TO),
+	line(LINE_NO, FULL_LINE),
+	&string_substring[FULL_LINE, OPEN_TO, CLOSE_FROM](TEXT),
+	FROM_POS = pos(LINE_NO, OPEN_FROM),
+	TO_POS = pos(LINE_NO, CLOSE_TO).
+\end{lstlisting} 
 
-	% Extract content between tags (currently assumes start and end tags to be on the same line)
-	element_text(ELEMENT_NAME, FROM_POS, TO_POS, TEXT) :-
-		terminal(ELEMENT_NAME, LINE_NO, OPEN_FROM, OPEN_TO, LINE_NO, CLOSE_FROM, CLOSE_TO),
-		line(LINE_NO, FULL_LINE),
-		&string_substring[FULL_LINE, OPEN_TO, CLOSE_FROM](TEXT),
-		FROM_POS = pos(LINE_NO, OPEN_FROM),
-		TO_POS = pos(LINE_NO, CLOSE_TO).
-\end{lstlisting}    
+In Listing~\ref{lst:results-xml-parse-element-types}, the rule on line 18 derives whether an XML element is a \emph{terminal} element in that is does not enclose any additional elements other than plain text. In order to determine this, we check if there are any opening or closing tags between the opening and closing tags of the element in question, see lines 3 through 15. For all terminal elements, we parse the text content of each individual element by taking a substring of the line containing the opening and closing tags ranging from after the last character of the opening tag to before the first character of the closing tag. (Note that this implementation assumes that content within a tag does not contain newline characters in order to keep the code a bit shorter.)
+
+Every XML tag can also have any number of attributes. The parsing logic for attributes is shown in Listing~\ref{lst:results-xml-parse-attributes}. First, attributes are detected by checking every string that has been matched to be an opening XML tag against regular expressions matching attribute name an values, see the rule on line 2. Attributes derived using this approach are then associated with the corresponding \texttt{element/7} instance through the predicate \texttt{element\_attribute/8}. 
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-attributes}, caption={Parsing XML attributes.}]
+%% Extract attributes
+tag_opening_attribute(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO, attribute(NAME, VALUE)) :-
+	tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO),
+	&regex_matches[ATTRIBUTE_REGEX, TOK_VALUE](ATTRIBUTE_STR, _, _),
+	attribute_regex(ATTRIBUTE_REGEX),
+	&regex_matches[ATTRIBUTE_VALUE_REGEX, ATTRIBUTE_STR](VALUE, _, _), 
+	attribute_value_regex(ATTRIBUTE_VALUE_REGEX),
+	&regex_matches[ATTRIBUTE_NAME_REGEX, ATTRIBUTE_STR](NAME, _, _),
+	attribute_name_regex(ATTRIBUTE_NAME_REGEX).
+
+element_attribute(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO, attribute(NAME, VALUE)) :-
+	element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+	tag_opening_attribute(TAG_NAME, t(tag_open, _), OPEN_LINE_NO, OPEN_FROM, OPEN_TO, attribute(NAME, VALUE)).
+\end{lstlisting} 
+
+The final step in actual parsing of the XML content is to derive the complete hierarchy of all XML tags, i.e. determine which tags are direct children of another. This is done using the code from Listing~\ref{lst:results-xml-parse-hierarchy}. First, we establish elements that enclose other elements (i.e. opening and closing tag of the enclosed element between opening and closing tags of the enclosing element) using the rule on line 4. An element $e_1$ is not the parent element of an element $e_2$ enclosed by $e_1$ if there is a third element $e_i$ which is enclosed by $e_1$, but also encloses $e_2$. If, for any element encosing another element such an intermediate element exists, the rule from line 18 derives this as an instance of \texttt{element\_not\_parent/6}. An element $e_1$ \emph{is} the parent element of $e_2$ if it encloses $e_2$ and is not known to be not the parent. Element pairs fulfilling this definition are derived by the rule on line 22 and expressed as instances of \texttt{element\_parent/6}.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-hierarchy}, caption={Parsing XML attributes.}]
+% Derive parent elements
+% An element encloses another if the opening and closing tag of the enclosed 
+% element lie fully between opening and cloising tags of the enclosing element
+element_encloses(ENC, ENC_POS_FROM, ENC_POS_TO, LOWER, LOWER_POS_FROM, LOWER_POS_TO) :- 
+	element(LOWER, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO),
+	element(ENC, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
+	token(LOWER_OPEN_TOK, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO),
+	token(LOWER_CLOSE_TOK, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO),
+	token(ENC_OPEN_TOK, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO),
+	token(ENC_CLOSE_TOK, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
+	token_before(ENC_OPEN_TOK, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO, LOWER_OPEN_TOK, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO),
+	token_before(LOWER_CLOSE_TOK, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO, ENC_CLOSE_TOK, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
+	ENC_POS_FROM = pos(ENC_OPEN_LINE_NO, ENC_OPEN_FROM),
+	ENC_POS_TO = pos(ENC_CLOSE_LINE_NO, ENC_CLOSE_TO),
+	LOWER_POS_FROM = pos(LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM),
+	LOWER_POS_TO = pos(LOWER_CLOSE_LINE_NO, LOWER_CLOSE_TO).
+% An element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed byE1.   
+element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
+	element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
+	element_encloses(P, P_POS_FROM, P_POS_TO, I, I_POS_FROM, I_POS_TO),
+	element_encloses(I, I_POS_FROM, I_POS_TO, E, E_POS_FROM, E_POS_TO).
+element_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
+	element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
+	not element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO).
+\end{lstlisting}         
