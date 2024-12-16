@@ -335,7 +335,7 @@ element_encloses(ENC, ENC_POS_FROM, ENC_POS_TO, LOWER, LOWER_POS_FROM, LOWER_POS
 	ENC_POS_TO = pos(ENC_CLOSE_LINE_NO, ENC_CLOSE_TO),
 	LOWER_POS_FROM = pos(LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM),
 	LOWER_POS_TO = pos(LOWER_CLOSE_LINE_NO, LOWER_CLOSE_TO).
-% An element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed byE1.   
+% An element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed by E1.   
 element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
 	element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
 	element_encloses(P, P_POS_FROM, P_POS_TO, I, I_POS_FROM, I_POS_TO),
@@ -344,3 +344,77 @@ element_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :-
 	element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
 	not element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO).
 \end{lstlisting}         
+
+Last but not least, the \texttt{xml\_dom} module has a number of rules to project away positional information of tags which are not deemed to be of interest to the calling component. Listing~\ref{lst:results-xml-parse-projection} shows all rules used to achieve this. First, each parsed XML element is assigned a unique identifier represented using the predicate \texttt{dom\_element\_id/2} by the rule on line 1. Identifier terms are obtained from the \emph{enumeration literal} (see Section~\ref{subsubsec:alpha-arch-enum-resolution}) \texttt{id\_enum/3}. Based on the thereby established relation, versions of the predicates \texttt{element/7}, \texttt{element\_parent/6}, \texttt{element\_text/4}, \texttt{element\_attribute/8} in which the individual terms making up the respective element's position within the document are replaced with the corresponding identifier.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-projection}, caption={Deriving simplified representations of parsed XML content.}]
+dom_element_id(e(NAME, POS_FROM, POS_TO), ID) :- 
+	element(NAME, START_LINE_NO, START_FROM, START_TO, END_LINE_NO, END_FROM, END_TO),
+	POS_FROM = pos(START_LINE_NO, START_FROM),
+	POS_TO = pos(END_LINE_NO, END_TO),
+	id_enum(element_ids, e(NAME, POS_FROM, POS_TO), ID).
+
+dom_element(NAME, ID) :-
+	dom_element_id(e(NAME, _, _), ID).	
+
+dom_element_child(NAME, ID, CHILD_ID) :-
+	dom_element(NAME, ID),
+	dom_element_id(e(NAME, POS_FROM, POS_TO), ID),	
+	dom_element_id(e(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO), CHILD_ID),
+	element_parent(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO, NAME, POS_FROM, POS_TO).
+
+dom_element_text(NAME, ID, TEXT) :-
+	dom_element(NAME, ID),
+	dom_element_id(e(NAME, POS_FROM, POS_TO), ID),
+	element_text(NAME, POS_FROM, POS_TO, TEXT).	
+
+dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :-
+	dom_element(NAME, ID),
+	dom_element_id(e(NAME, pos(START_LINE_NO, START_FROM), pos(END_LINE_NO, END_TO)), ID),
+	element_attribute(NAME, START_LINE_NO, START_FROM, _, END_LINE_NO, _, END_TO, attribute(ATTR_NAME, ATTR_VALUE)).	
+\end{lstlisting}    
+
+\subsection{Extracting a graph representation from parsed XML data}
+\label{subsec:results-xml-extract-graph}
+
+Based on the DOM-elements unwrapped in Listing~\ref{lst:results-xml-graphcol-dom-unpack}, a representation of a graph using predicates \texttt{graph/1}, \texttt{graph\_vertex/2}, \texttt{graph\_directedness/2} and \texttt{graph\_edge/2} is constructed using the code from Listing~\ref{lst:results-xml-graphcol-build-graph}. DOM elements are translated into vertices and edges based on their names. Whether the graph in question is directed or undirected can be extracted from the corrseponding attribute of the \texttt{graph} element.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-build-graph}, caption={Constructing a graph representation from parsed XML data.}]
+% Translate generic DOM-elements into graphs
+graph(ID) :- dom_element("graph", ID).
+graph_vertex(ID, VERTEX) :- 
+    graph(ID), dom_element("graph", ID), dom_element_child("graph", ID, VERTEX_LIST_ID), 
+    dom_element("vertices", VERTEX_LIST_ID), dom_element("vertex", VERTEX_ID), dom_element_child("vertices", VERTEX_LIST_ID, VERTEX_ID),
+    dom_element_text("vertex", VERTEX_ID, VERTEX).
+graph_directedness(ID, DIRECTED) :- 
+    graph(ID), dom_element("graph", ID), dom_element_attribute("graph", ID, "directed", DIRECTED).
+graph_undirected(ID) :- graph_directedness(ID, "false").
+graph_directed(ID) :- graph_directedness(ID, "true").
+graph_edge(ID, EDGE) :- 
+    graph(ID), graph_vertex(ID, SRC_ID), graph_vertex(ID, TARGET_ID), dom_element("graph", ID), dom_element_child("graph", ID, EDGE_LIST_ID), 
+    dom_element("edges", EDGE_LIST_ID), dom_element("edge", EDGE_ID), dom_element_child("edges", EDGE_LIST_ID, EDGE_ID),
+    dom_element("source", SRC_ELEM_ID), dom_element_child("edge", EDGE_ID, SRC_ELEM_ID), dom_element_text("source", SRC_ELEM_ID, SRC_ID),
+    dom_element("target", TARGET_ELEM_ID), dom_element_child("edge", EDGE_ID, TARGET_ELEM_ID), dom_element_text("target", TARGET_ELEM_ID, TARGET_ID),
+    EDGE = e(SRC_ID, TARGET_ID).
+graph_edge(ID, e(TARGET, SRC)) :- graph_edge(ID, e(SRC, TARGET)), graph_undirected(ID).	    
+\end{lstlisting}    
+
+\subsection{Calculating and storing graph colorings}
+
+Colorings for the graph parsed in the previous sections can be calculated using module \texttt{threecol} introduced in Example~\ref{ex:3col-module}.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-colorings}, caption={Calculating graph colorings.}]
+graph_threecol(ID, COL) :- 
+	graph(ID), 
+	VERTEX_LIST = #list{V : graph_vertex(ID, V)}, 
+	EDGE_LIST = #list{edge(V1, V2) : graph_edge(ID, e(V1, V2))}, 
+	#threecol[VERTEX_LIST, EDGE_LIST](COL).
+\end{lstlisting}    
+
+TODO: Obtaining output path from user, writing 3-colorings to user-specified file!
+
+TODO: some input/output and answer set examples
+
+\section{Performance of solving Evolog programs}
+
+TODO: graphcol example with differently sized graphs.
