@@ -1,7 +1,7 @@
 #enumeration_predicate_is ids.
 
 enter_input_prompt("Please enter a path to read graphs from: ").
-enter_output_prompt("Please enter a path to write calculated colorings to: ").
+enter_output_prompt("Please enter a path to write calculated colorings for graph ").
 
 write_input_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- enter_input_prompt(PROMPT), &stdout(STDOUT).
 usr_input_res(INP) : @streamReadLine[STDIN] = INP :- write_input_prompt_res(success(_)), &stdin(STDIN).
@@ -73,231 +73,77 @@ graph_threecol(ID, COL) :-
 
 graph_coloring(GRAPH, COLORING, ID) :- ids(coloring_ids, gcol(GRAPH, COLORING), ID), graph_threecol(GRAPH, COLORING).
 
-% Unwrap colorings and assign identifiers.
-%graph_coloring_entry(GRAPH, COLORING_ID, VERTEX, COLOR, TAIL) :- graph_coloring(GRAPH, lst(col(VERTEX, COLOR), TAIL), COLORING_ID).
-%graph_coloring_entry(GRAPH, COLORING_ID, VERTEX, COLOR, TAIL) :- graph_coloring_entry(GRAPH, COLORING_ID, _, _, lst(col(VERTEX, COLOR), TAIL)).
-%graph_coloring_vertex(GRAPH, COLORING_ID, VERTEX, COLOR) :- graph_coloring_entry(GRAPH, COLORING_ID, VERTEX, COLOR, _).
+% Translate colorings into strings
+stringified_coloring_lst(GRAPH, COL_ID, COLSTR_LST) :- 
+	graph_coloring(GRAPH, COLS, COL_ID),
+	#threecol_to_xml[COLS](COLSTR_LST).
+stringified_coloring_entry(GRAPH, COL_ID, COL_STR, TAIL) :-
+	stringified_coloring_lst(GRAPH, COL_ID, lst(coloring_xmlstr(COL_STR), TAIL)).
+stringified_coloring_entry(GRAPH, COL_ID, COL_STR, TAIL) :-
+	stringified_coloring_entry(GRAPH, COL_ID, _, lst(coloring_xmlstr(COL_STR), TAIL)).	
+stringified_coloring(GRAPH, COL_ID, COL_STR) :- stringified_coloring_entry(GRAPH, COL_ID, COL_STR, _).
 
-% Establish an ordering of coloring entries
-%graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2) :-
-%	graph_coloring_vertex(GRAPH1, COLORING_ID1, VERTEX1, COLOR1),
-%	graph_coloring_vertex(GRAPH2, COLORING_ID2, VERTEX2, COLOR2),
-%	GRAPH1 < GRAPH2.	
-%graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2) :-
-%	graph_coloring_vertex(GRAPH1, COLORING_ID1, VERTEX1, COLOR1),
-%	graph_coloring_vertex(GRAPH2, COLORING_ID2, VERTEX2, COLOR2),
-%	GRAPH1 = GRAPH2,
-%	COLORING_ID1 < COLORING_ID2.
-%graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2) :-
-%	graph_coloring_vertex(GRAPH1, COLORING_ID1, VERTEX1, COLOR1),
-%	graph_coloring_vertex(GRAPH2, COLORING_ID2, VERTEX2, COLOR2),
-%	GRAPH1 = GRAPH2,
-%	COLORING_ID1 = COLORING_ID2,
-%	VERTEX1 < VERTEX2.
-%graph_coloring_vertex_not_pred(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH3, COLORING_ID3, VERTEX3, COLOR3) :-
-%	graph_coloring_vertex_less_than(GRAPH1, COLORING_ID1, VERTEX1, COLOR1, GRAPH2, COLORING_ID2, VERTEX2, COLOR2)
-%	graph_coloring_vertex_less_than(GRAPH2, COLORING_ID2, VERTEX2, COLOR2, GRAPH3, COLORING_ID3, VERTEX3, COLOR3),
-%	terms(GRAPH2, COLORING_ID2, VERTEX2, COLOR2) != terms(GRAPH3, COLORING_ID3, VERTEX3, COLOR3).
+% Stitch individual coloring strings into one string
+stringified_coloring_before(GRAPH, COL_ID, COL_ID_AFTER) :-
+	stringified_coloring(GRAPH, COL_ID, _),
+	stringified_coloring(GRAPH, COL_ID_AFTER, _),
+	COL_ID_AFTER > COL_ID.	
+stringified_coloring_not_predecessor(GRAPH, COL_ID, COL_ID_AFTER) :-
+	stringified_coloring_before(GRAPH, COL_ID, COL_ID_INTM),
+	stringified_coloring_before(GRAPH, COL_ID_INTM, COL_ID_AFTER).
+stringified_coloring_predecessor(GRAPH, COL_ID, COL_ID_AFTER) :-
+	stringified_coloring_before(GRAPH, COL_ID, COL_ID_AFTER),
+	not stringified_coloring_not_predecessor(GRAPH, COL_ID, COL_ID_AFTER).
+stringified_coloring_has_predecessor(GRAPH, COL_ID) :- 
+	stringified_coloring(GRAPH, COL_ID, _), 
+	stringified_coloring_predecessor(GRAPH, _, COL_ID).	
+stringified_coloring_first(GRAPH, COL_ID) :- 
+	stringified_coloring(GRAPH, COL_ID, _), 
+	not stringified_coloring_has_predecessor(GRAPH, COL_ID).	
+stringified_coloring_has_successor(GRAPH, COL_ID) :- 
+	stringified_coloring(GRAPH, COL_ID, _), 
+	stringified_coloring_before(GRAPH, COL_ID, _).	
+stringified_coloring_last(GRAPH, COL_ID) :-
+	stringified_coloring(GRAPH, COL_ID, _),
+	not stringified_coloring_has_successor(GRAPH, COL_ID).
+
+xmlstring_upto(GRAPH, STR, COL_ID_FIRST) :-
+	&stdlib_string_concat["<colorings>", COLSTR](STR),
+	stringified_coloring_first(GRAPH, COL_ID_FIRST),
+	stringified_coloring(GRAPH, COL_ID_FIRST, COLSTR).
+
+xmlstring_upto(GRAPH, STR, COL_ID) :-
+	stringified_coloring_predecessor(GRAPH, COL_ID_PRED, COL_ID),
+	xmlstring_upto(GRAPH, PREV_STR, COL_ID_PRED),
+	stringified_coloring(GRAPH, COL_ID, COLSTR),
+	&stdlib_string_concat[PREV_STR, COLSTR](STR).
+
+colorings_xmlstring(GRAPH, RESULT_STR) :-
+	stringified_coloring_last(GRAPH, COL_ID),
+	xmlstring_upto(GRAPH, STR, COL_ID),
+	&stdlib_string_concat[STR, "</colorings>"](RESULT_STR).
+
+% Prompt user for a path to which to write the calculated colorings for each graph
+write_output_prompt_res(G, R) : @streamWrite[STDOUT, P] = R :- 
+	graph(G), enter_output_prompt(PROMPT), 
+	&stdlib_string_concat[PROMPT, G](S),
+	&stdlib_string_concat[S, ": "](P),
+	&stdout(STDOUT).
+usr_output_res(G, INP) : @streamReadLine[STDIN] = INP :- write_output_prompt_res(G, success(_)), &stdin(STDIN).
+
+% Open the output file
+outfile(G, PATH) :- usr_output_res(G, success(line(PATH))).
+outfile_open(G, PATH, HD) : @fileOutputStream[PATH] = HD :- outfile(G, PATH).
+
+% Write colorings to output file
+write_colorings_result(G, R) : @streamWrite[HD, STR] = R :- 
+	colorings_xmlstring(G, STR), 
+	outfile(G, PATH), 
+	outfile_open(G, PATH, HD).
+
+% Close the output file
+outfile_closed(G, RES) : @outputStreamClose[STREAM] = RES :- outfile(G, PATH), write_colorings_result(G, success(_)).
+
+
 	
-	
 
-%% Prompt user for a path to which to write the calculated colorings
-%write_output_prompt_res(R) : @streamWrite[STDOUT, PROMPT] = R :- enter_output_prompt(PROMPT), &stdout(STDOUT).
-%usr_output_res(INP) : @streamReadLine[STDIN] = INP :- write_output_prompt_res(success(_)), &stdin(STDIN).
-%
-%% Open the output file
-%outfile(PATH) :- usr_output_res(success(line(PATH))).
-%outfile_open(PATH, HD) : @fileOutputStream[PATH] = HD :- outfile(PATH).
-%
-%% Write every vertex coloring along with graph and coloring ids to output file
-%% Assign a unique id to every line we want to write -> Slight abuse of enum semantics: Technically we cannot assume ids to be consecutive integers
-
-
-% Note: we could give the actual tree as function term out of DOM parsing (not sure if useful)
-#module xml_dom(input_lines/1 => {dom_element/2, dom_element_child/3, dom_element_text/3, dom_element_attribute/4}) {
-	#enumeration_predicate_is id_enum.
-
-	token_regex(tag_open, "(<(\w+)( (\w+=\\"\w+\\"))*>)").
-	token_regex(tag_close, "(</\w+>)").
-	opening_tag_name_regex("<(\w+)( (\w+=\\"\w+\\"))*>").
-	closing_tag_name_regex("</(\w+)>").
-	attribute_regex("(\w+=\\"\w+\\")").
-	attribute_name_regex("(\w+)=\\"\w+\\"").
-	attribute_value_regex("\w+=\\"(\w+)\\"").
-
-	% Unwrap lines
-	line_element(E, TAIL) :- input_lines(lst(E, TAIL)).
-	line_element(E, TAIL) :- line_element(_, lst(E, TAIL)).
-	line(LINE_NO, LINE) :- line_element(line(LINE_NO, LINE), _).
-
-	% Match basic tokens
-	token(t(TOK, VALUE), LINE_NO, FROM, TO) :- line(LINE_NO, LINE), token_regex(TOK, REGEX), &regex_matches[REGEX, LINE](VALUE, FROM, TO).
-
-	% Establish a token ordering
-	token_before(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO, TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO) :- 
-		token(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO), 
-		token(TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO), 
-		TOK1_LINE_NO = TOK2_LINE_NO, TOK1_TO < TOK2_FROM.
-	token_before(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO, TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO) :- 
-		token(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO), 
-		token(TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO), 
-		TOK1_LINE_NO < TOK2_LINE_NO. 
-
-	% Extract tag names
-	tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO) :- 
-		token(t(tag_open, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO),
-		&regex_matches[TAG_NAME_REGEX, TOK_VALUE](TAG_NAME, _, _),
-		opening_tag_name_regex(TAG_NAME_REGEX).
-	tag_closing(TAG_NAME, t(tag_close, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO) :- 
-		token(t(tag_close, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO),
-		&regex_matches[TAG_NAME_REGEX, TOK_VALUE](TAG_NAME, _, _),
-		closing_tag_name_regex(TAG_NAME_REGEX). 
-
-	% We have an opening/closing tag pair if tag name is the same, 
-	% opening tag is before closing tag, and no opening tag of same name between.
-	tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		tag_opening(TAG_NAME, OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		tag_closing(TAG_NAME, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO),
-		tag_opening(TAG_NAME, INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO),
-		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO),
-		token_before(INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
-	element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		tag_opening(TAG_NAME, OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		tag_closing(TAG_NAME, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		not tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
-	
-	%% Extract attributes
-	tag_opening_attribute(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO, attribute(NAME, VALUE)) :-
-		tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO),
-		&regex_matches[ATTRIBUTE_REGEX, TOK_VALUE](ATTRIBUTE_STR, _, _),
-		attribute_regex(ATTRIBUTE_REGEX),
-		&regex_matches[ATTRIBUTE_VALUE_REGEX, ATTRIBUTE_STR](VALUE, _, _), 
-		attribute_value_regex(ATTRIBUTE_VALUE_REGEX),
-		&regex_matches[ATTRIBUTE_NAME_REGEX, ATTRIBUTE_STR](NAME, _, _),
-		attribute_name_regex(ATTRIBUTE_NAME_REGEX).
-	
-	element_attribute(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO, attribute(NAME, VALUE)) :-
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		tag_opening_attribute(TAG_NAME, t(tag_open, _), OPEN_LINE_NO, OPEN_FROM, OPEN_TO, attribute(NAME, VALUE)).
-				
-	% Any string between two tags with no other opening or closing tags between is content
-	any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
-		token_before(t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
-	any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
-		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
-		token_before(t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO). 
-	any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :-
-		any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).       
-	terminal(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
-		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
-		not any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
-
-	% Extract content between tags (currently assumes start and end tags to be on the same line)
-	element_text(ELEMENT_NAME, FROM_POS, TO_POS, TEXT) :-
-		terminal(ELEMENT_NAME, LINE_NO, OPEN_FROM, OPEN_TO, LINE_NO, CLOSE_FROM, CLOSE_TO),
-		line(LINE_NO, FULL_LINE),
-		&string_substring[FULL_LINE, OPEN_TO, CLOSE_FROM](TEXT),
-		FROM_POS = pos(LINE_NO, OPEN_FROM),
-		TO_POS = pos(LINE_NO, CLOSE_TO).
-
-	% Derive parent elements
-	% An element encloses another if the opening and closing tag of the enclosed 
-	% element lie fully between opening and cloising tags of the enclosing element
-	element_encloses(ENC, ENC_POS_FROM, ENC_POS_TO, LOWER, LOWER_POS_FROM, LOWER_POS_TO) :- 
-		element(LOWER, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO),
-		element(ENC, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
-		token(LOWER_OPEN_TOK, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO),
-		token(LOWER_CLOSE_TOK, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO),
-		token(ENC_OPEN_TOK, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO),
-		token(ENC_CLOSE_TOK, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
-		token_before(ENC_OPEN_TOK, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO, LOWER_OPEN_TOK, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO),
-		token_before(LOWER_CLOSE_TOK, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO, ENC_CLOSE_TOK, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
-		ENC_POS_FROM = pos(ENC_OPEN_LINE_NO, ENC_OPEN_FROM),
-		ENC_POS_TO = pos(ENC_CLOSE_LINE_NO, ENC_CLOSE_TO),
-		LOWER_POS_FROM = pos(LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM),
-		LOWER_POS_TO = pos(LOWER_CLOSE_LINE_NO, LOWER_CLOSE_TO).
-	% An element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed by E1.   
-	element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
-		element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
-		element_encloses(P, P_POS_FROM, P_POS_TO, I, I_POS_FROM, I_POS_TO),
-		element_encloses(I, I_POS_FROM, I_POS_TO, E, E_POS_FROM, E_POS_TO).
-	element_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
-		element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
-		not element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO).
-
-
-	dom_element_id(e(NAME, POS_FROM, POS_TO), ID) :- 
-		element(NAME, START_LINE_NO, START_FROM, START_TO, END_LINE_NO, END_FROM, END_TO),
-		POS_FROM = pos(START_LINE_NO, START_FROM),
-		POS_TO = pos(END_LINE_NO, END_TO),
-		id_enum(element_ids, e(NAME, POS_FROM, POS_TO), ID).
-
-	dom_element(NAME, ID) :-
-		dom_element_id(e(NAME, _, _), ID).	
-
-	dom_element_child(NAME, ID, CHILD_ID) :-
-		dom_element(NAME, ID),
-		dom_element_id(e(NAME, POS_FROM, POS_TO), ID),	
-		dom_element_id(e(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO), CHILD_ID),
-		element_parent(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO, NAME, POS_FROM, POS_TO).
-
-	dom_element_text(NAME, ID, TEXT) :-
-		dom_element(NAME, ID),
-		dom_element_id(e(NAME, POS_FROM, POS_TO), ID),
-		element_text(NAME, POS_FROM, POS_TO, TEXT).	
-
-	dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :-
-		dom_element(NAME, ID),
-		dom_element_id(e(NAME, pos(START_LINE_NO, START_FROM), pos(END_LINE_NO, END_TO)), ID),
-		element_attribute(NAME, START_LINE_NO, START_FROM, _, END_LINE_NO, _, END_TO, attribute(ATTR_NAME, ATTR_VALUE)).	
-}
-
-#module threecol_to_xml (coloring/1 => {coloring_xmlstr/1}) {
-    coloring_entry(vertex(ID, COL), TAIL) :- coloring(lst(col(ID, COL), TAIL)).
-    coloring_entry(vertex(ID, COL), TAIL) :- coloring_entry(_, lst(col(ID, COL), TAIL)).
-    coloring_entry_pred(ID, ID_PRED) :- coloring_entry(vertex(ID, _), lst(col(ID_PRED, _), _)).
-    coloring_entry_has_pred(ID) :- coloring_entry_pred(ID, _).
-    coloring_entry_is_pred(ID) :- coloring_entry_pred(_, ID).
-    coloring_entry_first(ID) :- coloring_entry(vertex(ID, _), _), not coloring_entry_has_pred(ID).
-    coloring_entry_last(ID) :- coloring_entry(vertex(ID, _), _), not coloring_entry_is_pred(ID).
-
-    coloring_tag_open("<coloring>").
-    coloring_tag_close("</coloring>").
-
-    coloring_part(ID, STR) :- 
-        coloring_entry(vertex(ID, COL), _), 
-        &stdlib_string_concat["<vertex><id>", ID](S1),
-        &stdlib_string_concat[S1, "</id><color>"](S2),
-        &stdlib_string_concat[S2, COL](S3).
-        &stdlib_string_concat[S3, "</color></vertex>"](STR).
-
-    coloring_xmlstr_upto(STR, ID) :- 
-        coloring_entry_first(ID), 
-        coloring_part(ID, FIRST_PARTSTR),
-        coloring_tag_open(OPENSTR)
-        &stdlib_string_concat[OPENSTR, FIRST_PARTSTR](STR).
-    coloring_xmlstr_upto(STR, ID) :- 
-        coloring_entry_pred(ID, ID_PRED),
-        coloring_xmlstr_upto(PREV_STR, ID_PRED),
-        coloring_part(ID, PARTSTR),
-        &stdlib_string_concat[PREV_STR, PARTSTR](STR).
-    coloring_xmlstr(STR) :- 
-        coloring_entry_last(ID),
-        coloring_xmlstr_upto(PREV_STR, ID),
-        coloring_tag_close(CLOSESTR),
-        &stdlib_string_concat[PREV_STR, CLOSESTR](STR).    
-}

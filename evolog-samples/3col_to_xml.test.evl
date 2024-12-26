@@ -1,0 +1,7 @@
+graph_coloring(1, lst(col("a", "green"), lst(col("b", "red"), lst(col("c", "blue"), lst_empty))), 1).
+graph_coloring(1, lst(col("a", "red"), lst(col("b", "green"), lst(col("c", "blue"), lst_empty))), 2).
+graph_coloring(1, lst(col("a", "blue"), lst(col("b", "red"), lst(col("c", "green"), lst_empty))), 3).
+
+stringified_coloring(GRAPH_ID, COL_ID, COL_STR) :- 
+    graph_coloring(GRAPH_ID, COLS, COL_ID),
+    #threecol_to_xml[COLS](COL_STR).
