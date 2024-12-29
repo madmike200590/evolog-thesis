@@ -401,7 +401,7 @@ graph_edge(ID, e(TARGET, SRC)) :- graph_edge(ID, e(SRC, TARGET)), graph_undirect
 
 \subsection{Calculating and storing graph colorings}
 
-Colorings for the graph parsed in the previous sections can be calculated using module \texttt{threecol} introduced in Example~\ref{ex:3col-module}.
+Colorings for the graph parsed in the previous sections can be calculated using module \texttt{threecol} introduced in Example~\ref{ex:3col-module}. For later processing (i.e. serialization to XML content), each calculated coloring is assigned a unique ID using the enumeration predicate \texttt{ids/3}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-colorings}, caption={Calculating graph colorings.}]
 graph_threecol(ID, COL) :- 
@@ -409,7 +409,51 @@ graph_threecol(ID, COL) :-
 	VERTEX_LIST = #list{V : graph_vertex(ID, V)}, 
 	EDGE_LIST = #list{edge(V1, V2) : graph_edge(ID, e(V1, V2))}, 
 	#threecol[VERTEX_LIST, EDGE_LIST](COL).
+
+graph_coloring(GRAPH, COLORING, ID) :- ids(coloring_ids, gcol(GRAPH, COLORING), ID), graph_threecol(GRAPH, COLORING).    
 \end{lstlisting}    
+
+In order to write calculated colorings to an XML file, each coloring is first converted to an XML string using module \texttt{threecol\_to\_xml}, which is shown in Listing~\ref{lst:results-xml-graphcol-serialization}.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-serialization}, caption={Generating XML strings for graph colorings.}]
+#module threecol_to_xml (coloring/1 => {coloring_xmlstr/1}) {
+    coloring_entry(vertex(ID, COL), TAIL) :- coloring(lst(col(ID, COL), TAIL)).
+    coloring_entry(vertex(ID, COL), TAIL) :- coloring_entry(_, lst(col(ID, COL), TAIL)).
+    coloring_entry_pred(ID, ID_PRED) :- coloring_entry(vertex(ID, _), lst(col(ID_PRED, _), _)).
+    coloring_entry_has_pred(ID) :- coloring_entry_pred(ID, _).
+    coloring_entry_is_pred(ID) :- coloring_entry_pred(_, ID).
+    coloring_entry_first(ID) :- coloring_entry(vertex(ID, _), _), not coloring_entry_has_pred(ID).
+    coloring_entry_last(ID) :- coloring_entry(vertex(ID, _), _), not coloring_entry_is_pred(ID).
+
+    coloring_tag_open("<coloring>").
+    coloring_tag_close("</coloring>").
+
+    coloring_part(ID, STR) :- 
+        coloring_entry(vertex(ID, COL), _), 
+        &stdlib_string_concat["<vertex><id>", ID](S1),
+        &stdlib_string_concat[S1, "</id><color>"](S2),
+        &stdlib_string_concat[S2, COL](S3),
+        &stdlib_string_concat[S3, "</color></vertex>"](STR).
+
+    coloring_xmlstr_upto(STR, ID) :- 
+        coloring_entry_first(ID), 
+        coloring_part(ID, FIRST_PARTSTR),
+        coloring_tag_open(OPENSTR),
+        &stdlib_string_concat[OPENSTR, FIRST_PARTSTR](STR).
+
+    coloring_xmlstr_upto(STR, ID) :- 
+        coloring_entry_pred(ID, ID_PRED),
+        coloring_xmlstr_upto(PREV_STR, ID_PRED),
+        coloring_part(ID, PARTSTR),
+        &stdlib_string_concat[PREV_STR, PARTSTR](STR).
+        
+    coloring_xmlstr(STR) :- 
+        coloring_entry_last(ID),
+        coloring_xmlstr_upto(PREV_STR, ID),
+        coloring_tag_close(CLOSESTR),
+        &stdlib_string_concat[PREV_STR, CLOSESTR](STR).	    
+} 
+\end{lstlisting}  
 
 TODO: Obtaining output path from user, writing 3-colorings to user-specified file!
 
