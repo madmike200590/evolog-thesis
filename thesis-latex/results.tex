@@ -413,7 +413,8 @@ graph_threecol(ID, COL) :-
 graph_coloring(GRAPH, COLORING, ID) :- ids(coloring_ids, gcol(GRAPH, COLORING), ID), graph_threecol(GRAPH, COLORING).    
 \end{lstlisting}    
 
-In order to write calculated colorings to an XML file, each coloring is first converted to an XML string using module \texttt{threecol\_to\_xml}, which is shown in Listing~\ref{lst:results-xml-graphcol-serialization}.
+In order to write calculated colorings to an XML file, each coloring is first converted to an XML string using module \texttt{threecol\_to\_xml}, which is shown in Listing~\ref{lst:results-xml-graphcol-serialization}. The module takes as input an atom of predicate \texttt{coloring/1} which is assumed to have one argument term, where the argument is a list of terms representing vertices along with an assigned color, e.g. \texttt{coloring(lst(col(1, red), lst(col(2, blue), lst\_empty))).}
+In the listing, the rules on lines 2 through 8 are used to first "unwrap" the input list into one \texttt{coloring\_entry/2} atom per list entry, an then establish a total ordering of said atoms using predicates \texttt{coloring\_entry\_pred/2}, \texttt{coloring\_entry\_first/1} and \texttt{coloring\_entry\_last/1}. Based on the derived ordering, an XML string representing the input coloring is built recursively starting from the "lowest" element. Every step of the construction process yields an instance of \texttt{coloring\_xmlstr\_upto/2} where the second argument term is the identifier of the "highest" vertex encoded in the CML string contituting the first argument. The output predicate of the module \texttt{coloring\_xmlstr/1} is derived from the "maximal" instance of \texttt{coloring\_xmlstr\_upto/2}, i.e. the one corresponding to the last coloring entry according to \texttt{coloring\_entry\_last/1}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-serialization}, caption={Generating XML strings for graph colorings.}]
 #module threecol_to_xml (coloring/1 => {coloring_xmlstr/1}) {
@@ -454,6 +455,93 @@ In order to write calculated colorings to an XML file, each coloring is first co
         &stdlib_string_concat[PREV_STR, CLOSESTR](STR).	    
 } 
 \end{lstlisting}  
+
+Listing~\ref{lst:results-xml-graphcol-stringify} shows how module \texttt{threecol\_to\_xml} is used in the application to obtain an XML string for each calculated graph coloring.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-stringify}, caption={Generating XML strings for graph colorings.}]
+% Translate colorings into strings
+stringified_coloring_lst(GRAPH, COL_ID, COLSTR_LST) :- 
+    graph_coloring(GRAPH, COLS, COL_ID),
+    #threecol_to_xml[COLS](COLSTR_LST).
+stringified_coloring_entry(GRAPH, COL_ID, COL_STR, TAIL) :-
+    stringified_coloring_lst(GRAPH, COL_ID, lst(coloring_xmlstr(COL_STR), TAIL)).
+stringified_coloring_entry(GRAPH, COL_ID, COL_STR, TAIL) :-
+    stringified_coloring_entry(GRAPH, COL_ID, _, lst(coloring_xmlstr(COL_STR), TAIL)).	
+stringified_coloring(GRAPH, COL_ID, COL_STR) :- stringified_coloring_entry(GRAPH, COL_ID, COL_STR, _).
+\end{lstlisting}  
+
+Concatenating the strings for each coloring of a respective graph into one XML string encoding all colorings found for the graph in question is done in much the same way as the string representations of individual colorings are constructed. Listing~\ref{lst:results-xml-graphcol-concat-colorings} illustrates this.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-concat-colorings}, caption={Concatenating XML strings of individual colorings.}]
+% Stitch individual coloring strings into one string
+stringified_coloring_before(GRAPH, COL_ID, COL_ID_AFTER) :-
+    stringified_coloring(GRAPH, COL_ID, _),
+    stringified_coloring(GRAPH, COL_ID_AFTER, _),
+    COL_ID_AFTER > COL_ID.	
+stringified_coloring_not_predecessor(GRAPH, COL_ID, COL_ID_AFTER) :-
+    stringified_coloring_before(GRAPH, COL_ID, COL_ID_INTM),
+    stringified_coloring_before(GRAPH, COL_ID_INTM, COL_ID_AFTER).
+stringified_coloring_predecessor(GRAPH, COL_ID, COL_ID_AFTER) :-
+    stringified_coloring_before(GRAPH, COL_ID, COL_ID_AFTER),
+    not stringified_coloring_not_predecessor(GRAPH, COL_ID, COL_ID_AFTER).
+stringified_coloring_has_predecessor(GRAPH, COL_ID) :- 
+    stringified_coloring(GRAPH, COL_ID, _), 
+    stringified_coloring_predecessor(GRAPH, _, COL_ID).	
+stringified_coloring_first(GRAPH, COL_ID) :- 
+    stringified_coloring(GRAPH, COL_ID, _), 
+    not stringified_coloring_has_predecessor(GRAPH, COL_ID).	
+stringified_coloring_has_successor(GRAPH, COL_ID) :- 
+    stringified_coloring(GRAPH, COL_ID, _), 
+    stringified_coloring_before(GRAPH, COL_ID, _).	
+stringified_coloring_last(GRAPH, COL_ID) :-
+    stringified_coloring(GRAPH, COL_ID, _),
+    not stringified_coloring_has_successor(GRAPH, COL_ID).
+
+xmlstring_upto(GRAPH, STR, COL_ID_FIRST) :-
+    &stdlib_string_concat["<colorings>", COLSTR](STR),
+    stringified_coloring_first(GRAPH, COL_ID_FIRST),
+    stringified_coloring(GRAPH, COL_ID_FIRST, COLSTR).
+
+xmlstring_upto(GRAPH, STR, COL_ID) :-
+    stringified_coloring_predecessor(GRAPH, COL_ID_PRED, COL_ID),
+    xmlstring_upto(GRAPH, PREV_STR, COL_ID_PRED),
+    stringified_coloring(GRAPH, COL_ID, COLSTR),
+    &stdlib_string_concat[PREV_STR, COLSTR](STR).
+
+colorings_xmlstring(GRAPH, RESULT_STR) :-
+    stringified_coloring_last(GRAPH, COL_ID),
+    xmlstring_upto(GRAPH, STR, COL_ID),
+    &stdlib_string_concat[STR, "</colorings>"](RESULT_STR).
+\end{lstlisting}  
+
+\subsection{Writing calculated graph colorings to XML files}
+
+Once all colorings for the graph(s) from the input file have been calculated and transformed into XML representation, the last remaining step is to actually write those XML strings to files. The code used for this is shown in Listing~\ref{lst:results-xml-graphcol-write-output}.
+
+% Prompt user for a path to which to write the calculated colorings for each graph
+write_output_prompt_res(G, R) : @streamWrite[STDOUT, P] = R :- 
+	graph(G), enter_output_prompt(PROMPT), 
+	&stdlib_string_concat[PROMPT, G](S),
+	&stdlib_string_concat[S, ": "](P),
+	&stdout(STDOUT).
+usr_output_res(G, INP) : @streamReadLine[STDIN] = INP :- write_output_prompt_res(G, success(_)), &stdin(STDIN).
+
+% Open the output file
+outfile(G, PATH) :- usr_output_res(G, success(line(PATH))).
+outfile_open(G, PATH, HD) : @fileOutputStream[PATH] = HD :- outfile(G, PATH).
+
+% Write colorings to output file
+write_colorings_result(G, R) : @streamWrite[HD, STR] = R :- 
+	colorings_xmlstring(G, STR), 
+	outfile(G, PATH), 
+	outfile_open(G, PATH, success(stream(HD))).
+
+% Close the output file
+outfile_closed(G, RES) : @outputStreamClose[STREAM] = RES :- 
+	outfile(G, PATH), write_colorings_result(G, success(_)), 
+	outfile_open(G, PATH, success(stream(STREAM))).
+
+
 
 TODO: Obtaining output path from user, writing 3-colorings to user-specified file!
 
