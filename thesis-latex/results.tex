@@ -516,8 +516,9 @@ colorings_xmlstring(GRAPH, RESULT_STR) :-
 
 \subsection{Writing calculated graph colorings to XML files}
 
-Once all colorings for the graph(s) from the input file have been calculated and transformed into XML representation, the last remaining step is to actually write those XML strings to files. The code used for this is shown in Listing~\ref{lst:results-xml-graphcol-write-output}.
+Once all colorings for the graph(s) from the input file have been calculated and transformed into XML representation, the last remaining step is to actually write those XML strings to files. The code used for this is shown in Listing~\ref{lst:results-xml-graphcol-write-output}. The way the user interaction is implemented is similar to how the input file path is obtained in Listing~\ref{lst:results-xml-graphcol-userinput}.
 
+\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-write-output}, caption={Writing Graph colorings to XML files.}]
 % Prompt user for a path to which to write the calculated colorings for each graph
 write_output_prompt_res(G, R) : @streamWrite[STDOUT, P] = R :- 
 	graph(G), enter_output_prompt(PROMPT), 
@@ -540,12 +541,37 @@ write_colorings_result(G, R) : @streamWrite[HD, STR] = R :-
 outfile_closed(G, RES) : @outputStreamClose[STREAM] = RES :- 
 	outfile(G, PATH), write_colorings_result(G, success(_)), 
 	outfile_open(G, PATH, success(stream(STREAM))).
+\end{lstlisting}
 
+\section{Usage of the graph coloring application}
 
+In this Section, we demonstrate a few example inputs for the graph coloring application along with the resulting output files and answer sets.
 
-TODO: Obtaining output path from user, writing 3-colorings to user-specified file!
+\begin{example}[Trivial Graph]
+\label{ex:results-graphcol-trivial}
+The simplest case on which to test our graph coloring application is a trivial graph consisting of one vertex. Listing~\ref{lst:results-graphcol-trivial-input} shows the corresponding input XML file.
 
-TODO: some input/output and answer set examples
+\begin{lstlisting}[style=asp-code, label={lst:results-graphcol-trivial-input}, caption={One-vertex graph in XML encoding.}]
+<graph directed="false">
+    <vertices>
+        <vertex>a</vertex>
+    </vertices>
+</graph>    
+\end{lstlisting}  
+
+Listing~\ref{lst:results-graphcol-trivial-call} shows the solver call to run the XML-Graph-Coloring application for the input as well as all inputs and outputs during runtime.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-graphcol-trivial-call}, caption={Running the application for a one-vertex graph.}]
+C:\...\evolog-thesis\evolog-samples\xml-graphcol> alpha-solver -i .\file-based-3col.evl -i .\xml_dom.mod.evl -i .\3col-module-with-lists.evl -i .\3col_to_xml.mod.evl 
+Please enter a path to read graphs from:
+inputs/trivial.xml
+Please enter a path to write calculated colorings for graph 1:
+outputs/trivial.out.xml
+Answer set 1:
+{ ... }
+\end{lstlisting}  
+\end{example}
+ 
 
 \section{Performance of solving Evolog programs}
 

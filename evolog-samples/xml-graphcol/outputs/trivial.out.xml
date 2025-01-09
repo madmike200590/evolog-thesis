@@ -1,0 +1,20 @@
+<colorings>
+	<coloring>
+		<vertex>
+			<id>a</id>
+			<color>red</color>
+		</vertex>
+	</coloring>
+	<coloring>
+		<vertex>
+			<id>a</id>
+			<color>blue</color>
+		</vertex>
+	</coloring>
+	<coloring>
+		<vertex>
+			<id>a</id>
+			<color>green</color>
+		</vertex>
+	</coloring>
+</colorings>

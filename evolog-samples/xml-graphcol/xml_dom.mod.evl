@@ -1,0 +1,151 @@
+% Note: we could give the actual tree as function term out of DOM parsing (not sure if useful)
+#module xml_dom(input_lines/1 => {dom_element/2, dom_element_child/3, dom_element_text/3, dom_element_attribute/4}) {
+	#enumeration_predicate_is id_enum.
+
+	token_regex(tag_open, "(<(\w+)( (\w+=\\"\w+\\"))*>)").
+	token_regex(tag_close, "(</\w+>)").
+	opening_tag_name_regex("<(\w+)( (\w+=\\"\w+\\"))*>").
+	closing_tag_name_regex("</(\w+)>").
+	attribute_regex("(\w+=\\"\w+\\")").
+	attribute_name_regex("(\w+)=\\"\w+\\"").
+	attribute_value_regex("\w+=\\"(\w+)\\"").
+
+	% Unwrap lines
+	line_element(E, TAIL) :- input_lines(lst(E, TAIL)).
+	line_element(E, TAIL) :- line_element(_, lst(E, TAIL)).
+	line(LINE_NO, LINE) :- line_element(line(LINE_NO, LINE), _).
+
+	% Match basic tokens
+	token(t(TOK, VALUE), LINE_NO, FROM, TO) :- line(LINE_NO, LINE), token_regex(TOK, REGEX), &regex_matches[REGEX, LINE](VALUE, FROM, TO).
+
+	% Establish a token ordering
+	token_before(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO, TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO) :- 
+		token(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO), 
+		token(TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO), 
+		TOK1_LINE_NO = TOK2_LINE_NO, TOK1_TO < TOK2_FROM.
+	token_before(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO, TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO) :- 
+		token(TOK1, TOK1_LINE_NO, TOK1_FROM, TOK1_TO), 
+		token(TOK2, TOK2_LINE_NO, TOK2_FROM, TOK2_TO), 
+		TOK1_LINE_NO < TOK2_LINE_NO. 
+
+	% Extract tag names
+	tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO) :- 
+		token(t(tag_open, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO),
+		&regex_matches[TAG_NAME_REGEX, TOK_VALUE](TAG_NAME, _, _),
+		opening_tag_name_regex(TAG_NAME_REGEX).
+	tag_closing(TAG_NAME, t(tag_close, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO) :- 
+		token(t(tag_close, TOK_VALUE), LINE_NO, TAG_FROM, TAG_TO),
+		&regex_matches[TAG_NAME_REGEX, TOK_VALUE](TAG_NAME, _, _),
+		closing_tag_name_regex(TAG_NAME_REGEX). 
+
+	% We have an opening/closing tag pair if tag name is the same, 
+	% opening tag is before closing tag, and no opening tag of same name between.
+	tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+		tag_opening(TAG_NAME, OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+		tag_closing(TAG_NAME, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token(INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO),
+		tag_opening(TAG_NAME, INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO),
+		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO),
+		token_before(INTM_OPEN_TOK, INTM_OPEN_LINE_NO, INTM_OPEN_FROM, INTM_OPEN_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+	element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+		tag_opening(TAG_NAME, OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+		tag_closing(TAG_NAME, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		not tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+	
+	%% Extract attributes
+	tag_opening_attribute(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO, attribute(NAME, VALUE)) :-
+		tag_opening(TAG_NAME, t(tag_open, TOK_VALUE), LINE_NO, FROM, TO),
+		&regex_matches[ATTRIBUTE_REGEX, TOK_VALUE](ATTRIBUTE_STR, _, _),
+		attribute_regex(ATTRIBUTE_REGEX),
+		&regex_matches[ATTRIBUTE_VALUE_REGEX, ATTRIBUTE_STR](VALUE, _, _), 
+		attribute_value_regex(ATTRIBUTE_VALUE_REGEX),
+		&regex_matches[ATTRIBUTE_NAME_REGEX, ATTRIBUTE_STR](NAME, _, _),
+		attribute_name_regex(ATTRIBUTE_NAME_REGEX).
+	
+	element_attribute(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO, attribute(NAME, VALUE)) :-
+		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		tag_opening_attribute(TAG_NAME, t(tag_open, _), OPEN_LINE_NO, OPEN_FROM, OPEN_TO, attribute(NAME, VALUE)).
+				
+	% Any string between two tags with no other opening or closing tags between is content
+	any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
+		token_before(t(tag_open, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+	any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO),
+		token(CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		token_before(OPEN_TOK, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO),
+		token_before(t(tag_close, INTM_TOK), INTM_LINE_NO, INTM_FROM, INTM_TO, CLOSE_TOK, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO). 
+	any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :-
+		any_tag_opening_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		any_tag_closing_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).       
+	terminal(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO) :- 
+		element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO),
+		not any_tag_between(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
+
+	% Extract content between tags (currently assumes start and end tags to be on the same line)
+	element_text(ELEMENT_NAME, FROM_POS, TO_POS, TEXT) :-
+		terminal(ELEMENT_NAME, LINE_NO, OPEN_FROM, OPEN_TO, LINE_NO, CLOSE_FROM, CLOSE_TO),
+		line(LINE_NO, FULL_LINE),
+		&string_substring[FULL_LINE, OPEN_TO, CLOSE_FROM](TEXT),
+		FROM_POS = pos(LINE_NO, OPEN_FROM),
+		TO_POS = pos(LINE_NO, CLOSE_TO).
+
+	% Derive parent elements
+	% An element encloses another if the opening and closing tag of the enclosed 
+	% element lie fully between opening and cloising tags of the enclosing element
+	element_encloses(ENC, ENC_POS_FROM, ENC_POS_TO, LOWER, LOWER_POS_FROM, LOWER_POS_TO) :- 
+		element(LOWER, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO),
+		element(ENC, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
+		token(LOWER_OPEN_TOK, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO),
+		token(LOWER_CLOSE_TOK, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO),
+		token(ENC_OPEN_TOK, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO),
+		token(ENC_CLOSE_TOK, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
+		token_before(ENC_OPEN_TOK, ENC_OPEN_LINE_NO, ENC_OPEN_FROM, ENC_OPEN_TO, LOWER_OPEN_TOK, LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM, LOWER_OPEN_TO),
+		token_before(LOWER_CLOSE_TOK, LOWER_CLOSE_LINE_NO, LOWER_CLOSE_FROM, LOWER_CLOSE_TO, ENC_CLOSE_TOK, ENC_CLOSE_LINE_NO, ENC_CLOSE_FROM, ENC_CLOSE_TO),
+		ENC_POS_FROM = pos(ENC_OPEN_LINE_NO, ENC_OPEN_FROM),
+		ENC_POS_TO = pos(ENC_CLOSE_LINE_NO, ENC_CLOSE_TO),
+		LOWER_POS_FROM = pos(LOWER_OPEN_LINE_NO, LOWER_OPEN_FROM),
+		LOWER_POS_TO = pos(LOWER_CLOSE_LINE_NO, LOWER_CLOSE_TO).
+	% An element E1 is parent of element E2 if E1 encloses E2 and there is no other element that encloses E2 and is enclosed by E1.   
+	element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
+		element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
+		element_encloses(P, P_POS_FROM, P_POS_TO, I, I_POS_FROM, I_POS_TO),
+		element_encloses(I, I_POS_FROM, I_POS_TO, E, E_POS_FROM, E_POS_TO).
+	element_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :- 
+		element_encloses(P, P_POS_FROM, P_POS_TO, E, E_POS_FROM, E_POS_TO),
+		not element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO).
+
+	dom_element_id(e(NAME, POS_FROM, POS_TO), ID) :- 
+		element(NAME, START_LINE_NO, START_FROM, START_TO, END_LINE_NO, END_FROM, END_TO),
+		POS_FROM = pos(START_LINE_NO, START_FROM),
+		POS_TO = pos(END_LINE_NO, END_TO),
+		id_enum(element_ids, e(NAME, POS_FROM, POS_TO), ID).
+
+	dom_element(NAME, ID) :-
+		dom_element_id(e(NAME, _, _), ID).	
+
+	dom_element_child(NAME, ID, CHILD_ID) :-
+		dom_element(NAME, ID),
+		dom_element_id(e(NAME, POS_FROM, POS_TO), ID),	
+		dom_element_id(e(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO), CHILD_ID),
+		element_parent(CHILD_NAME, CHILD_POS_FROM, CHILD_POS_TO, NAME, POS_FROM, POS_TO).
+
+	dom_element_text(NAME, ID, TEXT) :-
+		dom_element(NAME, ID),
+		dom_element_id(e(NAME, POS_FROM, POS_TO), ID),
+		element_text(NAME, POS_FROM, POS_TO, TEXT).	
+
+	dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :-
+		dom_element(NAME, ID),
+		dom_element_id(e(NAME, pos(START_LINE_NO, START_FROM), pos(END_LINE_NO, END_TO)), ID),
+		element_attribute(NAME, START_LINE_NO, START_FROM, _, END_LINE_NO, _, END_TO, attribute(ATTR_NAME, ATTR_VALUE)).	
+}
