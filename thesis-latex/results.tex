@@ -569,7 +569,38 @@ Please enter a path to write calculated colorings for graph 1:
 outputs/trivial.out.xml
 Answer set 1:
 { ... }
-\end{lstlisting}  
+\end{lstlisting}
+
+The (single) answer set $A$ of the program is rather lengthy in its unfiltered form and is therefore given as the union of sets $A_{input},A_{dom},A_{col},A_{string},A_{output}$ in which we group atoms by functional area they relate to.
+We denote as $A_{input}$ the set of atoms in $A$ which are derived by rules dealing with obtaining user input (i.e. the path from which to read graph specifications):
+\begin{align*}
+    A_{input} = \{&enter\_input\_prompt("Please\ enter\ a\ path\ to\ read\ graphs\ from:\ "),\\
+                  &write\_input\_prompt\_res(success(ok)),\\
+                  &usr\_input\_res(success(line("inputs/trivial.xml"))),\ infile("inputs/trivial.xml"),\\
+                  &infile\_open("inputs/trivial.xml", success(stream(inputStream\_2))),\\
+                  &readline\_result("inputs/trivial.xml",\ 0,\ success(line("<graph\ directed="false">"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 1,\ success(line("    <vertices>"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 2\, success(line("        <vertex>a</vertex>"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 3,\ success(line(" </vertices>"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 4,\ success(line("</graph>"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 5,\ success(line(eof))),\\
+                  &infile\_closed("inputs/trivial.xml",\ success(closeResult(ok))),\\
+                  &file\_lines("inputs/trivial.xml",\\
+                  &~~~~lst(line(0,\ "<graph\ directed="false">"),\\
+                  &~~~~lst(line(1,\ "    <vertices>"),\ lst(line(2,\ "        <vertex>a</vertex>"),\\
+                  &~~~~lst(line(3,\ "       </vertices>"),\ lst(line(4,\ "</graph>"),\\
+                  &~~~~lst\_empty))))))\}
+\end{align*} 
+Similarly, $A_{dom}$ contains all atoms in the answer set which model the \gls{dom} representation of the input XML file. For brevity, we do not list every individual list term of the $file\_dom$ instance (since the atoms resulting from unwrapping the list are part of $A_{dom}$ anyway). Also, helper atoms for partial list entries needed for unwrapping (such as $dom\_element\_entry$) are not included:
+\begin{align*}
+    A_{dom} = \{&dom\_element("graph",~1),\\
+                &dom\_element("vertex",~3),\\
+                &dom\_element("vertices",~2),\\
+                &dom\_element\_attribute("graph",~1,~"directed",~"false"),\\
+                &dom\_element\_child("graph",~1,~2),\\
+                &dom\_element\_child("vertices",~2,~3),\\
+                &dom\_element\_text("vertex",~3,~"a")\}
+\end{align*}    
 \end{example}
  
 
