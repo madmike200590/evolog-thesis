@@ -1,0 +1,2 @@
+Trivial: 1,357 sec
+K3: 

@@ -1,0 +1,2 @@
+infile("inputs/perftest/k3.xml"). 
+outfile(1, "outputs/perftest/k3.out.xml").
