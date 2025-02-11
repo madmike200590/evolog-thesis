@@ -1,0 +1,2 @@
+infile("infiles/myciel4.col.xml"). 
+outfile(1, "output/myciel4.col.out.xml").

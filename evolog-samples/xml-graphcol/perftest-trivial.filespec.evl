@@ -1,2 +1,0 @@
-infile("inputs/perftest/trivial.xml"). 
-outfile(1, "outputs/perftest/trivial.out.xml").

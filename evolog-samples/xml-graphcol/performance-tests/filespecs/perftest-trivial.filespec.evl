@@ -1,0 +1,2 @@
+infile("infiles/trivial.xml"). 
+outfile(1, "output/trivial.out.xml").

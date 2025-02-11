@@ -1,0 +1,2 @@
+infile("infiles/huck.col.xml"). 
+outfile(1, "output/huck.col.out.xml").
