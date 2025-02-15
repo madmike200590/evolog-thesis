@@ -10,15 +10,16 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
-public class DimacsToXmlTranslator {
+public class DimacsTranslator {
 
 	public static void main(String[] args) throws IOException {
-		if(args.length != 2) {
-			System.err.println("Usage: DimacsToXmlTranslator <input-file> <output-file>");
+		if(args.length != 3) {
+			System.err.println("Usage: DimacsToXmlTranslator <mode> <input-file> <output-file>");
 			return;
 		}
-		Path in = Path.of(args[0]);
-		Path out = Path.of(args[1]);
+		Mode mode = Mode.valueOf(args[0].toUpperCase());
+		Path in = Path.of(args[1]);
+		Path out = Path.of(args[2]);
 		if(!Files.exists(in)) {
 			System.err.println("Input file does not exist: " + in);
 			return;
@@ -44,7 +45,9 @@ public class DimacsToXmlTranslator {
 		} catch (IOException ex) {
 			System.err.println("Error reading input file: " + ex.getMessage());
 		}
+	}
 
+	private static void translateToXml(Set<String> vertices, Set<ImmutablePair<String, String>> edges, Path out) {
 		// Write xml file
 		try (PrintStream ps = new PrintStream(Files.newOutputStream(out))) {
 			ps.println("<graph directed=\"false\">");
@@ -62,6 +65,29 @@ public class DimacsToXmlTranslator {
 		} catch (IOException ex) {
 			System.err.println("Error writing output file: " + ex.getMessage());
 		}
+	}
+
+	private static void translateToAsp(Set<String> vertices, Set<ImmutablePair<String, String>> edges, Path out) {
+		// Write asp facts
+		try (PrintStream ps = new PrintStream(Files.newOutputStream(out))) {
+			for(String vertex : vertices) {
+				ps.println("vertex(" + vertex + ").");
+			}
+			for(ImmutablePair<String, String> edge : edges) {
+				ps.println("edge(" + edge.getLeft() + ", " + edge.getRight() + ").");
+			}
+		} catch (IOException ex) {
+			System.err.println("Error writing output file: " + ex.getMessage());
+		}
+	}
+
+	private static void translateToAsp(Path in, Path out) {
+
+	}
+
+	enum Mode {
+		XML,
+		ASP;
 	}
 
 

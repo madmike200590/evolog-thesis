@@ -36,7 +36,7 @@
                         <configuration>
                             <archive>
                                 <manifest>
-                                    <mainClass>com.github.madmike200590.dimacstranslate.DimacsToXmlTranslator</mainClass>
+                                    <mainClass>com.github.madmike200590.dimacstranslate.DimacsTranslator</mainClass>
                                 </manifest>
                             </archive>
                             <descriptorRefs>
