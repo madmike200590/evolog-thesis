@@ -1,2 +1,2 @@
-infile("infiles/k3.xml"). 
+infile("infiles_evolog/k3.xml"). 
 outfile(1, "output/k3.out.xml").

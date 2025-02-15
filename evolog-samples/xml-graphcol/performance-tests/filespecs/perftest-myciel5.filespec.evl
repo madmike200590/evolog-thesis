@@ -1,2 +1,2 @@
-infile("infiles/myciel5.col.xml"). 
+infile("infiles_evolog/myciel5.col.xml"). 
 outfile(1, "output/myciel5.col.out.xml").

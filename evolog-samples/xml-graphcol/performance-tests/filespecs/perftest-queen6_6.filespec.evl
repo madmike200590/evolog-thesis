@@ -1,2 +1,2 @@
-infile("infiles/queen6_6.col.xml"). 
+infile("infiles_evolog/queen6_6.col.xml"). 
 outfile(1, "output/queen6_6.col.out.xml").
