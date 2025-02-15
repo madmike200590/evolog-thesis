@@ -45,6 +45,15 @@ public class DimacsTranslator {
 		} catch (IOException ex) {
 			System.err.println("Error reading input file: " + ex.getMessage());
 		}
+
+		switch (mode) {
+			case XML:
+				translateToXml(vertices, edges, out);
+				break;
+			case ASP:
+				translateToAsp(vertices, edges, out);
+				break;
+		}
 	}
 
 	private static void translateToXml(Set<String> vertices, Set<ImmutablePair<String, String>> edges, Path out) {
