@@ -678,4 +678,59 @@ The output file written to \texttt{trivial.out.xml} is given in Listing~\ref{lst
 
 In order to gain some idea of Alpha's solving performance for Evolog programs, a slightly modified version of the graph coloring program has been used where all rules that read user input interactively (and therefore are blocking) were removed and instead facts were added for the \texttt{infile/1} and \texttt{outfile/2} predicates.
 
-TODO: graphcol example with differently sized graphs.
+Alpha's solving performance for this modified version of the XML-based-3-coloring application has been benchmarked against calculating colorings for the same graphs represented as ASP facts and without writing calculated colorings to XML files.
+Listing~\ref{lst:results-classic-3col-k3} shows the "classic ASP" representation used for the complete graph with 3 vertices $K_3$.
+
+\begin{lstlisting}[style=asp-code, label={lst:results-classic-3col-k3}, caption={Pure-ASP version of a 3-coloring encoding for the graph $K_3$.}]
+vertex(1).
+vertex(2).
+vertex(3).
+
+edge(1,2).
+edge(2,3).
+edge(3,1).  
+
+% Make sure edges are symmetric
+edge(V2, V1) :- edge(V1, V2).
+
+% Guess colors
+red(V) :- vertex(V), not green(V), not blue(V).
+green(V) :- vertex(V), not red(V), not blue(V).
+blue(V) :- vertex(V), not red(V), not green(V).
+
+% Filter invalid guesses
+:- vertex(V1), vertex(V2), edge(V1, V2), red(V1), red(V2).
+:- vertex(V1), vertex(V2), edge(V1, V2), green(V1), green(V2).
+:- vertex(V1), vertex(V2), edge(V1, V2), blue(V1), blue(V2).
+
+col(V, red) :- red(V).
+col(V, blue) :- blue(V).
+col(V, green) :- green(V).    
+\end{lstlisting}
+
+\subsection{Performance Test Results}
+
+The results of running the above described performance tests are summarized in Table~\ref{tbl:results-perftest}.
+
+\begin{table}[H]
+    \begin{center}
+        \caption[Test Results for calculating 6 3-colorings per graph, once based on XML-input with XML-output (XML-3col) and once in plain ASP (Classic-3col)]{All execution times are given in seconds.}
+        \label{tab:results-other}
+        \begin{tabularx}{\textwidth} { 
+            |>{\raggedright\arraybackslash}X 
+            | >{\centering\arraybackslash}X
+            | >{\centering\arraybackslash}X
+            | >{\centering\arraybackslash}X
+            | >{\raggedleft\arraybackslash}X| }
+            \hline
+            \textbf{Instance} & \textbf{Classic-3col} & \textbf{XML-3col} \\ \hlineB{3}
+                K3 & 0.684 & 1.202 \\ \hline
+                G8-05-4 & 0.731 & 1.520 \\ \hline
+                G13-03-4 & 0.726 & 1.816 \\ \hline
+                G13-05-4 & 0.694 & 1.871  \\ \hline
+                G21-03-4 & 0.775 & 3.359  \\ \hline
+                G34-02-3 & 0.805 & 10.318 \\ \hline
+                G55-01-4 & 0.830 & 28.830  \\ \hline
+        \end{tabularx}
+    \end{center}
+\end{table}
