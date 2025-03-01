@@ -1,0 +1,32 @@
+In this chapter, we discuss observations from the expirements conducted in Chapter~\ref{chap:results}. It is split into two main parts: In the first part, we discuss recurring patterns in code written in Evolog as observed on the model application written in Chapter~\ref{chap:results}. In the second part of this chapter, we take a look at the performance metrics gained from the testing described in Section~\ref{sec:results-performance-tests}.
+
+\section{Observations from writing Evolog code}
+
+Considering the example application discussed in Section~\ref{sec:results-xml-graphcol}, this section aims to highlight potential areas for improvement of the language.
+
+\paragraph{Unwrapping list terms}
+As the examples in Section~\ref{sec:results-xml-graphcol} clearly show, there is a certain amount of boilerplate code involved whenever one has to "unpack" a list term obtained as an output term of a module literal. Since in most cases where list terms come into play, one actually wants to work on individual values on the list, we end up with many iterations of similar-looking code that is needed to transform one atom with a single list term into a set of "element atoms", each referring to one element of the list. An example of this is the subset of the 3-Coloring module (see Example~\ref{ex:3col-module}) where the module input (an atom referencing a list of vertices and a list of edges) is deconstructed in order to represent a graph using instances of predicates \texttt{vertex/1} and \texttt{edge/2}. The relevant part of the program is shown in Listing~\ref{lst:discussion-graph-unwrap}.
+
+\begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrap}, caption={Unwrapping list terms representing a graph}]
+	vertex_element(V, TAIL) :- graph(lst(V, TAIL), _).
+	vertex_element(V, TAIL) :- vertex_element(_, lst(V, TAIL)).
+	vertex(V) :- vertex_element(V, _).
+	edge_element(E, TAIL) :- graph(_, lst(E, TAIL)).
+	edge_element(E, TAIL) :- edge_element(_, lst(E, TAIL)).
+	edge(V1, V2) :- edge_element(edge(V1, V2), _).
+\end{lstlisting}
+
+The 6 lines of code shown in Listing~\ref{lst:discussion-graph-unwrap} deal with deconstructing two list terms, a vertex list and and edge list, respectively, into individual atoms such that each atom corresponds to one element of the list.
+The transformation always follows the same pattern:
+\begin{itemize}
+    \item One rule derives an instance of an "element atom" from the head of the list, which is obtained by deconstructing the list term into the form \texttt{lst(V, TAIL)}, where \texttt{TAIL} is the rest of the list without the head value represented as variable \texttt{V}.
+    \item A second rule recursively derives further list elements from element atoms by further deconstructing the \texttt{TAIL} terms of the individual element atoms. Repeated evaluation of this rule eventually leads to one element atom for every element of the original list term.
+    \item Finally, a third rule derives the actual domain atoms we're interested in by projecting away the partial lists from the individual element atoms.
+\end{itemize}    
+
+Example~\ref{ex:discussion-graph-unwrapping} demonstrates this method of unwrapping list terms based on a list representation of the complete graph with 3 vertices $K_3$.
+
+\begin{example}[List Unwrapping]
+\label{ex:discussion-graph-unwrapping} 
+Listing~\ref{lst:discussion-graph-unwrapping-example} demonstrates...   
+\end{example}    
