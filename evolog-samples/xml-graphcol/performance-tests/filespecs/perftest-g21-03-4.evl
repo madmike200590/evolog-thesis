@@ -1,0 +1,2 @@
+infile("infiles_evolog/graph_21_0.3-4.xml"). 
+outfile(1, "output/graph_21_0.3-4.out.xml").

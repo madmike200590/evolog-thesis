@@ -1,2 +1,0 @@
-infile("infiles_evolog/queen5_5.col.xml"). 
-outfile(1, "output/queen5_5.col.out.xml").

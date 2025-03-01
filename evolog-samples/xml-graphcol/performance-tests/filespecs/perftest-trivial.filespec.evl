@@ -1,2 +1,0 @@
-infile("infiles_evolog/trivial.xml"). 
-outfile(1, "output/trivial.out.xml").
