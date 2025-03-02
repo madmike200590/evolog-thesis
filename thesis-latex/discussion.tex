@@ -28,5 +28,52 @@ Example~\ref{ex:discussion-graph-unwrapping} demonstrates this method of unwrapp
 
 \begin{example}[List Unwrapping]
 \label{ex:discussion-graph-unwrapping} 
-Listing~\ref{lst:discussion-graph-unwrapping-example} demonstrates...   
+Listing~\ref{lst:discussion-graph-unwrapping-example} shows the "graph unwrapping" program from Listing~\ref{lst:discussion-graph-uwrap} including a fact representing the complete graph $K_3$ encoded as two list terms.
+\begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrap}, caption={Unwrapping the list representation of $K_3$.}]
+	graph(
+		lst(a, lst(b, lst(c, lst_empty))),
+		lst(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty)))).
+	
+	vertex_element(V, TAIL) :- graph(lst(V, TAIL), _).
+	vertex_element(V, TAIL) :- vertex_element(_, lst(V, TAIL)).
+	vertex(V) :- vertex_element(V, _).
+	edge_element(E, TAIL) :- graph(_, lst(E, TAIL)).
+	edge_element(E, TAIL) :- edge_element(_, lst(E, TAIL)).
+	edge(V1, V2) :- edge_element(edge(V1, V2), _).
+\end{lstlisting}
+Listing ~\ref{lst:discussion-graph-unwrapped-example} shows the (single) answer set of the program given in Listing~\ref{lst:discussion-graph-unwrap}
+\begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrapped-example}, caption={The unwrapped list representation of $K_3$.}]
+Answer set 1:
+	{ edge(a, b)
+	edge(b, c)
+	edge(c, a)
+	edge_element(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty)))
+	edge_element(edge(b, c), lst(edge(c, a), lst_empty))
+	edge_element(edge(c, a), lst_empty)
+	graph(
+		lst(a, lst(b, lst(c, lst_empty))), 
+		lst(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty))))
+	vertex(a)
+	vertex(b)
+	vertex(c)
+	vertex_element(a, lst(b, lst(c, lst_empty)))
+	vertex_element(b, lst(c, lst_empty))
+	vertex_element(c, lst_empty) }
+\end{lstlisting}
 \end{example}    
+
+\paragraph{Generalizing list-unrwapping}
+As Example~\ref{ex:discussion-graph-unwrapping} demonstrates, unwrapping a list term always takes 3 rules that only differ in predicate names. Definition~\ref{def:discussion-list-extraction} introduces a potential "syntacic sugar" solution we call an \emph{unwrap rule}.
+
+\begin{definition}[List-Unwrapping-Rule]
+\label{def:discussion-list-extraction}
+Given an Atom $a$ with terms $t_1,\ldots,t_k,\ldots,t_n$, where $t_k$ is a list term, we define the following rule to be the \emph{unwrap rule for $t_k$}:
+\[
+	e(V)~\leftarrow~\#unwrap\{ V~|~t_k \},~a(t_1,\ldots,t_k,\ldots,t_n).
+\]
+In the unwrap rule, $e(V)$ is called an \emph{element atom}, where $V$ refers to one value from the list $t_k$.
+We define the semantics of the above rule to be equivalent to the following program:
+\begin{align*}
+	blabla.. TODO
+\end{align*}	
+\end{definition}	
