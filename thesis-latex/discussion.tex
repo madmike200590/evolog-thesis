@@ -4,7 +4,7 @@ In this chapter, we discuss observations from the expirements conducted in Chapt
 
 Considering the example application discussed in Section~\ref{sec:results-xml-graphcol}, this section aims to highlight potential areas for improvement of the language.
 
-\paragraph{Unwrapping list terms}
+\subsection{Unwrapping list terms}
 As the examples in Section~\ref{sec:results-xml-graphcol} clearly show, there is a certain amount of boilerplate code involved whenever one has to "unpack" a list term obtained as an output term of a module literal. Since in most cases where list terms come into play, one actually wants to work on individual values on the list, we end up with many iterations of similar-looking code that is needed to transform one atom with a single list term into a set of "element atoms", each referring to one element of the list. An example of this is the subset of the 3-Coloring module (see Example~\ref{ex:3col-module}) where the module input (an atom referencing a list of vertices and a list of edges) is deconstructed in order to represent a graph using instances of predicates \texttt{vertex/1} and \texttt{edge/2}. The relevant part of the program is shown in Listing~\ref{lst:discussion-graph-unwrap}.
 
 \begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrap}, caption={Unwrapping list terms representing a graph}]
@@ -28,7 +28,7 @@ Example~\ref{ex:discussion-graph-unwrapping} demonstrates this method of unwrapp
 
 \begin{example}[List Unwrapping]
 \label{ex:discussion-graph-unwrapping} 
-Listing~\ref{lst:discussion-graph-unwrapping-example} shows the "graph unwrapping" program from Listing~\ref{lst:discussion-graph-uwrap} including a fact representing the complete graph $K_3$ encoded as two list terms.
+Listing~\ref{lst:discussion-graph-unwrapping-example} shows the "graph unwrapping" program from Listing~\ref{lst:discussion-graph-unwrap} including a fact representing the complete graph $K_3$ encoded as two list terms.
 \begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrap}, caption={Unwrapping the list representation of $K_3$.}]
 	graph(
 		lst(a, lst(b, lst(c, lst_empty))),
@@ -74,6 +74,12 @@ Given an Atom $a$ with terms $t_1,\ldots,t_k,\ldots,t_n$, where $t_k$ is a list 
 In the unwrap rule, $e(V)$ is called an \emph{element atom}, where $V$ refers to one value from the list $t_k$.
 We define the semantics of the above rule to be equivalent to the following program:
 \begin{align*}
-	blabla.. TODO
+	\mathit{list\_element}(V,\mathit{TAIL})~&\leftarrow~a(t_1,\ldots,\mathit{lst}(V,\mathit{TAIL}),\ldots,t_n).\\
+	\mathit{list\_element}(V,\mathit{TAIL})~&\leftarrow~\mathit{list\_element}(\_,\mathit{lst}(V,\mathit{TAIL})).\\
+	e(V)~&\leftarrow~\mathit{list\_element}(V,\_).
 \end{align*}	
-\end{definition}	
+\end{definition}
+
+\subsection{Repetitive File-IO Actions}
+
+\todo{do}
