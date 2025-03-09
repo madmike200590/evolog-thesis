@@ -151,11 +151,39 @@ line(LINE_NO, LINE) :-
 
 The code to write a set of lines to a file looks similar to how a file is read. Listing~\ref{lst:discussion-fileio-writelines} demonstrates the typical implementation. The following steps are needed:
 \begin{itemize}
-	\item blabla
+	\item First, the file to which content is to be written is opened.
+	\item Assuming lines to be written are consecutively numbered and available as atoms of form \texttt{line(LINE\_NO, LINE)}, the first line (assumed to have an index of 0) is written.
+	\item If the first line has been successfully written, all other lines are written using a recursive rule.
+	\item We derive that all lines have been written when the line with maximum index has been written.
+	\item One \texttt{all\_lines\_written} has been derived, the file is closed.
+	\item The file is also closed in case an error occurs during writing.
 \end{itemize}	
 
 \begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-writelines}, caption={Writing lines to a file.}]
+% Open the output file
+open_result(PATH, RES) : @fileOutputStream[PATH] = RES :- outfile(PATH).
 
+% Write lines in order of ascending line number
+write_result(0, RES) : @streamWrite[STREAM, LINE] = RES :- open_result(PATH, success(stream(STREAM))), outfile(PATH), line(0,LINE).
+write_result(LINE_NO, RES) : @streamWrite[STREAM, LINE] = RES :-  
+	open_result(PATH, success(stream(STREAM))), 
+	write_result(LINE_NO - 1, success(ok)), 
+	outfile(PATH), line(LINE_NO, LINE).
+all_lines_written :- write_result(LINE_NO, success(ok)), LINE_NO = #max{NUM : line(NUM, _)}.
+	
+% The file should be closed once all lines were successfully written	
+should_close(PATH, STREAM) :- all_lines_written, open_result(PATH, success(stream(STREAM))), outfile(PATH).
+
+% The file should also be closed when an IO error occurs during writing
+should_close(PATH, STREAM) :- 
+	write_result(_, error(_)),
+	open_result(PATH, success(stream(STREAM))), outfile(PATH).
+
+% Close the file
+close_result(PATH, RES) : @outputStreamClose[STREAM] = RES :- 
+	should_close(PATH, STREAM), 
+	open_result(PATH, success(stream(STREAM))), 
+	outfile(PATH).
 \end{lstlisting}	
 
-\todo{do}
+\paragraph{Module-based abstraction of actions}
