@@ -80,6 +80,82 @@ We define the semantics of the above rule to be equivalent to the following prog
 \end{align*}	
 \end{definition}
 
+Listing~\ref{lst:discussion-sugared-unwrap} shows a potential implementation of the 3-Coloring Module from Example~\ref{ex:3col-module} using the shorthand notation for list unwrapping proposed in Definition~\ref{def:discussion-list-extraction}.
+
+\begin{lstlisting}[style=asp-code, label={lst:discussion-sugared-unwrap}, caption={3-Coloring Module with shorthand list unwrapping rules.}]
+#module threecol(graph/2 => {col/2})  {
+	% Unwrap input
+	vertex(V) :- #unwrap{V | VLST}, graph(VLST, _).
+	edge(V1, V2) :- #unwrap{edge(V1, V2) | ELST}, graph(_, ELST).
+
+	% Make sure edges are symmetric
+	edge(V2, V1) :- edge(V1, V2).
+
+	% Guess colors
+	red(V) :- vertex(V), not green(V), not blue(V).
+	green(V) :- vertex(V), not red(V), not blue(V).
+	blue(V) :- vertex(V), not red(V), not green(V).
+
+	% Filter invalid guesses
+	:- vertex(V1), vertex(V2), edge(V1, V2), red(V1), red(V2).
+	:- vertex(V1), vertex(V2), edge(V1, V2), green(V1), green(V2).
+	:- vertex(V1), vertex(V2), edge(V1, V2), blue(V1), blue(V2).
+
+	col(V, red) :- red(V).
+	col(V, blue) :- blue(V).
+	col(V, green) :- green(V).
+}
+\end{lstlisting}	
+
 \subsection{Repetitive File-IO Actions}
+
+As we can observe in Listings~\ref{lst:results-xml-graphcol-userinput} and~\ref{lst:results-xml-graphcol-write-output}, respectively, reading the content of a file, as well as writing to a file require a set of rules that looks the same regardless of the specific file or content in question. Listing~\ref{lst:discussion-fileio-readlines} shows the "standard program" to read all lines from a file:
+\begin{itemize}
+	\item A file path (i.e. location in storage), represented using the fact \texttt{infile(PATH)} is opened.
+	\item Assuming opening the file produced no error, the first line of content is read using the rule on line 11.
+	\item Based on the first line read (line number 0), we recursively continue reading as long as reading the last line was successful and did not yield \texttt{eof} (i.e. a pseudo-term denoting the end of content) as a result.
+	\item If \texttt{eof} has been read, the file is closed, and lines are represented as atoms of form \texttt{line(LINE\_NO, LINE)}.
+\end{itemize}	
+
+\begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-readlines}, caption={Reading all lines from a file.}]
+infile_open(PATH, HD) : @fileInputStream[PATH] = HD :- 
+	infile(PATH).
+
+% Handle file opening error
+error(io, MSG) :- infile_open(_, error(MSG)).
+
+% Read all lines from infile 
+readline_result(PATH, 0, RES) : 
+	@streamReadLine[STREAM] = RES :- 
+	infile(PATH), infile_open(PATH, success(stream(STREAM))).
+readline_result(PATH, LINE_NO, RES) : 
+	@streamReadLine[STREAM] = RES :- 
+	infile(PATH), 
+	infile_open(PATH, success(stream(STREAM))), 
+	readline_result(PATH, PREV_LINE_NO, PREV_LINE_RES), 
+	PREV_LINE_RES != success(line(eof)), 
+	LINE_NO = PREV_LINE_NO + 1.
+
+% close stream after getting eof
+infile_closed(PATH, RES) : 
+	@inputStreamClose[STREAM] = RES :- 
+	infile(PATH), 
+	infile_open(PATH, success(stream(STREAM))),
+	readline_result(PATH, _, ok(eof)).
+
+% Extract actual lines and numbers
+line(LINE_NO, LINE) :- 
+	readline_result(PATH, LINE_NO, success(line(LINE))), 
+	LINE != eof.
+\end{lstlisting}	
+
+The code to write a set of lines to a file looks similar to how a file is read. Listing~\ref{lst:discussion-fileio-writelines} demonstrates the typical implementation. The following steps are needed:
+\begin{itemize}
+	\item blabla
+\end{itemize}	
+
+\begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-writelines}, caption={Writing lines to a file.}]
+
+\end{lstlisting}	
 
 \todo{do}
