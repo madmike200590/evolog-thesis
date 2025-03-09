@@ -187,3 +187,6 @@ close_result(PATH, RES) : @outputStreamClose[STREAM] = RES :-
 \end{lstlisting}	
 
 \paragraph{Module-based abstraction of actions}
+As we've demonstrated in Listings~\ref{lst:discussion-fileio-readlines} and~\ref{lst:discussion-fileio-writelines}, frequently used file operations like reading all lines from and writing a set of lines to a file, form repetitive code patterns that would greatly benefit from some shortened abstraction. The obvious solutions seems to be to simply permit actions in Evolog Modules. However, this approach presents some challenges with regards to transparent semantics.
+
+Recalling the representation of action result terms (see Section~\ref{subsucsec:implementation-actions-execution} and Definition~\ref{def:action-rule-syntax}) as function terms $r(v)$ with function symbol $r~\in~\{\mathit{success},~\mathit{error}\}$, any module-based abstraction of actions would have to make sure to represent the result of executing all actions in the sub-program as one atom (which gets translated to a term in module interpretation) representing either success or failure of the complete program. Special care needs to be taken in case of errors where some actions have already succeeded before, e.g. when writing the 31st of 50 lines to a file fails, but 30 lines habe already been written.
