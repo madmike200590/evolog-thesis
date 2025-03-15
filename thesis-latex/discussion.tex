@@ -189,4 +189,69 @@ close_result(PATH, RES) : @outputStreamClose[STREAM] = RES :-
 \paragraph{Module-based abstraction of actions}
 As we've demonstrated in Listings~\ref{lst:discussion-fileio-readlines} and~\ref{lst:discussion-fileio-writelines}, frequently used file operations like reading all lines from and writing a set of lines to a file, form repetitive code patterns that would greatly benefit from some shortened abstraction. The obvious solutions seems to be to simply permit actions in Evolog Modules. However, this approach presents some challenges with regards to transparent semantics.
 
-Recalling the representation of action result terms (see Section~\ref{subsucsec:implementation-actions-execution} and Definition~\ref{def:action-rule-syntax}) as function terms $r(v)$ with function symbol $r~\in~\{\mathit{success},~\mathit{error}\}$, any module-based abstraction of actions would have to make sure to represent the result of executing all actions in the sub-program as one atom (which gets translated to a term in module interpretation) representing either success or failure of the complete program. Special care needs to be taken in case of errors where some actions have already succeeded before, e.g. when writing the 31st of 50 lines to a file fails, but 30 lines habe already been written.
+Recalling the demand for \emph{action transparency} (see Definition~\ref{def:evolog-actions-transparency}), i.e. that the result of every firing (ground) action rule must be part of an answer set, modules containing actions can not simple be used in module literals as they're described in Section~\ref{sec:evolog-modules}. Instead, we'd have to apply the definitions of action functions in rule heads to an Evolog Module and have a module function as an action interpretation function. Example~\ref{ex:discussion-fileio-actmodules} demonstrates this approach.
+
+\begin{example}[Action Modules]
+In this example, we show a potential implementation for a module that takes a list of numbered strings and a string describing a file location as input, and writes all lines to the referenced file. Listing~\ref{lst:discussion-fileio-actmodule-impl} gives an example of how a module definition for a module containing actions might look.
+\begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-actmodule-impl}, caption={Prototypical definition of a module containing Evolog actions.}]
+#action write_lines(lines/1, path/1 => (success: lines_written/1 | error: io_error/1)) {
+	% Unwrap line list
+	line(IDX, LINE) :- #unwrap{line(IDX, LINE) | LST}, lines(LST).
+	% Unwrap 1-element-list path/1
+	outfile(PATH) :- #unwrap{P | PLST}, path(PLST).
+	
+	% Open the output file
+	open_result(PATH, RES) : @fileOutputStream[PATH] = RES :- outfile(PATH).
+
+	% Write lines in order of ascending line number
+	write_result(0, RES) : @streamWrite[STREAM, LINE] = RES :- open_result(PATH, success(stream(STREAM))), outfile(PATH), line(0, LINE).
+	write_result(LINE_NO, RES) : @streamWrite[STREAM, LINE] = RES :-  
+		open_result(PATH, success(stream(STREAM))), 
+		write_result(LINE_NO - 1, success(ok)), 
+		outfile(PATH), line(LINE_NO, LINE).
+	all_lines_written :- write_result(LINE_NO, success(ok)), LINE_NO = #max{NUM : line(NUM, _)}.
+		
+	% The file should be closed once all lines were successfully written	
+	should_close(PATH, STREAM) :- all_lines_written, open_result(PATH, success(stream(STREAM))), outfile(PATH).
+
+	% The file should also be closed when an IO error occurs during writing
+	should_close(PATH, STREAM) :- 
+		write_result(_, error(_)),
+		open_result(PATH, success(stream(STREAM))), outfile(PATH).
+
+	% Close the file
+	close_result(PATH, RES) : @outputStreamClose[STREAM] = RES :- 
+		should_close(PATH, STREAM), 
+		open_result(PATH, success(stream(STREAM))), 
+		outfile(PATH).
+
+	io_error("Failed opening file: " + MSG) :-
+		open_result(_, error(MSG)).
+	io_error("Failed writing line " + IDX + ": " + MSG) :-
+		write_result(IDX, error(MSG)).
+	io_error("Failed closing file: " + MSG) :-
+		close_result(_, error(MSG)).
+
+	lines_written(CNT) :- CNT = #count{N, R : write_result(N, R)}, not io_error(_).		
+}	
+\end{lstlisting}	
+The action module proposed in Listing~\ref{lst:discussion-fileio-actmodule-impl} differs from a "regular" module in the following ways:
+\begin{itemize}
+	\item The module output definition \texttt{(success: lines\_written/1 | error: io\_error/1)} distinguishes between a success and an error case. 
+	\item Since we assume action result terms to always be unary function terms with symbol either $\mathit{success}$ or $\mathit{error}$, the atoms of the given predicates would then be arguments of the respective (success or error) term in their termified form according to Definition~\ref{def:module-output-translation}.
+	\item The above items imply that an action module result can only be success \emph{or} error, but not both. In an actual implementation of this concept, ways of enforcing this rule would need to be adressed. 
+\end{itemize}
+Listing~\ref{lst:discussion-fileio-actmodule-usage} shows a prototypical example of how an action module could be used.
+\begin{lstlisting}
+line(0, "lorem ipsum dolor").
+line(1, "sit amet consectetur").
+line(2, "adipiscing  elit")
+
+write_result(R) : @write_lines[LINES, "/tmp/out.txt"] = R 
+	:- LINES = #list{line(I, L) : line(I, L)}.
+\end{lstlisting}		
+\end{example}
+
+
+
+% Recalling the representation of action result terms (see Section~\ref{subsucsec:implementation-actions-execution} and Definition~\ref{def:action-rule-syntax}) as function terms $r(v)$ with function symbol $r~\in~\{\mathit{success},~\mathit{error}\}$, any module-based abstraction of actions would have to make sure to represent the result of executing all actions in the sub-program as one atom (which gets translated to a term in module interpretation) representing either success or failure of the complete program. Special care needs to be taken in case of errors where some actions have already succeeded before, e.g. when writing the 31st of 50 lines to a file fails, but 30 lines habe already been written.

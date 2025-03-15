@@ -1,0 +1,50 @@
+line(0, "lorem ipsum dolor").
+line(1, "sit amet consectetur").
+line(2, "adipiscing  elit")
+
+write_result(R) : @write_lines[LINES, "/tmp/out.txt"] = R 
+	:- LINES = #list{line(I, L) : line(I, L)}.
+
+#action write_lines(lines/1, path/1 => lines_written/1) {
+	% Unwrap line list
+	line(IDX, LINE) :- #unwrap{line(IDX, LINE) | LST}, lines(LST).
+	% Unwrap 1-element-list path/1
+	outfile(PATH) :- #unwrap{P | PLST}, path(PLST).
+	
+	% Open the output file
+	open_result(PATH, RES) : @fileOutputStream[PATH] = RES :- outfile(PATH).
+
+	% Write lines in order of ascending line number
+	write_result(0, RES) : @streamWrite[STREAM, LINE] = RES :- open_result(PATH, success(stream(STREAM))), outfile(PATH), line(0, LINE).
+	write_result(LINE_NO, RES) : @streamWrite[STREAM, LINE] = RES :-  
+		open_result(PATH, success(stream(STREAM))), 
+		write_result(LINE_NO - 1, success(ok)), 
+		outfile(PATH), line(LINE_NO, LINE).
+	all_lines_written :- write_result(LINE_NO, success(ok)), LINE_NO = #max{NUM : line(NUM, _)}.
+		
+	% The file should be closed once all lines were successfully written	
+	should_close(PATH, STREAM) :- all_lines_written, open_result(PATH, success(stream(STREAM))), outfile(PATH).
+
+	% The file should also be closed when an IO error occurs during writing
+	should_close(PATH, STREAM) :- 
+		write_result(_, error(_)),
+		open_result(PATH, success(stream(STREAM))), outfile(PATH).
+
+	% Close the file
+	close_result(PATH, RES) : @outputStreamClose[STREAM] = RES :- 
+		should_close(PATH, STREAM), 
+		open_result(PATH, success(stream(STREAM))), 
+		outfile(PATH).
+
+	error("Failed opening file: " + MSG) :-
+		open_result(_, error(MSG)).
+	error("Failed writing line " + IDX + ": " + MSG) :-
+		write_result(IDX, error(MSG)).
+	error("Failed closing file: " + MSG) :-
+		close_result(_, error(MSG)).
+
+	% The overall result is an error if any individual result is an error.
+	result(error(MSG)) :- error(msg).
+	% The overall result is success if no error exists.
+	result(success(lines_written(CNT))) :- CNT = #count{N, R : write_result(N, R)}, not error(_).		
+}
