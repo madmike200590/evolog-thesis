@@ -192,6 +192,7 @@ As we've demonstrated in Listings~\ref{lst:discussion-fileio-readlines} and~\ref
 Recalling the demand for \emph{action transparency} (see Definition~\ref{def:evolog-actions-transparency}), i.e. that the result of every firing (ground) action rule must be part of an answer set, modules containing actions can not simple be used in module literals as they're described in Section~\ref{sec:evolog-modules}. Instead, we'd have to apply the definitions of action functions in rule heads to an Evolog Module and have a module function as an action interpretation function. Example~\ref{ex:discussion-fileio-actmodules} demonstrates this approach.
 
 \begin{example}[Action Modules]
+\label{ex:discussion-fileio-actmodules}	
 In this example, we show a potential implementation for a module that takes a list of numbered strings and a string describing a file location as input, and writes all lines to the referenced file. Listing~\ref{lst:discussion-fileio-actmodule-impl} gives an example of how a module definition for a module containing actions might look.
 \begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-actmodule-impl}, caption={Prototypical definition of a module containing Evolog actions.}]
 #action write_lines(lines/1, path/1 => (success: lines_written/1 | error: io_error/1)) {
@@ -252,6 +253,8 @@ write_result(R) : @write_lines[LINES, "/tmp/out.txt"] = R
 \end{lstlisting}		
 \end{example}
 
+While the approach to writing composite actions using a special form of modules sketched in Example~\ref{ex:discussion-fileio-actmodules} looks promising at first glance, we note that it also, potentially, projects away information about side-effects: Consider two distinct Frames $F_1$ and $F_2$, where in $F_1$ the \texttt{stream\_write} action in module \texttt{write\_lines} gives an error for line 1, and in $F_2$, the same action yields an error for line 2. In both frames, the result of the action rule in the top-level program is going to be an error, specifically \texttt{write\_result(io\_error("Failed writing line 1: error"))} for $F_1$, and \texttt{write\_result(io\_error("Failed writing line 2: error"))} (note that wrapping list terms mandated by module output translation were ignored since there is only one answer set holding one instance of \texttt{io\_error} anyway). While in this case the line on which writing failed is made transparent through the error message, in general, it would be possible to project away the information how many lines were written, i.e. two frames might yield different outcomes for the actions inside the module while yielding the exact same result for the overall program. Potential implementations of this concept would have to make allowances for this.
 
 
-% Recalling the representation of action result terms (see Section~\ref{subsucsec:implementation-actions-execution} and Definition~\ref{def:action-rule-syntax}) as function terms $r(v)$ with function symbol $r~\in~\{\mathit{success},~\mathit{error}\}$, any module-based abstraction of actions would have to make sure to represent the result of executing all actions in the sub-program as one atom (which gets translated to a term in module interpretation) representing either success or failure of the complete program. Special care needs to be taken in case of errors where some actions have already succeeded before, e.g. when writing the 31st of 50 lines to a file fails, but 30 lines habe already been written.
+\section{Potential improvements to solving performance}
+
