@@ -1,0 +1,8 @@
+## Related work, things to mention
+- NeurASP -> Neural Network used as kind of external atom (kinda similar to Evolog modules): 
+@article{yang2023neurasp,
+  title={Neurasp: Embracing neural networks into answer set programming},
+  author={Yang, Zhun and Ishay, Adam and Lee, Joohyung},
+  journal={arXiv preprint arXiv:2307.07700},
+  year={2023}
+}
