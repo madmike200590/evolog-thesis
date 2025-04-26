@@ -242,8 +242,6 @@ The program in Listing~\ref{lst:implementation-actions-unsupported1} is intended
 
 Listing~\ref{lst:implementation-actions-supported1} shows a supported version of the program from Listing~\ref{lst:implementation-actions-unsupported1}. Here, rather than constraints, regular rules are used for error checking, and in case of an error, a corresponding message is written to \texttt{stdout}. In this version, the program might not run in the "intended" fashion, but there will always be an answer set, i.e. effects the program applies on the outside world will always be made transparent.
 
-\todo{This suggests a definition of transparency based on being satisfiable in all frames}
-
 \begin{lstlisting}[style=asp-code, label={lst:implementation-actions-supported1}, caption={A supported version of the "greeter" application.}]
     prompt_text("Hello user, enter your name: ").
         
@@ -266,13 +264,10 @@ Listing~\ref{lst:implementation-actions-supported1} shows a supported version of
         &stdlib_string_concat["An error occurred: ", ERR](ERRMSG),
         &stdout(STDOUT).
 \end{lstlisting} 
-
 \end{example}     
 
 \subsubsection{Action Implementation}
 \label{subsucsec:implementation-actions-execution}
-
-NOTE: this is just a basic write-up about how it works, not the final text
 
 Action execution in Alpha is tied into the stratified evaluation component described in Section~\ref{subsubsec:impl-stratified-eval}. Specifically, whenever a ground instance of an action rule is fired, the corresponding action function is evaluated. The expansion of action rules described in Definition~\ref{def:action-rule-expansion} happens implicitly:
 Instead of actually splitting a rule with an action head into an application- and projection-rule as described in the formal definition, the implementation constructs an internal representation of the ground rule in question, which is equivalent to an \emph{action application term} $f_{act}(S, I)$ (see Definition~\ref{def:action-rule-expansion}) in that it uniquely identifies a ground instance of an action rule within a program. After calculating the application for the ground rule to be fired, Alpha's action execution component queries an in-memory table called \emph{action record} for existing entries where the key is equal to the calculated action application term. If such a mapping exists, the cached action result is returned, otherwise, the java method associated with the action function is executed, and a new mapping is added to the action record. The action record, i.e. action result cache, is used to make sure actions only get executed once, regardless of how often a certain ground instance of a rule is "fired" during program evaluation. Listing~\ref{lst:implementation-actions-execution-service} shows an (abbreviated) version of Alpha's action execution component.
@@ -369,19 +364,6 @@ Listing~\ref{lst:implementation-actions-actionfunc} shows the Java Interface spe
         T getValue();
     }    
 \end{lstlisting}   
-
-\begin{example}
-In this example, we take a detailed look at an evolog application intended to simulate possible real-world uses. We assume that graphs are stored as XML files, and construct an application that uses Evolog modules and actions to
-\begin{itemize}
-    \item Prompt the user for a file path to read from using actions
-    \item Read the content of the given file using actions
-    \item Parse the resulting XML strings into a DOM-like representation using a generic module
-    \item Use another generic module to calculate three-colorings of the graphs read from the input file
-    \item Use actions to write the calculated colorings to an output file
-\end{itemize}        
-\label{ex:implementation-actions-program-with-guesses}
-\todo{I'm not sure where to best put this - maybe it should go to chapter 5.}
-\end{example}    
 
 \subsection{Implementing Program Modularization}
 

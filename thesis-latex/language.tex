@@ -25,6 +25,14 @@ where
 An \emph{action program} $P$ is a set of (classic ASP-)rules and action rules.
 \end{definition}
 
+\begin{example}
+Listing~\ref{lst:evolog-actions-helloworld} shows a typical "Hello World"-program written using the action rule syntax outlined in Definition~\ref{def:action-rule-syntax}. It consists of only one rule, which has a head atom $hello\_result(R)$, the action term $stream\_write[STDOUT, TEXT]$ and action result term $R$. The body consists of a regular atom $hello\_text(TEXT)$ and an external atom $\&stdout(STDOUT)$.
+\begin{lstlisting}[style=asp-code, label={lst:evolog-actions-helloworld}, caption={A "Hello World"-program in Evolog.}]
+hello_text("Hello World!").
+hello_result(R) : @streamWrite[STDOUT, TEXT] = R :- hello_text(TEXT), &stdout(STDOUT).	
+\end{lstlisting}
+\end{example}	
+
 \subsection{Semantics}
 \label{subsec:evolog-actions-semantics}
 
