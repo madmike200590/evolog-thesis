@@ -201,9 +201,9 @@ Note that $P^{I}$ is a positive logic program.
 A Herbrand Interpretation $I$ of an \gls{asp} program $P$ is an \emph{answer set} or \emph{stable model} of $P$ iff it is the least model $LM(P^I)$ of the GL-reduct $P^I$ of $P$. We denote the set of Answer Sets of a program $P$ as $\mathit{AS}(P)$.
 \end{definition}
 
-\section{Lazy-grounding answer-set solving using Alpha}
+\section{Lazy-grounding Answer-Set Solving}
 
-The theoretical notion underlying lazy-grounding answer-set solving is that of a \emph{Computation Sequence}, which is formalized in Definition~\ref{def:prelims-asp-semantics-compseq}. Intuitively, a computation sequence is a sequence of (ground) rules firing, such that, at the end, the atoms derived by the rules from the computation sequence (together with all facts of the program) constitute an answer set.
+The theoretical notion underpinning lazy-grounding answer-set solving is that of a \emph{Computation Sequence}, which is formalized in Definition~\ref{def:prelims-asp-semantics-compseq}. Intuitively, a computation sequence is a sequence of (ground) rules firing, such that, at the end, the atoms derived by the rules from the computation sequence (together with all facts of the program) constitute an answer set.
 
 \begin{definition}[Computation Sequence, adapted from~\cite{lazy-cdnl} and~\cite{asperix-fw-chain}]
 \label{def:prelims-asp-semantics-compseq}
@@ -443,12 +443,12 @@ Expanding on Example~\ref{ex:prelims-nonstrat-splitting-sets}, it is clear that 
 Given a splitting set $S$ of program $P$, the bottom $B_S(P)$ is called \emph{common base program}, i.e. $CBP(P)$ if it is stratified and maximal in the sense that adding any further rule to $B_S(P)$ would destroy the property of $B_S(P)$ of being stratified.
 \end{definition}
 
-What remains is to solve the remaining, non-stratifiable part of a program. State-of-the-art two-phased solvers such as Clingo employ solving techniques based on~\gls{cdnl} for this~\cite{clasp-cdnl}. The basic idea of \gls{cdnl} is to encode a ground program as a set of constraints called \emph{nogoods}, i.e. sets of literals that must not be contained in any answer set. Based on these nogoods, truth assignments over $H_B(P)$ are "guessed" and conflicting guesses are used to potentially learn new nogoods using techniques originating in SAT-solving. However, these techniques normally require an input program to be fully ground, and therefore do not lend themselves to lazy-grounding approaches. Alpha uses a solving approach that is inspired by \gls{cdnl}, but makes a number of modifications to apply the same principles in a lazy-grounding scenario. Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} gives a highlevel overview of how answer set search is realized in Alpha.
+What remains is to solve the remaining, non-stratifiable part of a program. State-of-the-art two-phased solvers such as Clingo employ solving techniques based on~\gls{cdnl} for this~\cite{clasp-cdnl}. The basic idea of \gls{cdnl} is to encode a ground program as a set of constraints called \emph{nogoods}, i.e. sets of literals that must not be contained in any answer set. Based on these nogoods, truth assignments over $H_B(P)$ are "guessed" and conflicting guesses are used to potentially learn new nogoods using techniques originating in SAT-solving. However, these techniques normally require an input program to be fully ground, and therefore do not lend themselves to lazy-grounding approaches. Alpha uses a solving approach that is inspired by \gls{cdnl}, but makes a number of modifications to apply the same principles in a lazy-grounding scenario. Section~\ref{subsec:prelims-lazygrounding-alpha-cdnl} gives a highlevel overview of a \gls{cdnl}-based answer set search procedure that has first been implemented in Alpha~\cite{lazy-cdnl}.
 
-\subsection{Lazy-grounding answer set search}
+\subsection{Employing CDNL-based answer set seach for lazy-grounding solvers}
 \label{subsec:prelims-lazygrounding-alpha-cdnl}
 
-Just like two-phased solvers, Alpha also uses \emph{nogoods} to encode rules and constraints. However, Alpha does not have a full grounding of the program it solves, which necessitates a number of modifications. Without a full grounding, a solver must be able to distinguish between atoms in an assignment (i.e. answer set candidate) that are \emph{true because some rule fired}, and atoms that \emph{must be true because some constraint does not permit otherwise} (but haven't been derived by a rule). Lazy-grounding solvers introduce a third truth value, \emph{must-be-true} (MBT), to reflect this. For an assignment to be an answer set, it must not contain any MBT values. Definitions~\ref{def:prelims-alpha-nogood} and~\ref{def:prelims-alpha-nogood-ruleencoding} formally describe nogoods and their use to represent rules in Alpha.
+Just like in traditional two-phased solvers, the lazy-grounding \gls{cdnl}-approach uses \emph{nogoods} to encode rules and constraints. However, since a full grounding of the program to solve is not available, some modifications are necessary. Without a full grounding, a solver must be able to distinguish between atoms in an assignment (i.e. answer set candidate) that are \emph{true because some rule fired}, and atoms that \emph{must be true because some constraint does not permit otherwise} (but haven't been derived by a rule). Lazy-grounding solvers introduce a third truth value, \emph{must-be-true} (MBT), to reflect this. For an assignment to be an answer set, it must not contain any MBT values. Definitions~\ref{def:prelims-alpha-nogood} and~\ref{def:prelims-alpha-nogood-ruleencoding} formally describe nogoods and their use to represent rules in this solving strategy.
 
 \begin{definition}[Alpha-Assignment, Nogood~\cite{lazy-cdnl}]
 \label{def:prelims-alpha-nogood}	
@@ -457,17 +457,17 @@ An \emph{Alpha-Assignment}, in the following just \emph{assignment} is a sequenc
 	A^{\mathcal{B}} = \{ Ta~|~Ta \in A \lor Ma \in A\} \cup \{ Fa~|~Fa \in A\}
 \]
 \\
-A \emph{nogood}, in the variant used by Alpha, is a set of signed literals intuitively characterizing a set of literals that may not occur in an assignment with the given truth values:
+A \emph{nogood}, in the variant used here, is a set of signed literals intuitively characterizing a set of literals that may not occur in an assignment with the given truth values:
 \[
 	ng = \{ sl_1,\ldots,sl_n \}, s \in \{T, F\}
 \]
-Different from how nogoods are defined in classic two-phased solvers, a nogood in Alpha may optionally have a specifically designated "head" literal. Given a nogood where $sl_i$ is the head literal, we denote this as: $ng = \{ sl_1,\ldots,sl_n \}_i$. For a signed literal $sl$, we denote the literal with inverse sign as $\overline{sl}$.
+Different from how nogoods are defined in classic two-phased solvers, a nogood may optionally have a specifically designated "head" literal. Given a nogood where $sl_i$ is the head literal, we denote this as: $ng = \{ sl_1,\ldots,sl_n \}_i$. For a signed literal $sl$, we denote the literal with inverse sign as $\overline{sl}$.
 An assignment $A$ \emph{satisfies} a nogood $ng$ if $ng \nsubseteq A^{\mathcal{B}}$. Furthermore, an assignment $A$ is a \emph{solution} to a set $\Delta$ of nogoods if $\{a~|~Ta \in A^{\mathcal{B}}\} \cap \{a~|~Fa \in A^{\mathcal{B}}\} = \emptyset$,  $\{a~|~Ta \in A^{\mathcal{B}}\} \cup \{a~|~Fa \in A^{\mathcal{B}}\} = A^{\mathcal{B}}$ and $\forall~ng \in \Delta: ng \nsubseteq A^{\mathcal{B}}$.
 \end{definition}
 
 \begin{definition}[Nogood representation of rules~\cite{lazy-cdnl}]
 \label{def:prelims-alpha-nogood-ruleencoding}		
-In order to represent a ground body of a rule, Alpha introduces new atoms, denoted $\beta(r,\sigma)$ for a rule $r$ and variable substitution $\sigma$.\\
+In order to represent a ground body of a rule, new atoms are introduced, denoted $\beta(r,\sigma)$ for a rule $r$ and variable substitution $\sigma$.\\
 Given a rule $r$ with head $h(r) = a_0$, positive body $b^{+}(r) = a_1,\ldots,a_k$ and negative body $b^{-}(r) = a_{k+1},\ldots,a_n$, the \emph{nogood representation} of $r$, $ng(r)$ is defined as follows:
 \begin{align*}
 	ng(r) = \{&\{F\beta(r,\sigma),Ta_1,\ldots,Ta_k,Fa_{k+1},\ldots,Fa_n\}_1,\{Fa_0,T\beta(r,\sigma)\},\\
@@ -477,9 +477,9 @@ Given a rule $r$ with head $h(r) = a_0$, positive body $b^{+}(r) = a_1,\ldots,a_
 \end{definition}
 
 
-\paragraph{Lazy Grounding and solving in Alpha~\cite{alpha-techniques}}
-Alpha's grounder always calculates ground substitutions for all rules that are \emph{applicable} with respect to a (partial) assignment $A$. A rule $r$ is said to be applicable w.r.t $A$, if, given a ground substitution $\sigma$ $b^{+}(r\sigma) \subseteq A^{\mathcal{B}}$ and $b^{-}(r\sigma) \cap \{a~|~Ta \in A^{\mathcal{B}}\} = \emptyset$, i.e. a ground rule is applicable, if its positive body is satisifed and its negative body is not contradicted by an assignment.
-When solving a program, Alpha's grounder constructs an initial partial assignment from all facts and the model of the previously solved \gls{cbp}. Based on this partial assignment, ground instances for applicable rules are computed and translated into nogoods. The partial assignment and generated nogoods are passed to the solver. The solver then first applies propagation, i.e. extends assignment $A$ based on unit nogoods as described in Definition~\ref{def:prelims-alpha-nogood-unitness}. Then, if a conflict between the (possibly extended) assignment and the current set of nogoods exists, the conflict is analyzed, a new nogood describing the conflict cause is added, and the solver \emph{backtracks} (i.e. retracts enough of the assignment to get to a conflict-free state). If there are no conflicts, and applicable rules exist, the solver guesses (based on a heuristic), which rule to apply. If there are no applicable rules or unassigned atoms, and no atom is assigned \emph{must-be-true}, the solver has found an answer set. In this case, the answer set is stored, a new nogood which prevents finding the same answer set again is added, and the solver backtracks. Algorithm~\ref{alg:prelims-alpha-search} gives a highlevel summary of Alpha's answer set search procedure.
+\paragraph{Lazy Grounding and Solving Procedure~\cite{alpha-techniques}}
+In order to find answer sets in the lazy-grounding search procedure used by Alpha, a grounding component (grounder) always calculates ground substitutions for all rules that are \emph{applicable} with respect to a (partial) assignment $A$. A rule $r$ is said to be applicable w.r.t $A$, if, given a ground substitution $\sigma$ $b^{+}(r\sigma) \subseteq A^{\mathcal{B}}$ and $b^{-}(r\sigma) \cap \{a~|~Ta \in A^{\mathcal{B}}\} = \emptyset$, i.e. a ground rule is applicable, if its positive body is satisifed and its negative body is not contradicted by an assignment.
+When solving a program, the grounder constructs an initial partial assignment from all facts and the model of the previously solved \gls{cbp}. Based on this partial assignment, ground instances for applicable rules are computed and translated into nogoods. The partial assignment and generated nogoods are then passed to a solving component (solver). The solver then first applies propagation, i.e. extends assignment $A$ based on unit nogoods as described in Definition~\ref{def:prelims-alpha-nogood-unitness}. Then, if a conflict between the (possibly extended) assignment and the current set of nogoods exists, the conflict is analyzed, a new nogood describing the conflict cause is added, and the solver \emph{backtracks} (i.e. retracts enough of the assignment to get to a conflict-free state). If there are no conflicts, and applicable rules exist, the solver guesses (based on a heuristic), which rule to apply. If there are no applicable rules or unassigned atoms, and no atom is assigned \emph{must-be-true}, the solver has found an answer set. In this case, the answer set is stored, a new nogood which prevents finding the same answer set again is added, and the solver backtracks. Algorithm~\ref{alg:prelims-alpha-search} gives a highlevel summary of the answer set search procedure.
 
 \begin{definition}[Weak and strongly unit nogoods~\cite{lazy-cdnl}]
 \label{def:prelims-alpha-nogood-unitness}	
@@ -488,7 +488,7 @@ Let $ng$ be a nogood $ng = \{sl_1,\ldots,s_n\}$ and $A$ an assignment. Then
 	\item $ng$ is \emph{weakly unit} under $A$ for $sl$ if $ng \setminus A^{\mathcal{B}} = \{sl\}$ and $\overline{sl} \notin A^{\mathcal{B}}$
 	\item $ng$ is \emph{strongly unit} under $A$ for $sl$ if $sl$ is designated the "head" of $ng$, $ng \setminus A = \{sl\}$ and $\overline{sl} \notin A$
 \end{itemize}	
-Intuitively, if a nogood is unit under an assignment $A$, it forces a truth value for the single literal $sl$ which is not yet assigned (as otherwise, the nogood would be violated). In Alpha, the notions of weak and strong unitness are used to distinguish between nogoods forcing a literal to be set to \emph{must-be-true} (if implied by a weakly unit nogood) and \emph{true} (if implied by a strongly unit nogood)
+Intuitively, if a nogood is unit under an assignment $A$, it forces a truth value for the single literal $sl$ which is not yet assigned (as otherwise, the nogood would be violated). Here, the notions of weak and strong unitness are used to distinguish between nogoods forcing a literal to be set to \emph{must-be-true} (if implied by a weakly unit nogood) and \emph{true} (if implied by a strongly unit nogood)
 \end{definition}	
 
 \begin{algorithm}[!h]
@@ -522,5 +522,5 @@ Run lazy grounder, obtain initial nogoods $\Delta$ from facts.\\
 	}
 }
 \textbf{return} $AS$
-\caption{Alpha's answer set search procedure~\cite{alpha-techniques}}\label{alg:prelims-alpha-search}
+\caption{An answer set search procedure for lazy-grounding solvers~\cite{alpha-techniques}.}\label{alg:prelims-alpha-search}
 \end{algorithm}
