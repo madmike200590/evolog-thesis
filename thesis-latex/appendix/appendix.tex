@@ -1,10 +1,37 @@
 \chapter{Additional Material}
 
-Some more samples that would be too much inline. \todo{do proper text}
-
 \section{Installing Alpha}
 
-TODO: Brief how-to to install an Alpha build made for this thesis and run the examples (Windoze/Linux).
+\paragraph{Using a pre-built binary file}
+The Alpha ASP solver is written in Java. In order to run it, a Java Runtime Environment (JRE) compatible with Java 11 (i.e. Version 11 or newer) is required. Alpha builds can be obtained from the Github page\footnote{\url{https://github.com/alpha-asp/Alpha/releases}}.
+
+The artifact required to run Alpha is the bundled jar file containing the commandline application, i.e. \texttt{alpha-cli-app-\$\{version\}-bundled.jar}.
+
+In order to solve an ASP program stored in file \texttt{program.asp}, run the jar file as demonstrated in Listing~\ref{lst:appendix-run-alpha}.
+\begin{lstlisting}[style=code, label={lst:appendix-run-alpha}, caption={Solving an ASP program using Alpha.}]
+$>java -jar /path/to/alpha/
+	alpha-cli-app-x.y.z-bundled.jar -i program.asp
+\end{lstlisting}	
+
+In order to run the Alpha jar from any location in the file system without always having to enter the full path to the jar, one can create a launcher script for Alpha. This launcher script then needs to be placed in a directory that is included in the system's \texttt{PATH} environment variable (e.g. \texttt{/usr/local/bin} on most Linux systems). Listing~\ref{lst:appendix-launcher-linux} shows a launcher script suitable for a Linux system (i.e. in the Bash scripting language) which assumes the Alpha jar for Alpha version 0.8.0 to be stored in \texttt{/usr/local/bin}.
+\begin{lstlisting}[style=asp-code, label={lst:appendix-launcher-linux}, caption={Bash launcher script for Alpha.}]
+#!/bin/bash
+
+java -jar /usr/local/bin/alpha-cli-app-0.8.0-bundled.jar $@
+\end{lstlisting}	
+
+Listing~\ref{lst:appendix-launcher-windoze} shows a Windows-compatible script which assumes that the Alpha jar is stored in \texttt{C:/Program Files/alpha-asp}.
+\begin{lstlisting}[style=asp-code, label={lst:appendix-launcher-windoze}, caption={Windows-Batch launcher script for Alpha.}]
+java -jar "C:\Program Files\alpha-asp\alpha-cli-app-0.8.0-SNAPSHOT-bundled.jar" %*
+\end{lstlisting}	
+
+Using a central launcher script, Alpha can be called through the name of the launcher script from any working directory. This is demonstrated in Listing~\ref{lst:appendix-use-launcher}, where \texttt{alpha-solver} is assumed as name of the launcher script.
+\begin{lstlisting}[style=code, label={lst:appendix-use-launcher}, caption={Solving an ASP program using Alpha through a launcher script.}]
+$>alpha-solver -i program.asp
+\end{lstlisting}
+
+\paragraph{Building Alpha from source code}
+\todo{write}
 
 \section{Running ASP code with Alpha}
 

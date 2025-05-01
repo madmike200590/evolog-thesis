@@ -5,7 +5,7 @@ While chapter~\ref{chap:language} gives a complete formal specification of the E
 \label{sec:alpha-arch-overview}
 \todo{maybe move this section to preliminaries}
 
-Alpha is a lazy-grounding \gls{asp} solver implemented in Java. In a nutshell, Alpha calculates Computation Sequences (see Definition~\ref{def:prelims-asp-semantics-compseq}) for an input program using a \gls{cdnl}-inspired solving algorithm. Starting from the set of facts contained in the program, an initial truth assignment is constructed. Based on this assignment, ground instances are calculated for all rules that \emph{could potentially fire} based on the assignment. These ground instances are converted into \emph{noGoods} and passed to the solver component which, using an adapted \gls{cdnl} approach, guesses a new assignment based on the last set of noGoods. This process is repeated until no more guesses are possible, at which point the current assignment is either returned as an answer set, or some conflict is detected, in which case a new noGood is learned, and the solver backtracks. However, the actual ground-solve-loop is - while arguably at the heart of Alpha - just a small part of the process through which programs get evaluated. Figure \ref{fig:alpha-arch} gives an overview of the building blocks making up the Alpha system.\todo{cite alpha paper here}
+Alpha is a lazy-grounding \gls{asp} solver implemented in Java. In a nutshell, Alpha calculates Computation Sequences (see Definition~\ref{def:prelims-asp-semantics-compseq}) for an input program using a \gls{cdnl}-inspired solving algorithm. Starting from the set of facts contained in the program, an initial truth assignment is constructed. Based on this assignment, ground instances are calculated for all rules that \emph{could potentially fire} based on the assignment. These ground instances are converted into \emph{noGoods} and passed to the solver component which, using an adapted \gls{cdnl} approach, guesses a new assignment based on the last set of noGoods. This process is repeated until no more guesses are possible, at which point the current assignment is either returned as an answer set, or some conflict is detected, in which case a new noGood is learned, and the solver backtracks. However, the actual ground-solve-loop is - while arguably at the heart of Alpha - just a small part of the process through which programs get evaluated. Figure \ref{fig:alpha-arch} gives an overview of the building blocks making up the Alpha~\cite{alpha} system.
 
 \begin{figure}[t]
     \includegraphics[width=\linewidth]{graphics/alpha-architecture.drawio.png}
@@ -58,8 +58,13 @@ Given an enumeration atom $a_e$ with terms $t_{enum}, t_{value}$ and $t_{ord}$ a
     \item If the map for $\sigma t_{enum}$ does not contain a mapping for key $\sigma t_{value}$, extend $\sigma$ by the mapping $t_{ord} \mapsto o$, where $ = s + 1$ and $s$ denotes the current map size for $\sigma t_{enum}$. Add the mapping $(\sigma t_{ord}, o)$ to the map and return the extended version of $\sigma$.
     \item If a mapping for $\sigma t_{enum}$ and $\sigma t_{value}$ exists, read the associated ordinal $o$, add it to $\sigma$ and return the extended substitution.
 \end{itemize}    
-From a semantics point of view, enumeration literals can intuitively be seen as "lazily assigned fixed-interpretation literals"  (see Definition~\ref{def:prelims-asp-semantics-fixedinterpretation-literals}) in the way that every enumeration atom is true for exactly the ground substitution generated upon grounding it for the first time.
-\todo{show the answer set}
+From a semantics point of view, enumeration literals can intuitively be seen as "lazily assigned fixed-interpretation literals"  (see Definition~\ref{def:prelims-asp-semantics-fixedinterpretation-literals}) in the way that every enumeration atom is true for exactly the ground substitution generated upon grounding it for the first time. The program from Listing~\ref{lst:enum-rewritten} yields the following answer set:
+\begin{align*}
+    A = \{ &color(black), color(blue), color(cyan), color(green), color(magenta), color(red),\\
+           &color(white), color(yellow), numbered\_color(black, 1), numbered\_color(blue, 2),\\
+           &numbered\_color(cyan, 3), numbered\_color(green, 4), numbered\_color(magenta, 6),\\
+           &numbered\_color(red, 7), numbered\_color(white, 8), numbered\_color(yellow, 5)\}
+\end{align*}    
 
 \subsubsection{Aggregate Atoms}
 \label{subsubsec:alpha-arch-aggregate-rewriting}
