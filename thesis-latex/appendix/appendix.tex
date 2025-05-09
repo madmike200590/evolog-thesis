@@ -31,13 +31,14 @@ $>alpha-solver -i program.asp
 \end{lstlisting}
 
 \paragraph{Building Alpha from source code}
-As an alternative to using a pre-build binary package, Alpha can also be built from sources. For this, a Java Development Kit (JDK) compatible with Java 11 is required. In order to build Alpha, clone the git repository\footnote{\url{https://github.com/alpha-asp/Alpha.git}} and start the build through the Gradle Wrapper script as demonstrated in Listing~\ref{lst:appendix:build-alpha}. The actual executable jar is built using the gralde task \emph{bundledJar}, but to make sure all automated tests succeed as expected, is it recommended to run a full build (using taks \emph{build}) first. After the \emph{bundledJar} task has completed, the executable file is located in the build directory of the \texttt{alpha-cli-app} module.
+As an alternative to using a pre-built binary package, Alpha can also be built from sources. For this, a Java Development Kit (JDK) compatible with Java 11 is required. In order to build Alpha, clone the git repository\footnote{\url{https://github.com/alpha-asp/Alpha.git}} and start the build through the Gradle Wrapper script as demonstrated in Listing~\ref{lst:appendix:build-alpha}. The actual executable jar is built using the gralde task \emph{bundledJar}, but to make sure all automated tests succeed as expected, is it recommended to run a full build (using taks \emph{build}) first. After the \emph{bundledJar} task has completed, the executable file is located in the build directory of the \texttt{alpha-cli-app} module.
 \begin{lstlisting}[style=code, label={lst:appendix-build-alpha}, caption={Building Alpha from source code.}]
 $>git clone https://github.com/alpha-asp/Alpha.git
 $>cd Alpha
 $>./gradlew build
 $>./gradlew bundledJar
-$>java -jar alpha-cli-app/build/libs/alpha-cli-app-0.8.0-bundled.jar -i program.asp
+$>java -jar alpha-cli-app/build/libs/
+	alpha-cli-app-0.8.0-bundled.jar -i program.asp
 \end{lstlisting}	
 
 \section{Running ASP code with Alpha}

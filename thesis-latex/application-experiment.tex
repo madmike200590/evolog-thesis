@@ -1,10 +1,11 @@
-In this chapter, we apply Alpha's Evolog extension to a larger example. In order to showcase the kind of applications that can be written in pure Evolog (without the need to resort to any additional programming language), we implement an application that:
+The goal of this chapter is to evaluate the implementation of Evolog described in Chapter~\ref{chap:implementation} as a potential tool for application programming as described in Section~\ref{sec:problem-statement}. To that end, a complete application including user interaction, reading from and writing to files, as well as solving NP-hard search problems, is implemented purely in the Evolog language as introduced in the previous chapters.
+Specifically, the application in question, which we will refer to as \emph{XML-graph-coloring} in the following sections, calculates 3-colorings for graphs, which are read from XML files. Calculated 3-colorings are again written to XML files. The file locations for both input and output files are interactively entered by the user on the commandline during runtime. More specifically, the application implements the following overall workflow:
 \begin{itemize}
-    \item asks the user to enter a path to a file containing a graph represented in XML format,
-    \item reads and parses the XML content of the given files,
-    \item calculates 3-colorings of the graph from the XML file,
-    \item and finally writes the list of obtained colorings to a user-supplied file path.
+    \item Upon startup, users are prompted to enter a path to a file containing an XML-encoded graph.
+    \item The given file is read using \emph{Action Rules} as described in Section~\ref{sec:evolog-actions}.
+    \item The XML data read from the input file is parsed into a function-term based representation using a dedicated xml-parsing \emph{Module} (see Section~\ref{sec:evolog-modules}.)
 \end{itemize}    
+TODO....
 
 We first describe the program itself and then move on to a discussion of observations that can be made from the example.
 
