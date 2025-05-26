@@ -305,7 +305,7 @@ outfile_closed(G, RES) : @outputStreamClose[STREAM] = RES :-
 
 \section{Usage of the graph coloring application}
 
-In this Section, illustrate the operation of the graph coloring application along with the resulting output files and answer sets.\todo{rephrase, it's actually just one due to space constraints.}
+In this Section, illustrate the graph coloring application's operation based on a simple input file.
 
 \begin{example}[Trivial Graph]
 \label{ex:results-graphcol-trivial}
@@ -439,6 +439,8 @@ The output file written to \texttt{trivial.out.xml} is given in Listing~\ref{lst
 
 In order to gain some idea of Alpha's solving performance for Evolog programs, a slightly modified version of the graph coloring program has been used where all rules that read user input interactively (and therefore are blocking) were removed and instead facts were added for the \texttt{infile/1} and \texttt{outfile/2} predicates.
 
+\subsection{Test setup and inputs}
+
 Alpha's solving performance for this modified version of the XML-based-3-coloring application has been benchmarked against calculating colorings for the same graphs represented as ASP facts and without writing calculated colorings to XML files.
 Listing~\ref{lst:results-classic-3col-k3} shows the "classic ASP" representation used for the complete graph with 3 vertices $K_3$.
 
@@ -469,6 +471,17 @@ col(V, blue) :- blue(V).
 col(V, green) :- green(V).    
 \end{lstlisting}
 
+In addition to $K_3$ as the simplest input graph, the application was tested against the following randomly generated graphs:
+\begin{itemize}
+    \item \texttt{G8-05-4}: A connected graph with 8 vertices and a "density factor" of 0.5, i.e. a likelyhood of 50\% of there being an edge between any two vertices.
+    \item \texttt{G13-03-4}: A connected graph with 13 vertices and a density factor of 0.3.
+    \item \texttt{G13-05-4}: A connected graph with 13 vertices and a density factor of 0.5.
+    \item \texttt{G21-03-4}: A connected graph with 21 vertices and a density factor of 0.3.
+    \item \texttt{G34-02-3}: A connected graph with 34 vertices and a density factor of 0.2.
+    \item \texttt{G55-01-4}: A connected graph with 34 vertices and a density factor of 0.1.
+\end{itemize}
+Ascending Fibonacci numbers were chosen for vertex counts in order to have an exponentially growing graph size, but avoid unintentional regularities in the input graphs, such as only having graphs with even vertex count, vertex count alwys being a multiple of some factor, etc.    
+
 \subsection{Performance Test Results}
 \label{subsec:results-performance-numbers}
 
@@ -496,3 +509,6 @@ The results of running the above described performance tests are summarized in T
         \end{tabularx}
     \end{center}
 \end{table}
+
+We can observe that solving performance of the basic 3-coloring program stays relatively stable across all graphs. While runtime does grow with increasing vertex count, the absolute difference is very small and would be of no concern in most real-world applications.
+However, in the Evolog version, where graphs are read from and written to XML files, we can observe a clearly exponential increase in runtime in step with the number of input vertices. Together with the fact that the pure 3-coloring part of the application (i.e. calculating colorings based on a graph represented as ASP atoms) does not seem to suffer from this kind of performance penalty, it seems clear that the XML processing part of the application exponentially scales with input size. This does not come as a complete surprise given that the atom counts for some predicates derived during parsing are (upper-)bounded by the square of the number of vertices in the input graph (e.g. all intermediate predicates needed to establish orderings of XML tags, list elements, etc.). See Appendix~\ref{sec:appendix-xml-dom-parsing} for a detailed discussion of the parser implementation.
