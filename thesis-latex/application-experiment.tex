@@ -21,7 +21,7 @@ From an application architecture point of view, the XML-graph-coloring applicati
     \item Graph 3-coloring calculation, implemented in Module \texttt{threecol}.
     \item Encoding of graph colorings as XML strings, which is realized in Module \texttt{threecol\_to\_xml}.
 \end{itemize}    
-Since both the \texttt{xml\_dom} as well as the \texttt{threecol\_to\_xml} module are realtively verbose and basically only deal with ordering elements, these are referred to as black boxes here. A detailed discussion including source code is given in Appendix~\ref{sec:appendix-xml-dom-parsing} and~\ref{sec:appendix-TODO}. The implementation of the three-coloring module is the same as shown in Example and is therefore not discussed again here.
+Since both the \texttt{xml\_dom} as well as the \texttt{threecol\_to\_xml} module are realtively verbose and basically only deal with ordering elements, these are referred to as black boxes here. A detailed discussion including source code is given in Appendix~\ref{sec:appendix-xml-dom-parsing} and~\ref{sec:appendix-graphcol-to-xml}. The implementation of the three-coloring module is the same as shown in Example and is therefore not discussed again here.
 
 \subsection{Reading files from user-supplied paths}
 
@@ -305,7 +305,7 @@ outfile_closed(G, RES) : @outputStreamClose[STREAM] = RES :-
 
 \section{Usage of the graph coloring application}
 
-In this Section, we demonstrate a few example inputs for the graph coloring application along with the resulting output files and answer sets.\todo{rephrase, it's actually just one due to space constraints.}
+In this Section, illustrate the operation of the graph coloring application along with the resulting output files and answer sets.\todo{rephrase, it's actually just one due to space constraints.}
 
 \begin{example}[Trivial Graph]
 \label{ex:results-graphcol-trivial}

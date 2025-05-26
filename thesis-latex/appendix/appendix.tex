@@ -346,9 +346,11 @@ dom_element_attribute(NAME, ID, ATTR_NAME, ATTR_VALUE) :-
 \end{lstlisting}    
 
 \section{Serializing graph-colorings to XML}
-\label{sec-appendix-graphcol-to-xml}
+\label{sec:appendix-graphcol-to-xml}
 
-\begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-serialization}, caption={Generating XML strings for graph colorings.}]
+Graph colorings calculated in the application from Chapter~\ref{chap:application-experiment} are converted to XML strings using the rules shown in Listing~\ref{lst:appendix-xml-graphcol-serialization}
+
+\begin{lstlisting}[style=asp-code, label={lst:appendix-xml-graphcol-serialization}, caption={Generating XML strings for graph colorings.}]
 #module threecol_to_xml (coloring/1 => {coloring_xmlstr/1}) {
     coloring_entry(vertex(ID, COL), TAIL) :- coloring(lst(col(ID, COL), TAIL)).
     coloring_entry(vertex(ID, COL), TAIL) :- coloring_entry(_, lst(col(ID, COL), TAIL)).
