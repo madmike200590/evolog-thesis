@@ -443,7 +443,11 @@ edge_lst(LIST) :-
     edge_lst_element(IDX, LIST), 
     not has_next_edge_element(IDX).
 \end{lstlisting} 
-Given facts $vertex(a),~vertex(b),~vertex(c),~edge(a,b),~edge(b,c),~edge(c,a)$, we get the following answer set (filtered for predicates $edge\_lst/1$ and $vertex\_lst/1$) $A = \{edge\_lst(list(edge(c,a), list(edge(b,c), list(edge(a,b), list\_empty)))), vertex\_lst(list(c, list(b,list(a,list\_empty))))\}$
+Given facts $vertex(a),~vertex(b),~vertex(c),~edge(a,b),~edge(b,c),~edge(c,a)$, we get the following answer set (filtered for predicates $edge\_lst/1$ and $vertex\_lst/1$):
+\begin{align*}
+    A = \{&edge\_lst(list(edge(c,a), list(edge(b,c), list(edge(a,b), \\
+           &list\_empty)))), vertex\_lst(list(c, list(b,list(a,list\_empty))))\}
+\end{align*}    
 
 Considering Listing~\ref{lst:graph-list-aggregation}, it is easy to see that construction of a list term looks always the same, regardless of the actual elements going into the list. Furthermore, we can observe a distinct similarity to the code generated to rewrite a $\#min$-aggregate outlined in Section~\ref{subsubsec:alpha-arch-aggregate-rewriting}. In the following, we define a new aggregate function, $\#list$, which Alpha rewrites into a generalized version of the list encoding from Listing~\ref{lst:graph-list-aggregation}.
 
@@ -563,7 +567,7 @@ Once a program and all contained module definitions have been parsed, every modu
 
 \begin{definition}[External Predicate Interpretation]
 \label{def:external-atom-interpretation}    
- Given an external atom $\&\mathit{ext}[i_1,\ldots,i_n](o_1,\ldots,o_m)$ with input terms $i_1,\ldots,i_n$ and output terms $o_1,\ldots,o_m$, and a substitution $\sigma$ assigning ground values to at least all input terms of $ex$, the \emph{predicate interpretation function} $f: HU^n \mapsto 2^{HU^m}$ is a function which, for a given $n$-tuple over the Herbrand Universe $HU$, returns all $m$-tuples over $HU$ for which the ground atom $\&\mathit{ext}[\sigma(i_1),\ldots,\sigma(i_n)](r_1,\ldots,r_m)$ where $(r_1\ldots,r_m) \in f(\sigma(i_1),\ldots,\sigma(i_n))$ is true.
+ Given an external atom \\ $\&\mathit{ext}[i_1,\ldots,i_n](o_1,\ldots,o_m)$ with input terms $i_1,\ldots,i_n$ and output terms $o_1,\ldots,o_m$, and a substitution $\sigma$ assigning ground values to at least all input terms of $ex$, the \emph{predicate interpretation function} $f: HU^n \mapsto 2^{HU^m}$ is a function which, for a given $n$-tuple over the Herbrand Universe $HU$, returns all $m$-tuples over $HU$ for which the ground atom $\&\mathit{ext}[\sigma(i_1),\ldots,\sigma(i_n)](r_1,\ldots,r_m)$ where $(r_1\ldots,r_m) \in f(\sigma(i_1),\ldots,\sigma(i_n))$ is true.
 \end{definition}
 
 Implementation-wise, predicate interpretations are Java methods with a specific signature. Listing~\ref{lst:predicate-interpretation-interface} shows the corrseponding interface definition. Note that, for an implementation of \texttt{PredicateInterpretation} to be valid, it must be pure functional, i.e. not have any side-effects.

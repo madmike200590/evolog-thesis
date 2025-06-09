@@ -41,10 +41,6 @@ $>java -jar alpha-cli-app/build/libs/
 	alpha-cli-app-0.8.0-bundled.jar -i program.asp
 \end{lstlisting}	
 
-\section{Running ASP code with Alpha}
-
-TODO: Debugging features of CLI application, basic API usage.
-
 \section{Examples}
 \begin{example}[Fibonacci-Numbers using external atoms]
 \label{ex:user-supplied-externals}
@@ -56,7 +52,7 @@ In this example, we use an external predicate definition \texttt{fibonacci\_numb
 fib(N, FN) :- &fibonacci_number[N](FN), N = 0..40.
 even_fib(N, FN) :- fib(N, FN), FN \ 2 = 0.    
 \end{lstlisting}    
-The Java implementation of the \texttt{fibonacci\_number/2} predicate makes use of \emph{Binet's Formula}\todo{can we cite something here?} to efficiently compute Fibonacci numbers using a closed form expression of the sequence.
+The Java implementation of the \texttt{fibonacci\_number/2} predicate makes use of \emph{Binet's Formula}\footnote{\url{https://en.wikipedia.org/wiki/Fibonacci\_sequence\#Binet's\_formula}} to efficiently compute Fibonacci numbers using a closed form expression of the sequence.
 \begin{lstlisting}[style=java, label={lst:user-supplied-externals-java}, caption={Fibonacci number computation in Java.}]
 public class CustomExternals {
 
@@ -87,7 +83,8 @@ public class CustomExternalsApp {
 			Externals.scan(CustomExternals.class);
 		String aspCode =
 			Files.readString(
-				Paths.get("src/main/resources/customExternals.asp"));
+				Paths.get("src/main/resources/
+					customExternals.asp"));
 				InputProgram program =
 					alpha.readProgramString(aspCode,
 				customExternals);

@@ -30,7 +30,7 @@ Example~\ref{ex:discussion-graph-unwrapping} demonstrates this method of unwrapp
 \begin{example}[List Unwrapping]
 \label{ex:discussion-graph-unwrapping} 
 Listing~\ref{lst:discussion-graph-unwrapping-example} shows the "graph unwrapping" program from Listing~\ref{lst:discussion-graph-unwrap} including a fact representing the complete graph $K_3$ encoded as two list terms.
-\begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrap}, caption={Unwrapping the list representation of $K_3$.}]
+\begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrapping-example}, caption={Unwrapping the list representation of $K_3$.}]
 	graph(
 		lst(a, lst(b, lst(c, lst_empty))),
 		lst(edge(a, b), lst(edge(b, c), lst(edge(c, a), lst_empty)))).
@@ -156,7 +156,7 @@ The code to write a set of lines to a file looks similar to how a file is read. 
 	\item Assuming lines to be written are consecutively numbered and available as atoms of form \texttt{line(LINE\_NO, LINE)}, the first line (assumed to have an index of 0) is written.
 	\item If the first line has been successfully written, all other lines are written using a recursive rule.
 	\item We derive that all lines have been written when the line with maximum index has been written.
-	\item One \texttt{all\_lines\_written} has been derived, the file is closed.
+	\item Once \texttt{all\_lines\_written} has been derived, the file is closed.
 	\item The file is also closed in case an error occurs during writing.
 \end{itemize}	
 
@@ -244,7 +244,7 @@ The action module proposed in Listing~\ref{lst:discussion-fileio-actmodule-impl}
 	\item The above items imply that an action module result can only be success \emph{or} error, but not both. In an actual implementation of this concept, ways of enforcing this rule would need to be adressed. 
 \end{itemize}
 Listing~\ref{lst:discussion-fileio-actmodule-usage} shows a prototypical example of how an action module could be used.
-\begin{lstlisting}
+\begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-actmodule-usage}, caption={Prototypical usage of an action module providing an abstraction to write content to a file.}]
 line(0, "lorem ipsum dolor").
 line(1, "sit amet consectetur").
 line(2, "adipiscing  elit")

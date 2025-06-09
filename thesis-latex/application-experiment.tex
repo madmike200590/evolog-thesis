@@ -338,17 +338,17 @@ We denote as $A_{input}$ the set of atoms in $A$ which are derived by rules deal
                   &write\_input\_prompt\_res(success(ok)),\\
                   &usr\_input\_res(success(line("inputs/trivial.xml"))),\ infile("inputs/trivial.xml"),\\
                   &infile\_open("inputs/trivial.xml", success(stream(inputStream\_2))),\\
-                  &readline\_result("inputs/trivial.xml",\ 0,\ success(line("<graph\ directed="false">"))),\\
-                  &readline\_result("inputs/trivial.xml",\ 1,\ success(line("    <vertices>"))),\\
-                  &readline\_result("inputs/trivial.xml",\ 2\, success(line("        <vertex>a</vertex>"))),\\
-                  &readline\_result("inputs/trivial.xml",\ 3,\ success(line(" </vertices>"))),\\
-                  &readline\_result("inputs/trivial.xml",\ 4,\ success(line("</graph>"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 0,\ success(line("{<}graph\ directed="false"{>}"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 1,\ success(line("    {<}vertices{>}"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 2\, success(line("        {<}vertex{>}a{<}/vertex{>}"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 3,\ success(line(" {<}/vertices{>}"))),\\
+                  &readline\_result("inputs/trivial.xml",\ 4,\ success(line("{<}/graph{>}"))),\\
                   &readline\_result("inputs/trivial.xml",\ 5,\ success(line(eof))),\\
                   &infile\_closed("inputs/trivial.xml",\ success(closeResult(ok))),\\
                   &file\_lines("inputs/trivial.xml",\\
-                  &~~~~lst(line(0,\ "<graph\ directed="false">"),\\
-                  &~~~~lst(line(1,\ "    <vertices>"),\ lst(line(2,\ "        <vertex>a</vertex>"),\\
-                  &~~~~lst(line(3,\ "       </vertices>"),\ lst(line(4,\ "</graph>"),\\
+                  &~~~~lst(line(0,\ "{<}graph\ directed="false"{>}"),\\
+                  &~~~~lst(line(1,\ "    {<}vertices{>}"),\ lst(line(2,\ "        {<}vertex{>}a{<}/vertex{>}"),\\
+                  &~~~~lst(line(3,\ "       {<}/vertices{>}"),\ lst(line(4,\ "{<}/graph{>}"),\\
                   &~~~~lst\_empty))))))\}
 \end{align*} 
 Similarly, $A_{dom}$ contains all atoms in the answer set which model the \gls{dom} representation of the input XML file. For brevity, we do not list every individual list term of the $file\_dom$ instance (since the atoms resulting from unwrapping the list are part of $A_{dom}$ anyway). Also, helper atoms for partial list entries needed for unwrapping (such as $dom\_element\_entry$) are not included:
@@ -375,26 +375,26 @@ The subset $A_{col}$ holds atoms relating to the actual model of the graph as we
 $A_{string}$ holds all atoms derived by rules dealing with serializing our calculated colorings into a single XML string. Since there is a relatively high number of pure "helper" atoms that are only used to impose orderings etc., this set is given in a much abbreviated form:
 \begin{align*}
     A_{string} = \{&\mathit{stringified\_coloring}(1,~1,\\
-                   &~~"\mathit{<coloring><vertex>}\\
-                   &~~~~\mathit{<id>a</id><color>red</color></vertex></coloring>}"),\\
+                   &~~"\mathit{{<}coloring{>}{<}vertex{>}}\\
+                   &~~~~\mathit{{<}id{>}a{<}/id{>}{<}color{>}red{<}/color{>}{<}/vertex{>}{<}/coloring{>}}"),\\
                    &\mathit{stringified\_coloring}(1,~2,\\
-                   &~~"\mathit{<coloring><vertex>}\\
-                   &~~~~\mathit{<id>a</id><color>blue</color></vertex></coloring>}"),\\
+                   &~~"\mathit{{<}coloring{>}{<}vertex{>}}\\
+                   &~~~~\mathit{{<}id{>}a{<}/id{>}{<}color{>}blue{<}/color{>}{<}/vertex{>}{<}/coloring{>}}"),\\
                    &\mathit{stringified\_coloring}(1,~3,\\
-                   &~~"\mathit{<coloring><vertex>}\\
-                   &~~~~\mathit{<id>a</id><color>green</color></vertex></coloring>}"),\\
+                   &~~"\mathit{{<}coloring{>}{<}vertex{>}}\\
+                   &~~~~\mathit{{<}id{>}a{<}/id{>}{<}color{>}green{<}/color{>}{<}/vertex{>}{<}/coloring{>}}"),\\
                    &\mathit{colorings\_xmlstring}(1,\\
-                   &~~"\mathit{<colorings>}\\
-                   &~~~~\mathit{<coloring>}\\
-                   &~~~~~~\mathit{<vertex><id>a</id><color>red</color></vertex>}\\
-                   &~~~~\mathit{</coloring>}\\
-                   &~~~~\mathit{<coloring>}\\
-                   &~~~~~~\mathit{<vertex><id>a</id><color>blue</color></vertex>}\\
-                   &~~~~\mathit{</coloring>}\\
-                   &~~~~\mathit{<coloring>}\\
-                   &~~~~~~\mathit{<vertex><id>a</id><color>green</color></vertex>}\\
-                   &~~~~\mathit{</coloring>}\\
-                   &~~\mathit{</colorings>}")\}
+                   &~~"\mathit{{<}colorings{>}}\\
+                   &~~~~\mathit{{<}coloring{>}}\\
+                   &~~~~~~\mathit{{<}vertex{>}{<}id{>}a{<}/id{>}{<}color{>}red{<}/color{>}{<}/vertex{>}}\\
+                   &~~~~\mathit{{<}/coloring{>}}\\
+                   &~~~~\mathit{{<}coloring{>}}\\
+                   &~~~~~~\mathit{{<}vertex{>}{<}id{>}a{<}/id{>}{<}color{>}blue{<}/color{>}{<}/vertex{>}}\\
+                   &~~~~\mathit{{<}/coloring{>}}\\
+                   &~~~~\mathit{{<}coloring{>}}\\
+                   &~~~~~~\mathit{{<}vertex{>}{<}id{>}a{<}/id{>}{<}color{>}green{<}/color{>}{<}/vertex{>}}\\
+                   &~~~~\mathit{{<}/coloring{>}}\\
+                   &~~\mathit{{<}/colorings{>}}")\}
 \end{align*}
 
 Last but not least, $A_{output}$ groups together all atoms derived while prompting users for output paths to write colorings to, as well as actually writing the output file(s):
@@ -490,7 +490,7 @@ The results of running the above described performance tests are summarized in T
 \begin{table}[H]
     \begin{center}
         \caption[Test Results for calculating 6 3-colorings per graph, once based on XML-input with XML-output (XML-3col) and once in plain ASP (Classic-3col)]{All execution times are given in seconds.}
-        \label{tab:results-other}
+        \label{tab:results-perftest}
         \begin{tabularx}{\textwidth} { 
             |>{\raggedright\arraybackslash}X 
             | >{\centering\arraybackslash}X
