@@ -475,20 +475,20 @@ Every ASP program $P$ is a valid and semantically equivalent Evolog program in t
 \end{theorem}
 
 \begin{proof}
-First, we assert that every "regular" ASP program P is also a syntactically valid Evolog program. This follows directly from the definitions - since Evolog only adds syntactic support for actions~\ref{def:action-rule-syntax}, but does not restrict regular ASP syntax, it follows that a syntactically correct ASP program is also a syntactically correct Evolog program. \\
+First, we assert that every "regular" ASP program P is also a syntactically valid Evolog program. This follows directly from the definitions - since Evolog only adds syntactic support for actions(see Definition ~\ref{def:action-rule-syntax}), but does not restrict regular ASP syntax, it follows that a syntactically correct ASP program is also a syntactically correct Evolog program. \\
 Next, we show that for every regular ASP program $P$ and any frame $F$, the Evolog Models of $P$ are the same as its Stable Models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$: \\
-Given any set of ground Atoms $A$ from the Herbrand Base $HB_P$ of $P$, $P$ is an Answer Set according to Stable Model Semantics if it is a minimal model of the GL-reduct~\ref{def:prelims-asp-semantics-gl-reduct} $P^{A}$ of $P$ w.r.t. $A$. We recall that $P^{A}$ is constructed as follows (see~\ref{def:prelims-asp-semantics-gl-reduct}):
+Given any set of ground Atoms $A$ from the Herbrand Base $HB_P$ of $P$, $P$ is an Answer Set according to Stable Model Semantics if it is a minimal model of the GL-reduct~\ref{def:prelims-asp-semantics-gl-reduct} $P^{A}$ of $P$ w.r.t. $A$. We recall that $P^{A}$ is constructed as follows (see also see Definition~\ref{def:prelims-asp-semantics-gl-reduct}):
 \begin{itemize}
 	\item remove from $P$ all rules $r$ that are "blocked", i.e. $A \not\models l$ for some literal $l \in b^{-}(r)$ 
 	\item and remove the negative body of all other rules.
 \end{itemize}
-Furthermore, consider how the Evolog-Reduct of $P$ w.r.t. $A$ and (any arbitrary) Frame $F$, $P_{F}^{A}$, is constructed (see~\ref{def:evolog-reduct}):
+Furthermore, consider how the Evolog-Reduct of $P$ w.r.t. $A$ and (any arbitrary) Frame $F$, $P_{F}^{A}$, is constructed (see Definition~\ref{def:evolog-reduct}):
 \begin{itemize}
 	\item Remove all rules $r$ from $P$ that are "blocked", i.e. $A \not\models l$ for some negative body literal $l \in b^{-}(r)$.
 	\item Remove all action application rules from $P$ which are not supported by $F$.
 	\item Remove the negative body from all other rules.
 \end{itemize}
-Since $P$ is a "regular", i.e. non-Evolog, ASP Program it contains no action application rules by definition. It is therefore clear, that for any set answer set candidate $A$ of $P$ and any Frame $F$, the GL-Reduct $P^{A}$ and Evolog-Reduct $P_{F}^{A}$ coincide. Any minimal model of the GL-reduct is therefore also a minimal model of the Evolog-Reduct (and vice-versa) and therefore the Evolog Models of P are identical with its Stable Models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$.
+Since $P$ is a "regular", i.e. non-Evolog, ASP Program it contains no action application rules by definition. It is therefore clear that for any set answer set candidate $A$ of $P$ and any Frame $F$, the GL-Reduct $P^{A}$ and Evolog-Reduct $P_{F}^{A}$ coincide. Any minimal model of the GL-reduct is therefore also a minimal model of the Evolog-Reduct (and vice-versa) and therefore the Evolog Models of P are identical with its stable models, i.e. $\mathit{EM}(P)=\mathit{AS}(P)$.
 \end{proof}
 
-% TODO not sure if it's all that valuable, but add theorem that Evolog can be simulated in plain ASP by encoding a frame as rules
+% Not sure if it's all that valuable, but we could add  a theorem that Evolog can be simulated in plain ASP by encoding a frame as facts and rules
