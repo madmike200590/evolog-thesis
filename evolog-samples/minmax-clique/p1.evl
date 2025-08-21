@@ -1,0 +1,28 @@
+% triangle graph for starters
+node(n1).
+node(n2).
+node(n3).
+edge(n1,n2).
+edge(n2,n3).
+edge(n3,n1).
+edge(Y, X) :- edge(X, Y).
+
+
+% let I range from 1 to 1, J from 1 to 3 and partition graph as follows:
+%% A(1,1) = n1
+%% A(1,2) = n2
+%% A(1,3) = n3
+v(1,1,n1).
+v(1,2,n2).
+v(1,3,n3).
+
+setI(X) :- v(X, _, _).
+setJ(X) :- v(_, X, _).
+
+% Guess functions from I to J
+{f(X, Y) : setJ(Y)} :- setI(X).
+%% Alpha doesn't know numeric bounds for choices, need constraints.
+:- f(X1, Y1), f(X2, Y2), X1 != X2.
+:- f(X1, Y1), f(X2, Y2), Y1 != Y2.
+func_guessed :- f(_, _).
+:- not func_guessed.

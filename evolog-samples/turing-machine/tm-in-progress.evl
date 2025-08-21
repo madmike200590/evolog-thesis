@@ -1,0 +1,33 @@
+% Turing Machine Simulation
+
+% TM consists of
+
+% state function
+% (s, x, (u, a, n))
+%% s... current state
+%% x... current symbol
+%% u... new symbol
+%% a... head action (l/r/n)
+%% n... new state
+
+%%% Encoding of a TM in ASP
+
+%% tape encoded as list, left end is head
+tape_at(lst(1, lst(0, lst(1, lst_empty))), 0).
+
+%% initial head position encoded as offset from left tape end
+head_offset_at(1, 0). % one cell from head
+
+% at any given time, we get the symbol under the head by moving through the list until offset is 0
+symbol_read_with_offset_at(S, TAIL, 0, T) :- tape_at(lst(S, TAIL), T).
+symbol_read_with_offset_at(S, TAIL, OFF, T) :- symbol_read_with_offset_at(_, lst(S, TAIL), OFF_P, T), OFF = OFF_P + 1.
+
+%% Transition function evaluation
+state_transition(TIME_NEXT, STATE_NEXT, SYMBOL_OUT, ACTION) :- state_at(STATE, TIME), transition_rule(STATE, SYMBOL, (SYMBOL_OUT, ACTION, STATE_NEXT)), TIME_NEXT = TIME + 1.
+
+
+%%%% TODO actually finish writing this. Only using it as an argument for now:
+%% TM is easy to implement, the only issue you have is dealing with the infinite tape.
+%% This can be done using an on-demand growing list. We have already demonstrated lists in Alpha.
+%% Therefore, the ASP version understood by Alpha is already Turing-complete 
+%% (but we cannot necessarily natively model everything, even though we can implement an interpreter)

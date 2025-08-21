@@ -1,0 +1,4 @@
+in_induced(V) :- v(X, Y, Z), f(X, Y).
+edge_p(X, Y) :- edge(X, Y), in_induced(X), in_induced(Y).
+{in_clique(X) : in_induced(X)}.
+:- in_clique(X), in_clique(Y), not edge_p(X, Y).
