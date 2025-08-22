@@ -1,0 +1,45 @@
+%% @param graphspec(graph(lst(V_1, ...), lst(edge(V1, V2), ...)), partition(lst(v(I, J, V), ...)) 
+#module subgraph_guess(graphspec/2 => { f/2 }) {
+
+
+
+}
+
+%%%% First module, guess functions
+% triangle graph for starters
+node(n1).
+node(n2).
+node(n3).
+edge(n1,n2).
+edge(n2,n3).
+edge(n3,n1).
+edge(Y, X) :- edge(X, Y).
+
+% let I range from 1 to 1, J from 1 to 3 and partition graph as follows:
+%% A(1,1) = n1
+%% A(1,2) = n2
+%% A(1,3) = n3
+v(1,1,n1).
+v(1,2,n2).
+v(1,3,n3).
+
+setI(X) :- v(X, _, _).
+setJ(X) :- v(_, X, _).
+
+% Guess functions from I to J
+{f(X, Y) : setJ(Y)} :- setI(X).
+%% Alpha doesn't know numeric bounds for choices, need constraints.
+:- f(X1, Y1), f(X2, Y2), X1 != X2.
+:- f(X1, Y1), f(X2, Y2), Y1 != Y2.
+func_guessed :- f(_, _).
+:- not func_guessed.
+
+%%%% Second module, guess cliques for each subgraph
+in_induced(V) :- v(X, Y, Z), f(X, Y).
+edge_p(X, Y) :- edge(X, Y), in_induced(X), in_induced(Y).
+{in_clique(X) : in_induced(X)}.
+:- in_clique(X), in_clique(Y), not edge_p(X, Y).
+
+%%%% Third module, check vertex count in each clique
+k(1). % The input param k
+:- #count{X : inClique(X)} < K, k(K).
