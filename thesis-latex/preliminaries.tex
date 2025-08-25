@@ -136,7 +136,7 @@ Given a program $P$ containing variables, \emph{grounding} refers to the process
 
 \begin{definition}[Substitution, adapted from~\cite{lazy-cdnl}]
 \label{def:prelims-asp-semantics-substitution}
-A substitution $\sigma: \VARs \mapsto (\IDs \cup \INTs)$ is a mapping from variables to constants. For a atom $a$, applying a a substitution results in a substituted atom $a\sigma$ in which variables are replaced according to $\sigma$. Substitutions are applied to rules  by applying them to every individual atom or literal within the rule. By the same mechanism, we can apply substitutions to programs by applying the to all rules.
+A substitution $\sigma: \VARs \mapsto (\IDs \cup \INTs)$ is a mapping from variables to constants. For a atom $a$, applying a substitution results in a substituted atom $a\sigma$ in which variables are replaced according to $\sigma$. Substitutions are applied to rules  by applying them to every individual atom or literal within the rule. By the same mechanism, we can apply substitutions to programs by applying the to all rules.
 \end{definition}
 
 \begin{definition}[Grounding]
@@ -269,7 +269,7 @@ Then the least model $LM(P_{strat})$ of $P_{strat}$ is defined as follows.
 The sequence $\langle M_{S_i} \rangle,\ 0 \leq i \leq n$ with $M_{S_0} = \mathit{lfp}(T_{P_{S_0}})$ and $M_{S_i} = \mathit{lfp}(T_{(P_{S_{i}} \cup\ pr(M_{S_{i-1}}))})$ for all $1 \leq i \leq n$ defines the (iterative) least model for each stratum. The least model $LM(P_{strat})$ of program $P_{strat}$ is then the iterative least model of the highest stratum $M_{S_n}$, i.e. the end of the sequence $\langle M_{S_i} \rangle$.
 \end{definition}
 
-Since the evaluation mode described in Definition~\ref{def:prelims-asp-semantics-stratified-compseq} does not require any backtracking, i.e. the result of each step is part of the final result, we observe that te intermediate results of the immediate consequence operator yield a computation sequence for $P$. Example~\ref{ex:prelims-strat-eval} illustrates evaluation of a short stratifiable program.
+Since the evaluation mode described in Definition~\ref{def:prelims-asp-semantics-stratified-compseq} does not require any backtracking, i.e. the result of each step is part of the final result, we observe that the intermediate results of the immediate consequence operator yield a computation sequence for $P$. Example~\ref{ex:prelims-strat-eval} illustrates evaluation of a short stratifiable program.
 
 \begin{example}[Evaluating a stratified program]
 \label{ex:prelims-strat-eval}	
@@ -346,15 +346,15 @@ blue(V) :- coloring_vertex(V), not red(V), not green(V).
 Clearly, $P_{col}$ is not stratifiable - the color assignment rules cyclically depend on each other through negated body literals. In other words, the rules on lines 15 to 17 are \emph{mutually exclusive}, i.e. a solver has to \emph{choose} which of the three should fire for a given ground instance of $coloring\_vertex/1$.
 \end{example}
 
-The program from Example~\ref{ex:prelims-nonstrat} can not be evaluated by iterative fixpoint-calculation as in Example~\ref{ex:prelims-strat-eval} because it is not stratifiable. However, it is still possible to evaluate at least a part of it using this method, rather than a computationally more complex "trial-and-error"-approach. This partial evaluation approach uses \emph{splitting sets}, which are characterized in Definition~\ref{def:prelims-asp-semantics-splitting-set}. Intuitively, a splitting set $S$ is a set of atoms, such that if an atom $a$ is in $S$, also all atoms it depends on (i.e. body atoms of rules deriving $a$) are in $S$. By the splitting set theorem, a splitting sets lets us partition a program $P$ such that it can be evaluated incrementally, by first evaluating the bottom $B_U(P)$ and then the top $T_U(P)$. Since this section deals with non-ground programs specifically, we also give an adapted definition for splitting sets of nonground programs, see Definition~\ref{def:prelims-asp-semantics-nonground-splitting-set}. Example~\ref{ex:prelims-nonstrat-splitting-sets} applies the splitting set theorem to the program from Example~\ref{ex:prelims-nonstrat}.
+The program from Example~\ref{ex:prelims-nonstrat} can not be evaluated by iterative fixpoint-calculation as in Example~\ref{ex:prelims-strat-eval} because it is not stratifiable. However, stratified evaluation is still applicable for a part of the program. This partial evaluation approach uses \emph{splitting sets}, which are characterized in Definition~\ref{def:prelims-asp-semantics-splitting-set}. Intuitively, a splitting set $S$ is a set of atoms, such that if an atom $a$ is in $S$, also all atoms it depends on (i.e. body atoms of rules deriving $a$) are in $S$. By the splitting set theorem, a splitting sets lets us partition a program $P$ such that it can be evaluated incrementally, by first evaluating the bottom $B_U(P)$ and then the top $T_U(P)$. Since this section deals with non-ground programs specifically, we also give an adapted definition for splitting sets of nonground programs, see Definition~\ref{def:prelims-asp-semantics-nonground-splitting-set}. Example~\ref{ex:prelims-nonstrat-splitting-sets} applies the splitting set theorem to the program from Example~\ref{ex:prelims-nonstrat}.
 
 \begin{definition}[Splitting Set, adapted from~\cite{splitting-sets}]
 \label{def:prelims-asp-semantics-splitting-set}
-Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also theatoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules definingthe atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$is called \emph{top} of $P$, which is denoted as $T_U(P)$.\\
+Given a program $P$, a set of atoms $U$ is a \emph{splitting set} of $P$ if for every rule $r$, where $h(r) \in U$, also the atoms corresponding to all body literals of $r$ are in $U$. The set of rules corresponding to $U$, i.e. the rules definingthe atoms in $U$, is called \emph{bottom} of $P$ with respect to $U$, denoted as $B_U(P)$. Consequently, $P \setminus B_U(P)$is called \emph{top} of $P$, which is denoted as $T_U(P)$.\\
 \end{definition}
 
 \begin{theorem}[Splitting Set Theorem, adapted from~\cite{splitting-sets}]
-Given a program $P$ and splitting set $U$ which splits $P$ into bottom $B_U(P)$ and top $T_U(P) = P \setminus B_U(P)$. Then aset of atoms $A$ is an answer set if and only if $A = X \cup Y$ for sets $X$ and $Y$ where
+Given a program $P$ and splitting set $U$ which splits $P$ into bottom $B_U(P)$ and top $T_U(P) = P \setminus B_U(P)$. Then a set of atoms $A$ is an answer set if and only if $A = X \cup Y$ for sets $X$ and $Y$ where
 \begin{itemize}
 	\item $X \in AS(B_U(P))$, i.e. $X$ is an answer set of bottom $B_U(P)$ and
 	\item $Y \in AS(T_U(P) \cup X)$, i.e. $Y$ is an answer set of the program resulting from adding $X$ as facts to $T_U(P)$ 

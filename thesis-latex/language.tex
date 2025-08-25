@@ -36,7 +36,7 @@ hello_result(R) : @streamWrite[STDOUT, TEXT] = R :- hello_text(TEXT), &stdout(ST
 \subsection{Semantics}
 \label{subsec:evolog-actions-semantics}
 
-To properly define the semantics of an action program according to the intuition outlined at the start of this section, we first need to formalize our view of the "outside world" which action rules interact with. We call the world in which we execute a program a \emph{frame} - formally, action programs are always evaluated \emph{with respect to a given frame}. The behavior of actions is specified in terms of \emph{action functions}. The semantics (i.e. interpretations) of action functions in a program are defined by the respective frame.
+To properly define the semantics of an action program according to the intuition outlined at the start of this section, we first need to formalize our view of the "outside world" with which action rules interact. We call the world in which we execute a program a \emph{frame} - formally, action programs are always evaluated \emph{with respect to a given frame}. The behavior of actions is specified in terms of \emph{action functions}. The semantics (i.e. interpretations) of action functions in a program are defined by the respective frame.
 
 \subsubsection{Action Rule Expansion}
 \label{subsubsec:evolog-actions-semantics-expansion}
@@ -264,7 +264,7 @@ In order to make input terms of a module atom available to the module implementa
 Given a module definition $M$ with input predicate $p$ of arity $k$ and implementation program $P_M$ and a ground module atom $a_m$ referencing $M$ with input terms $t_1,\ldots,t_k$, then the ASP program that is solved to interpret $a_m$ is obtained by adding a fact $p(t_1,\ldots,t_k)$ to $P_M$. We denote this conversion of input terms to an atom as the \emph{"factification"} function $\mathit{fct(t_1,\ldots,t_k)}$.
 \end{definition}	
 
-Similar to module input translation, it is also necessary, to translate answer sets of an instantiated module program into output terms of the corresponding module atom. Every answer set gets converted into one set of terms, each - together with the inout terms - constituting one ground instance of the module atom. Predicates get converted into function symbols, and atoms become list items. Definition~\ref{def:asp-list-term} introduces the notion of a list term, which is used to represent lists of terms in ASP.
+Similar to module input translation, it is also necessary, to translate answer sets of an instantiated module program into output terms of the corresponding module atom. Every answer set gets converted into one set of terms, each - together with the input terms - constituting one ground instance of the module atom. Predicates get converted into function symbols, and atoms become list items. Definition~\ref{def:asp-list-term} introduces the notion of a list term, which is used to represent lists of terms in ASP.
 
 \begin{definition}[List Term]
 \label{def:asp-list-term}
@@ -307,7 +307,7 @@ Example~\ref{ex:bin-packing-module} demonstrates the use of modules to find solu
 
 \begin{example}[Bin-packing Module]
 \label{ex:bin-packing-module}
-Suppose a group of computer scientists $G = \{\mathit{bob}, \mathit{alice}, \mathit{dilbert}, \mathit{claire}, \mathit{cate}, \mathit{bill}, \mathit{carl}, \mathit{mary}\}$ plan to attend a conference on LLM-based AI agents in the neighboring town of Buzzwordville, which is 150 km distant. They have a number of cars at their disposal - Claire's camper van which seats 7 people, Dilbert's sedan seating 5, and Bob's roadster with 2 seats. Each car has different fuel efficiency, and the group wants to minimize the amount of fuel used.\\
+Suppose a group of computer scientists $G = \{\mathit{bob}, \mathit{alice}, \mathit{dilbert}, \mathit{claire}, \mathit{cate}, \mathit{bill}, \mathit{carl}, \mathit{mary}\}$ plan to attend a conference on LLM-based AI agents in the neighboring town of Buzzwordville, which is 150 km away. They have a number of cars at their disposal - Claire's camper van which seats 7 people, Dilbert's sedan seating 5, and Bob's roadster with 2 seats. Each car has different fuel efficiency, and the group wants to minimize the amount of fuel used.\\
 To complicate matters even more, there are a number of additional constraints:
 \begin{itemize}
 	\item For insurance reasons, each car must be driven by its owner.
@@ -467,7 +467,7 @@ The program from Listing~\ref{lst:bin-packing-main} has a single answer set, wit
 
 \section{Relationship between Evolog- and Stable Model Semantics}
 
-The extensions to the usual \gls{asp} programming language described in the previous sections extend the original formalism with a notion of an outside world (through frames in the context of which, actions can be expressed) as well as a grouping mechanism for sub-programs into modules.
+The extensions to the usual \gls{asp} programming language described in the previous sections extend the original formalism with a notion of an outside world (through frames in the context of which actions can be expressed) as well as a grouping mechanism for sub-programs into modules.
 
 \begin{theorem}[Extension]
 \label{thm:extension}
