@@ -31,7 +31,7 @@ $>alpha-solver -i program.asp
 \end{lstlisting}
 
 \paragraph{Building Alpha from source code}
-As an alternative to using a pre-built binary package, Alpha can also be built from sources. For this, a Java Development Kit (JDK) compatible with Java 11 is required. In order to build Alpha, clone the git repository\footnote{\url{https://github.com/alpha-asp/Alpha.git}} and start the build through the Gradle Wrapper script as demonstrated in Listing~\ref{lst:appendix:build-alpha}. The actual executable jar is built using the gralde task \emph{bundledJar}, but to make sure all automated tests succeed as expected, is it recommended to run a full build (using taks \emph{build}) first. After the \emph{bundledJar} task has completed, the executable file is located in the build directory of the \texttt{alpha-cli-app} module.
+As an alternative to using a pre-built binary package, Alpha can also be built from sources. For this, a Java Development Kit (JDK) compatible with Java 11 is required. In order to build Alpha, clone the git repository\footnote{\url{https://github.com/alpha-asp/Alpha.git}} and start the build through the Gradle Wrapper script as demonstrated in Listing~\ref{lst:appendix-build-alpha}. The actual executable jar is built using the gralde task \emph{bundledJar}, but to make sure all automated tests succeed as expected, is it recommended to run a full build (using task \emph{build}) first. After the \emph{bundledJar} task has completed, the executable file is located in the build directory of the \texttt{alpha-cli-app} module.
 \begin{lstlisting}[style=code, label={lst:appendix-build-alpha}, caption={Building Alpha from source code.}]
 $>git clone https://github.com/alpha-asp/Alpha.git
 $>cd Alpha
@@ -73,8 +73,11 @@ public class CustomExternals {
 
 }    
 \end{lstlisting}    
-The Alpha solver is invoked from a simple Java method, which uses Alpha's API to first compile the external atom definition, and then run the solving process for the parsed ASP program. This is illustrated in Listing~\ref{lst:user-supplied-externals-main}
-\begin{lstlisting}[style=java, label={lst:user-supplied-externals-main}]
+The Alpha solver is invoked from a simple Java method, which uses Alpha's API to first compile the external atom definition, and then run the solving process for the parsed ASP program. This is illustrated in Listing~\ref{lst:user-supplied-externals-main}.
+
+\newpage
+
+\begin{lstlisting}[style=java, label={lst:user-supplied-externals-main}, caption={Solving an ASP program with custom external atoms.}]
 public class CustomExternalsApp {
 
 	public static void main(String[] args) throws IOException {
@@ -232,7 +235,7 @@ element(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO,
         CLOSE_LINE_NO, CLOSE_FROM, CLOSE_TO).
 \end{lstlisting}    
 
-Having parsed all XML elements, the next step is to determine which of these are terminal elements in the sense that they only contain text, as opposed to elements which consist of further XML elements. This is achieved using the code form Listing~\ref{lst:results-xml-parse-element-types}.
+Having parsed all XML elements, the next step is to determine which of these are terminal elements in the sense that they only contain text, as opposed to elements which consist of further XML elements. This is achieved using the code from Listing~\ref{lst:results-xml-parse-element-types}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-element-types}, caption={Parsing details of XML elements}]
 % Any string between two tags with no other opening 
@@ -284,7 +287,7 @@ element_attribute(TAG_NAME, OPEN_LINE_NO, OPEN_FROM, OPEN_TO, CLOSE_LINE_NO, CLO
 	tag_opening_attribute(TAG_NAME, t(tag_open, _), OPEN_LINE_NO, OPEN_FROM, OPEN_TO, attribute(NAME, VALUE)).
 \end{lstlisting} 
 
-The final step in actual parsing of the XML content is to derive the complete hierarchy of all XML tags, i.e. determine which tags are direct children of another. This is done using the code from Listing~\ref{lst:results-xml-parse-hierarchy}. First, we establish elements that enclose other elements (i.e. opening and closing tag of the enclosed element between opening and closing tags of the enclosing element) using the rule on line 4. An element $e_1$ is not the parent element of an element $e_2$ enclosed by $e_1$ if there is a third element $e_i$ which is enclosed by $e_1$, but also encloses $e_2$. If, for any element encosing another element such an intermediate element exists, the rule from line 18 derives this as an instance of \texttt{element\_not\_parent/6}. An element $e_1$ \emph{is} the parent element of $e_2$ if it encloses $e_2$ and is not known to be not the parent. Element pairs fulfilling this definition are derived by the rule on line 22 and expressed as instances of \texttt{element\_parent/6}.
+The final step in actual parsing of the XML content is to derive the complete hierarchy of all XML tags, i.e. determine which tags are direct children of another. This is done using the code from Listing~\ref{lst:results-xml-parse-hierarchy}. First, we establish elements that enclose other elements (i.e. opening and closing tag of the enclosed element between opening and closing tags of the enclosing element) using the rule on line 4. An element $e_1$ is not the parent element of an element $e_2$ enclosed by $e_1$ if there is a third element $e_i$ which is enclosed by $e_1$, but also encloses $e_2$. If, for any element enclosing another element such an intermediate element exists, the rule from line 18 derives this as an instance of \texttt{element\_not\_parent/6}. An element $e_1$ \emph{is} the parent element of $e_2$ if it encloses $e_2$ and is not known to be not the parent. Element pairs fulfilling this definition are derived by the rule on line 22 and expressed as instances of \texttt{element\_parent/6}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-hierarchy}, caption={Parsing XML attributes.}]
 % Derive parent elements
@@ -313,7 +316,7 @@ element_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO) :-
 	not element_not_parent(E, E_POS_FROM, E_POS_TO, P, P_POS_FROM, P_POS_TO).
 \end{lstlisting}         
 
-Last but not least, the \texttt{xml\_dom} module has a number of rules to project away positional information of tags which are not deemed to be of interest to the calling component. Listing~\ref{lst:results-xml-parse-projection} shows all rules used to achieve this. First, each parsed XML element is assigned a unique identifier represented using the predicate \texttt{dom\_element\_id/2} by the rule on line 1. Identifier terms are obtained from the \emph{enumeration literal} (see Section~\ref{subsubsec:alpha-arch-enum-resolution}) \texttt{id\_enum/3}. Based on the thereby established relation, versions of the predicates \texttt{element/7}, \texttt{element\_parent/6}, \texttt{element\_text/4}, \texttt{element\_attribute/8} in which the individual terms making up the respective element's position within the document are replaced with the corresponding identifier.
+Last but not least, the \texttt{xml\_dom} module has a number of rules to project away positional information of tags which are not deemed to be of interest to the calling component. Listing~\ref{lst:results-xml-parse-projection} shows all rules used to achieve this. First, each parsed XML element is assigned a unique identifier represented using the predicate \texttt{dom\_element\_id/2} by the rule on line 1. Identifier terms are obtained from the \emph{enumeration literal} (see Section~\ref{subsubsec:alpha-arch-enum-resolution}) \texttt{id\_enum/3}. Based on the thereby established relation, versions of the predicates \texttt{element/7}, \texttt{element\_parent/6}, \texttt{element\_text/4}, \texttt{element\_attribute/8}, in which the individual terms making up the respective element's position within the document, are replaced with the corresponding identifier.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-parse-projection}, caption={Deriving simplified representations of parsed XML content.}]
 dom_element_id(e(NAME, POS_FROM, POS_TO), ID) :- 

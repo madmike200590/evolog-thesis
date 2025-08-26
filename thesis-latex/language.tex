@@ -417,7 +417,7 @@ instance(BINS, ITEMS) :-
 assignment_validation_output(ASSGN_VALID) :- 
 	instance(BINS, ITEMS), 
 	#bin_packing[BINS, ITEMS](ASSGN), 
-	#assignment_vali[ASSGN](ASSGN_VALID).
+	#assignment_valid[ASSGN](ASSGN_VALID).
 assignment(A) :- 
 	assignment_validation_output(
 		lst(assignment(A), lst_empty)).

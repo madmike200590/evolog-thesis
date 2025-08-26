@@ -21,7 +21,7 @@ From an application architecture point of view, the XML-graph-coloring applicati
     \item Graph 3-coloring calculation, implemented in Module \texttt{threecol}.
     \item Encoding of graph colorings as XML strings, which is realized in Module \texttt{threecol\_to\_xml}.
 \end{itemize}    
-Since both the \texttt{xml\_dom} as well as the \texttt{threecol\_to\_xml} module are realtively verbose and basically only deal with ordering elements, these are referred to as black boxes here. A detailed discussion including source code is given in Appendix~\ref{sec:appendix-xml-dom-parsing} and~\ref{sec:appendix-graphcol-to-xml}. The implementation of the three-coloring module is the same as shown in Example and is therefore not discussed again here.
+Since both the \texttt{xml\_dom} as well as the \texttt{threecol\_to\_xml} module are realtively verbose and basically only deal with ordering elements, these are referred to as black boxes here. A detailed discussion including source code is given in Appendix~\ref{sec:appendix-xml-dom-parsing} and~\ref{sec:appendix-graphcol-to-xml}. The implementation of the three-coloring module is the same as shown in Example~\ref{ex:3col-module} and is therefore not discussed again.
 
 \subsection{Reading files from user-supplied paths}
 
@@ -70,20 +70,20 @@ file_lines(PATH, LST) :-
     infile(PATH). 
 \end{lstlisting}    
 
-The rule on line 3 derives the predicate \texttt{write\_input\_prompt\_res/1}, which wraps the result of a stream output operation - which in this case writes a prompt text to stdout. Note that the \emph{standard output stream} \texttt{STDOUT} does not need to be opened using an Evolog action, but is always available to an application. A reference to \texttt{STDOUT} can be obtained through the external atom \texttt{stdout/1}.
+The rule on line 3 derives the predicate \texttt{write\_input\_prompt\_res/1}, which wraps the result of a stream output operation, which in this case writes a prompt text to stdout. Note that the \emph{standard output stream} \texttt{STDOUT} does not need to be opened using an Evolog action, but is always available to an application. A reference to \texttt{STDOUT} can be obtained through the external atom \texttt{stdout/1}.
 
 If writing the prompt text succeeds, i.e. in case the result term of the write action has structure \texttt{success(\_)}, user input is read from the \emph{standard input stream} \texttt{STDIN}. The result of the read operation is derived on line 5 using  predicate \texttt{usr\_input\_res/1}. Note that, as with stdout, \texttt{STDIN} does not have to be opened, but is obtained using the external atom \texttt{stdin/1}.
 
 In case the read operation succeeded, we attempt to open an input stream on the file entered by the user. The rule on line 9 derives the result of this operation in the \texttt{infile\_open/2} predicate. The first term is the path of the respective file, the second is an action result term which either takes the form \texttt{error(MSG)} or holds a reference to a file input stream \texttt{STREAM} wrapped in a function term \texttt{success(stream(STREAM))}.
 
-If opening succeeds, the openend file is read line-wise, using the rules on lines 16 and 19. Lines are numbered in order to keep positional information of file content. Reading stops once the result from the last \texttt{@streamReadLine} action is \texttt{success(line(eof))} where \texttt{eof} denotes \emph{end-of-file}.
+If opening succeeds, the opened file is read line-wise, using the rules on lines 16 and 19. Lines are numbered in order to keep positional information of file content. Reading stops once the result from the last \texttt{@streamReadLine} action is \texttt{success(line(eof))} where \texttt{eof} denotes \emph{end-of-file}.
 
-After all lines of the input file have been read successfully an \texttt{@inputStreamClose} action is used to close the input file (see line 28). Finally, all lines from a file are aggregated into a single list term using a \texttt{\#list} aggregate in the rule on line 35.
+After all lines of the input file have been read successfully, an \texttt{@inputStreamClose} action is used to close the input file (see line 28). Finally, all lines from a file are aggregated into a single list term using a \texttt{\#list} aggregate in the rule on line 35.
 
 \subsection{Parsing XML data}
 \label{subsec:results-xml-parsing}
 
-Based on the list of lines in an input file, the contained XML data is parsed using Module \texttt{xml\_dom}, which is described in detail in Appendix~\ref{sec:appendix-xml-dom-parsing}. Input files are expected to conform to the \gls{dtd} in Listing\ref{lst:results-xml-graphcol-input}.
+Based on the list of lines in an input file, the contained XML data is parsed using Module \texttt{xml\_dom}, which is described in detail in Appendix~\ref{sec:appendix-xml-dom-parsing}. Input files are expected to conform to the \gls{dtd} in Listing~\ref{lst:results-xml-graphcol-input}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-input}, caption={\gls{dtd} for graph XML files.}]  
 <!ELEMENT graph (vertices, edges)>
@@ -124,7 +124,7 @@ Listing~\ref{lst:results-xml-graphcol-input-ex} shows an example input file conf
 </graph>
 \end{lstlisting} 
 
-The XML-parsing module has 4 output terms which represent lists of \gls{dom} elements, parent-child relationships between \gls{dom} elements, text content of elements as well as attributes, respectively. Listing~\ref{lst:results-xml-graphcol-dom-unpack} shows the Evolog code to parse the XML content of an input file. Since each of the four result terms of the \texttt{xml\_dom} module is a list term, in order to have one atom per list entry, each list needs to be "unwrapped". List terms are unwrapped by first deriving one "entry"-atom for every element of the list which holds the element itself along with all successor elements in the list (i.e. the "tail list"). Finally, the tail list of each entry atom is projected away using an additional rule, such that tehre is one atom for each element of the original list. In Listing~\ref{lst:results-xml-graphcol-dom-unpack}, this unwrapping is performed for each output list of the XML parsing module from line 8 onward.
+The XML-parsing module has 4 output terms which represent lists of \gls{dom} elements, parent-child relationships between \gls{dom} elements, text content of elements as well as attributes, respectively. Listing~\ref{lst:results-xml-graphcol-dom-unpack} shows the Evolog code to parse the XML content of an input file. Since each of the four result terms of the \texttt{xml\_dom} module is a list term, in order to have one atom per list entry, each list needs to be "unwrapped". List terms are unwrapped by first deriving one "entry"-atom for every element of the list which holds the element itself along with all successor elements in the list (i.e. the "tail list"). Finally, the tail list of each entry atom is projected away using an additional rule, such that there is one atom for each element of the original list. In Listing~\ref{lst:results-xml-graphcol-dom-unpack}, this unwrapping is performed for each output list of the XML parsing module from line 8 onward.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-xml-graphcol-dom-unpack}, caption={Parsing and consuming XML data in an Evolog program.}]
 % Parse the string content of individual lines into a 
@@ -213,7 +213,7 @@ graph_threecol(ID, COL) :-
 graph_coloring(GRAPH, COLORING, ID) :- ids(coloring_ids, gcol(GRAPH, COLORING), ID), graph_threecol(GRAPH, COLORING).    
 \end{lstlisting}    
 
-In order to write calculated colorings to an XML file, each coloring is first converted to an XML string using module \texttt{threecol\_to\_xml}, which is shown in Listing~\ref{lst:results-xml-graphcol-serialization}. The module takes as input an atom of predicate \texttt{coloring/1} which is assumed to have one argument term, where the argument is a list of terms representing vertices along with an assigned color, e.g. \texttt{coloring(lst(col(1, red), lst(col(2, blue), lst\_empty))).}
+In order to write calculated colorings to an XML file, each coloring is first converted to an XML string using module \texttt{threecol\_to\_xml}, which is shown in Listing~\ref{lst:appendix-xml-graphcol-serialization}. The module takes as input an atom of predicate \texttt{coloring/1}, which is assumed to have one argument term,  the argument of which is a list of terms representing vertices along with an assigned color, e.g. \texttt{coloring(lst(col(1, red), lst(col(2, blue), lst\_empty))).}
 In the listing, the rules on lines 2 through 8 are used to first "unwrap" the input list into one \texttt{coloring\_entry/2} atom per list entry, an then establish a total ordering of said atoms using predicates \texttt{coloring\_entry\_pred/2}, \texttt{coloring\_entry\_first/1} and \texttt{coloring\_entry\_last/1}. Based on the derived ordering, an XML string representing the input coloring is built recursively starting from the "lowest" element. Every step of the construction process yields an instance of \texttt{coloring\_xmlstr\_upto/2} where the second argument term is the identifier of the "highest" vertex encoded in the XML string constituting the first argument. The output predicate of the module \texttt{coloring\_xmlstr/1} is derived from the "maximal" instance of \texttt{coloring\_xmlstr\_upto/2}, i.e. the one corresponding to the last coloring entry according to \texttt{coloring\_entry\_last/1}.
 
 Listing~\ref{lst:results-xml-graphcol-stringify} shows how module \texttt{threecol\_to\_xml} is used in the application to obtain an XML string for each calculated graph coloring.
@@ -305,7 +305,7 @@ outfile_closed(G, RES) : @outputStreamClose[STREAM] = RES :-
 
 \section{Usage of the graph coloring application}
 
-In this Section, illustrate the graph coloring application's operation based on a simple input file.
+In this Section, we illustrate the graph coloring application's operation based on a simple input file.
 
 \begin{example}[Trivial Graph]
 \label{ex:results-graphcol-trivial}
@@ -407,6 +407,8 @@ Last but not least, $A_{output}$ groups together all atoms derived while prompti
                    &\mathit{outfile\_closed}(1,~\mathit{success}(\mathit{ok}))\}
 \end{align*}
 
+\newpage
+
 The output file written to \texttt{trivial.out.xml} is given in Listing~\ref{lst:results-graphcol-trivial-output}.
 
 \begin{lstlisting}[style=asp-code, label={lst:results-graphcol-trivial-output}, caption={XML encoding of caluclated colorings for the input file from Listing~\ref{lst:results-graphcol-trivial-input}}]
@@ -480,12 +482,12 @@ In addition to $K_3$ as the simplest input graph, the application was tested aga
     \item \texttt{G34-02-3}: A connected graph with 34 vertices and a density factor of 0.2.
     \item \texttt{G55-01-4}: A connected graph with 34 vertices and a density factor of 0.1.
 \end{itemize}
-Ascending Fibonacci numbers were chosen for vertex counts in order to have an exponentially growing graph size, but avoid unintentional regularities in the input graphs, such as only having graphs with even vertex count, vertex count alwys being a multiple of some factor, etc.    
+Ascending Fibonacci numbers were chosen for vertex counts in order to have an exponentially growing graph size, but avoid unintentional regularities in the input graphs, such as only having graphs with even vertex count, vertex count always being a multiple of some factor, etc.    
 
 \subsection{Performance Test Results}
 \label{subsec:results-performance-numbers}
 
-The results of running the above described performance tests are summarized in Table~\ref{tbl:results-perftest}.
+The results of running the above described performance tests are summarized in Table~\ref{tab:results-perftest}.
 
 \begin{table}[H]
     \begin{center}

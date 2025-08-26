@@ -1,4 +1,4 @@
-In this chapter, we discuss observations from the expirements conducted in Chapter~\ref{chap:application-experiment}. It is split into two main parts: In the first part, we discuss recurring patterns in code written in Evolog as observed on the model application written in Chapter~\ref{chap:application-experiment}. In the second part of this chapter, we take a look at the performance metrics gained from the testing described in Section~\ref{sec:results-performance-tests}.
+In this chapter, we discuss observations from the expirements conducted in Chapter~\ref{chap:application-experiment}. It is split into two main parts: In the first part, we discuss recurring patterns in code written in Evolog as observed on the model application written in Chapter~\ref{chap:application-experiment}. In the second part of this chapter, we take a look at the performance metrics gained from the tests described in Section~\ref{sec:results-performance-tests}.
 
 \section{Observations from writing Evolog code}
 \label{sec:discussion-language-improvements}
@@ -6,7 +6,7 @@ In this chapter, we discuss observations from the expirements conducted in Chapt
 Considering the example application discussed in Section~\ref{sec:results-xml-graphcol}, this section aims to highlight potential areas for improvement of the language.
 
 \subsection{Unwrapping list terms}
-As the examples in Section~\ref{sec:results-xml-graphcol} clearly show, there is a certain amount of boilerplate code involved whenever one has to "unpack" a list term obtained as an output term of a module literal. Since in most cases where list terms come into play, one actually wants to work on individual values on the list, we end up with many iterations of similar-looking code that is needed to transform one atom with a single list term into a set of "element atoms", each referring to one element of the list. An example of this is the subset of the 3-Coloring module (see Example~\ref{ex:3col-module}) where the module input (an atom referencing a list of vertices and a list of edges) is deconstructed in order to represent a graph using instances of predicates \texttt{vertex/1} and \texttt{edge/2}. The relevant part of the program is shown in Listing~\ref{lst:discussion-graph-unwrap}.
+As the examples in Section~\ref{sec:results-xml-graphcol} clearly show, there is a certain amount of boilerplate code involved whenever one has to "unpack" a list term obtained as an output term of a module literal. Since in most cases where list terms come into play, one actually wants to work on individual values on the list, we end up with many iterations of similar-looking code that is needed to transform one atom with a single list term into a set of "element atoms", each referring to one element of the list. An example of this is the subset of the 3-Coloring module (see Example~\ref{ex:3col-module}), where the module input (an atom referencing a list of vertices and a list of edges) is deconstructed in order to represent a graph using instances of predicates \texttt{vertex/1} and \texttt{edge/2}. The relevant part of the program is shown in Listing~\ref{lst:discussion-graph-unwrap}.
 
 \begin{lstlisting}[style=asp-code, label={lst:discussion-graph-unwrap}, caption={Unwrapping list terms representing a graph}]
 	vertex_element(V, TAIL) :- graph(lst(V, TAIL), _).
@@ -22,7 +22,7 @@ The transformation always follows the same pattern:
 \begin{itemize}
     \item One rule derives an instance of an "element atom" from the head of the list, which is obtained by deconstructing the list term into the form \texttt{lst(V, TAIL)}, where \texttt{TAIL} is the rest of the list without the head value represented as variable \texttt{V}.
     \item A second rule recursively derives further list elements from element atoms by further deconstructing the \texttt{TAIL} terms of the individual element atoms. Repeated evaluation of this rule eventually leads to one element atom for every element of the original list term.
-    \item Finally, a third rule derives the actual domain atoms which are of interest by projecting away the partial lists from the individual element atoms.
+    \item Finally, a third rule derives the actual domain atoms, which are of interest, by projecting away the partial lists from the individual element atoms.
 \end{itemize}    
 
 Example~\ref{ex:discussion-graph-unwrapping} demonstrates this method of unwrapping list terms based on a list representation of the complete graph with 3 vertices $K_3$.
@@ -63,7 +63,7 @@ Answer set 1:
 \end{lstlisting}
 \end{example}    
 
-\paragraph{Generalizing list-unrwapping}
+\paragraph{Generalizing list-unwrapping}
 As Example~\ref{ex:discussion-graph-unwrapping} demonstrates, unwrapping a list term always takes 3 rules that only differ in predicate names. Definition~\ref{def:discussion-list-extraction} introduces a potential "syntacic sugar" solution we call an \emph{unwrap rule}.
 
 \begin{definition}[List-Unwrapping-Rule]
@@ -80,6 +80,8 @@ We define the semantics of the above rule to be equivalent to the following prog
 	e(V)~&\leftarrow~\mathit{list\_element}(V,\_).
 \end{align*}	
 \end{definition}
+
+\newpage
 
 Listing~\ref{lst:discussion-sugared-unwrap} shows a potential implementation of the 3-Coloring Module from Example~\ref{ex:3col-module} using the shorthand notation for list unwrapping proposed in Definition~\ref{def:discussion-list-extraction}.
 
@@ -110,9 +112,9 @@ Listing~\ref{lst:discussion-sugared-unwrap} shows a potential implementation of 
 
 \subsection{Repetitive File-IO Actions}
 
-As we can observe in Listings~\ref{lst:results-xml-graphcol-userinput} and~\ref{lst:results-xml-graphcol-write-output}, respectively, reading the content of a file, as well as writing to a file require a set of rules that looks the same regardless of the specific file or content in question. Listing~\ref{lst:discussion-fileio-readlines} shows the "standard program" to read all lines from a file:
+As we can observe in Listings~\ref{lst:results-xml-graphcol-userinput} and~\ref{lst:results-xml-graphcol-write-output}, respectively, reading the content of a file, as well as writing to a file, requires a set of rules that looks the same regardless of the specific file or content in question. Listing~\ref{lst:discussion-fileio-readlines} shows the "standard program" to read all lines from a file:
 \begin{itemize}
-	\item A file path (i.e. location in storage), represented using the fact \texttt{infile(PATH)} is opened.
+	\item A file path (i.e. location in storage), represented using a fact of form \texttt{infile(PATH)}, is opened.
 	\item Assuming opening the file produced no error, the first line of content is read using the rule on line 11.
 	\item Based on the first line read (line number 0), we recursively continue reading as long as reading the last line was successful and did not yield \texttt{eof} (i.e. a pseudo-term denoting the end of content) as a result.
 	\item If \texttt{eof} has been read, the file is closed, and lines are represented as atoms of form \texttt{line(LINE\_NO, LINE)}.
@@ -152,7 +154,7 @@ line(LINE_NO, LINE) :-
 
 The code to write a set of lines to a file looks similar to how a file is read. Listing~\ref{lst:discussion-fileio-writelines} demonstrates the typical implementation. The following steps are needed:
 \begin{itemize}
-	\item First, the file to which content is to be written is opened.
+	\item First, the file, to which content is to be written, is opened.
 	\item Assuming lines to be written are consecutively numbered and available as atoms of form \texttt{line(LINE\_NO, LINE)}, the first line (assumed to have an index of 0) is written.
 	\item If the first line has been successfully written, all other lines are written using a recursive rule.
 	\item We derive that all lines have been written when the line with maximum index has been written.
@@ -190,11 +192,11 @@ close_result(PATH, RES) : @outputStreamClose[STREAM] = RES :-
 \paragraph{Module-based abstraction of actions}
 As we've demonstrated in Listings~\ref{lst:discussion-fileio-readlines} and~\ref{lst:discussion-fileio-writelines}, frequently used file operations like reading all lines from and writing a set of lines to a file, form repetitive code patterns that would greatly benefit from some shortened abstraction. The obvious solutions seems to be to simply permit actions in Evolog Modules. However, this approach presents some challenges with regards to transparent semantics.
 
-Recalling the demand for \emph{action transparency} (see Definition~\ref{def:evolog-actions-transparency}), i.e. that the result of every firing (ground) action rule must be part of an answer set, modules containing actions can not simple be used in module literals as they're described in Section~\ref{sec:evolog-modules}. Instead, we'd have to apply the definitions of action functions in rule heads to an Evolog Module and have a module function as an action interpretation function. Example~\ref{ex:discussion-fileio-actmodules} demonstrates this approach.
+Recalling the demand for \emph{action transparency} (see Definition~\ref{def:evolog-actions-transparency}), i.e. that the result of every firing (ground) action rule must be part of an answer set, modules containing actions can not simple be used in module literals in the way they are described in Section~\ref{sec:evolog-modules}. Instead, we would have to apply the definitions of action functions in rule heads to an Evolog Module and have a module function as an action interpretation function. Example~\ref{ex:discussion-fileio-actmodules} demonstrates this approach.
 
 \begin{example}[Action Modules]
 \label{ex:discussion-fileio-actmodules}	
-In this example, we show a potential implementation for a module that takes a list of numbered strings and a string describing a file location as input, and writes all lines to the referenced file. Listing~\ref{lst:discussion-fileio-actmodule-impl} gives an example of how a module definition for a module containing actions might look.
+In this example, we show a potential implementation for a module that takes a list of numbered strings and a string describing a file location as input and writes all lines to the referenced file. Listing~\ref{lst:discussion-fileio-actmodule-impl} gives an example of how a module definition for a module containing actions might look.
 \begin{lstlisting}[style=asp-code, label={lst:discussion-fileio-actmodule-impl}, caption={Prototypical definition of a module containing Evolog actions.}]
 #action write_lines(lines/1, path/1 => (success: lines_written/1 | error: io_error/1)) {
 	% Unwrap line list
