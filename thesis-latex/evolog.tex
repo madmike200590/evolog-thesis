@@ -2,6 +2,20 @@
 
 \documentclass[draft,final]{vutinfth} % Remove option 'final' to obtain debug information.
 
+% Define convenience functions to use the author name and the thesis title in the PDF document properties.
+\newcommand{\authorname}{Michael Langowski} % The author name without titles.
+\newcommand{\thesistitle}{Evolog - Actions and Modularization in Lazy-Grounding Answer Set Programming} % The title of the thesis. The English version should be used, if it exists.
+
+% Create the XMP metadata file for the creation of PDF/A compatible documents.
+\begin{filecontents*}[overwrite]{\jobname.xmpdata}
+  \Author{\authorname}                                    % The author's name in the document properties.
+  \Title{\thesistitle}                                    % The document's title in the document properties.
+  \Language{de-AT}                                        % The document's language in the document properties. Select 'en-US', 'en-GB', or 'de-AT'.
+  \Keywords{answer set programming\sep lazy-grounding\sep knowledge representation\sep modularization\sep logic programming}               % The document's keywords in the document properties (separated by '\sep ').
+  \Publisher{TU Wien}                                     % The document's publisher in the document properties.
+  \Subject{Thesis}                                        % The document's subject in the document properties.
+\end{filecontents*}
+
 % Load packages to allow in- and output of non-ASCII characters.
 \usepackage{lmodern}        % Use an extension of the original Computer Modern font to minimize the use of bitmapped letters.
 \usepackage[T1]{fontenc}    % Determines font encoding of the output. Font packages have to be included before this line.
@@ -25,21 +39,14 @@
 \usepackage{color}
 \usepackage{float}
 \usepackage{boldline}
-\usepackage{hyperref}  % Enables cross linking in the electronic document version. This package has to be included second to last.
+\usepackage{morewrites} % Increases the number of external files that can be used.
+\usepackage[a-2b,mathxmp]{pdfx}      % Enables PDF/A compliance. Loads the package hyperref and has to be included second to last.
 \usepackage[acronym,toc]{glossaries} % Enables the generation of glossaries and lists fo acronyms. This package has to be included last.
-
-% Define convenience functions to use the author name and the thesis title in the PDF document properties.
-\newcommand{\authorname}{Michael Langowski} % The author name without titles.
-\newcommand{\thesistitle}{Evolog - Actions and Modularization in Lazy-Grounding Answer Set Programming} % The title of the thesis. The English version should be used, if it exists.
 
 % Set PDF document properties
 \hypersetup{
     pdfpagelayout   = TwoPageRight,           % How the document is shown in PDF viewers (optional).
     linkbordercolor = {Melon},                % The color of the borders of boxes around crosslinks (optional).
-    pdfauthor       = {\authorname},          % The author's name in the document properties (optional).
-    pdftitle        = {\thesistitle},         % The document's title in the document properties (optional).
-    pdfsubject      = {Subject},              % The document's subject in the document properties (optional).
-    pdfkeywords     = {a, list, of, keywords} % The document's keywords in the document properties (optional).
 }
 
 \setpnumwidth{2.5em}        % Avoid overfull hboxes in the table of contents (see memoir manual).
@@ -226,6 +233,12 @@ In order to demonstrat Evolog's suitability as an actual application programming
 \input{appendix/appendix.tex}
 
 \backmatter
+
+% Declare the use of AI tools as mentioned in the statement of originality.
+% Use either the English aitools or the German kitools.
+\begin{aitools}
+During implementation work on the Evolog reference implementation in the Alpha ASP Solver\footnote{\url{https://github.com/alpha-asp/Alpha/tree/evolog-modules}}, the Github Copilot IDE Plugin for Visual Studio Code\footnote{\url{https://marketplace.visualstudio.com/items?itemName=GitHub.copilot}, last accessed: 30.08.2025} has been used in the respective latest versions. Specifically, Copliot has been used for code completion suggestions (which were accepted very sparingly). There were no generative AI tools used to generate or enhance any of the text in this document.
+\end{aitools}
 
 % Use an optional list of figures.
 \listoffigures % Starred version, i.e., \listoffigures*, removes the toc entry.

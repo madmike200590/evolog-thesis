@@ -369,6 +369,7 @@ Listing~\ref{lst:implementation-actions-actionfunc} shows the Java Interface spe
 \end{lstlisting}   
 
 \subsection{Implementing Program Modularization}
+\label{sec:implementation-modules}
 
 Formally, module atoms are just a special type of external atoms. In implementing support for the Modularization concept described in~\ref{sec:evolog-modules}, we mainly have to deal with parsing module definitions and constructing external atoms in a way that ties in to the Alpha's pre-existing evaluation facilities for external atoms. While not strictly necessary, this section also discusses the newly added \texttt{\#list\{...\}} aggregate, which has been added as syntactic sugar in order to combine a set of terms into a single list term according to Definition~\ref{def:asp-list-term}.
 

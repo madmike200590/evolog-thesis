@@ -264,7 +264,7 @@ In order to make input terms of a module atom available to the module implementa
 Given a module definition $M$ with input predicate $p$ of arity $k$ and implementation program $P_M$ and a ground module atom $a_m$ referencing $M$ with input terms $t_1,\ldots,t_k$, then the ASP program that is solved to interpret $a_m$ is obtained by adding a fact $p(t_1,\ldots,t_k)$ to $P_M$. We denote this conversion of input terms to an atom as the \emph{"factification"} function $\mathit{fct(t_1,\ldots,t_k)}$.
 \end{definition}	
 
-Similar to module input translation, it is also necessary, to translate answer sets of an instantiated module program into output terms of the corresponding module atom. Every answer set gets converted into one set of terms, each - together with the input terms - constituting one ground instance of the module atom. Predicates get converted into function symbols, and atoms become list items. Definition~\ref{def:asp-list-term} introduces the notion of a list term, which is used to represent lists of terms in ASP.
+Similar to module input translation, it is also necessary to translate answer sets of an instantiated module program into output terms of the corresponding module atom. Every answer set gets converted into one set of terms, each - together with the input terms - constituting one ground instance of the module atom. Predicates get converted into function symbols, and atoms become list items. Definition~\ref{def:asp-list-term} introduces the notion of a list term, which is used to represent lists of terms in ASP.
 
 \begin{definition}[List Term]
 \label{def:asp-list-term}
